@@ -104,22 +104,51 @@
     // mar helado
     for (let y = 214; y < H; y++) for (let xx = 0; xx < W; xx++) {
       const t = (y - 214) / (H - 214);
-      let col = dither(['#2a4a80', '#1f3a6c', '#16305e', '#102650'], t, xx, y);
-      // reflejo de la luna (columna vertical tramada)
-      const dm = Math.abs(xx - 92 + Math.sin(y * 0.8) * 2);
-      if (dm < 6 - t * 3 && (y % 3) && BAYER[y & 3][xx & 3] < 9) col = dm < 2 ? '#dbe7f6' : '#8fa6c9';
-      // reflejo de la aurora
-      if (xx < 330 && (y % 4 === 1) && BAYER[(y >> 2) & 3][xx & 3] < 3 && Math.sin(xx * 0.33) > 0.2) col = '#1f9c8c';
-      px(x, xx, y, col);
+      px(x, xx, y, dither(['#2a4a80', '#1f3a6c', '#16305e', '#102650'], t, xx, y));   // el agua (los reflejos se animan)
     }
     rect(x, 0, 214, W, 1, '#4a6fa8');
-    // témpanos flotantes
-    const r = rng(19);
-    for (let i = 0; i < 7; i++) {
-      const fx = r() * W | 0, fy = 222 + r() * 40 | 0, fw = 8 + r() * 18 | 0;
-      rect(x, fx, fy, fw, 2, '#5a83bf'); rect(x, fx + 1, fy, fw - 2, 1, '#9fc0e8'); rect(x, fx + 1, fy + 2, fw - 2, 1, '#0d2149');
-    }
     return c;
+  }
+
+  // ---------------- el mar, animado ----------------
+  const SEA_Y = 215, SEA_H = H - 215;
+  function drawSea(c, A, t) {
+    // olas: cada fila del agua se mece a un lado y a otro (más lento y amplio cerca, más fino lejos)
+    for (let i = 0; i < SEA_H; i++) {
+      const k = i / SEA_H, dx = Math.round(Math.sin(t * (0.02 + k * 0.03) + i * 0.9) * (0.5 + k * 2.5));
+      c.drawImage(A.sea, 0, i, W, 1, dx, SEA_Y + i, W, 1);
+      if (dx > 0) c.drawImage(A.sea, 0, i, 1, 1, 0, SEA_Y + i, dx, 1);
+      else if (dx < 0) c.drawImage(A.sea, W - 1, i, 1, 1, W + dx, SEA_Y + i, -dx, 1);
+    }
+    // la aurora reflejada en todo el ancho: su franja brillante, invertida y rota por las olas
+    for (let i = 1; i < SEA_H; i += 2) {
+      const k = i / SEA_H, src = 104 - i * 1.3;                          // espejo de la franja brillante de la aurora
+      const dx = Math.round(Math.sin(t * 0.05 + i * 0.7) * (1 + k * 3));
+      const a = (0.75 - k * 0.45) * (0.75 + 0.25 * Math.sin(t * 0.03 + i));
+      if (a <= 0.02 || src < 0) continue;
+      c.globalAlpha = a;
+      c.drawImage(A.aurora, 0, Math.round(src), W, 1, dx, SEA_Y + i, W, 1);
+    }
+    c.globalAlpha = 1;
+    // reflejo de la luna: una columna que tiembla y se rompe en trocitos
+    for (let i = 0; i < SEA_H; i++) {
+      if ((i + (t >> 3)) % 3 === 0) continue;
+      const k = i / SEA_H, w = Math.max(1, Math.round(7 - k * 4 + Math.sin(t * 0.08 + i * 1.3) * 2));
+      const x = Math.round(92 + Math.sin(t * 0.06 + i * 0.8) * (1 + k * 3) - w / 2);
+      rect(c, x, SEA_Y + i, w, 1, w > 3 ? '#dbe7f6' : '#8fa6c9', 0.85 - k * 0.45);
+    }
+    // destellos que aparecen y se apagan sobre el agua
+    for (let n = 0; n < 14; n++) {
+      const life = (t + n * 37) % 90, seed = Math.floor((t + n * 37) / 90) * 13 + n * 7;
+      if (life > 24) continue;
+      const gx = (seed * 97) % W, gy = SEA_Y + 3 + (seed * 53) % (SEA_H - 6), a = Math.sin(life / 24 * Math.PI);
+      px(c, gx, gy, '#e6f4ff', a); if (life > 8 && life < 16) { px(c, gx - 1, gy, '#9fc0e8', a * 0.6); px(c, gx + 1, gy, '#9fc0e8', a * 0.6); }
+    }
+    // témpanos que se mecen y derivan muy despacio
+    for (const f of A.floes) {
+      const x = Math.round(((f.x + t * f.v) % (W + 40) + W + 40) % (W + 40) - 20), y = f.y + Math.round(Math.sin(t * 0.03 + f.ph));
+      rect(c, x, y, f.w, 2, '#5a83bf'); rect(c, x + 1, y, f.w - 2, 1, '#9fc0e8'); rect(c, x + 1, y + 2, f.w - 2, 1, '#0d2149', 0.8);
+    }
   }
 
   // ---------------- la isla de hielo ----------------
@@ -228,7 +257,14 @@
     spawns: [[156, 1], [324, -1], [204, 1], [276, -1]],
     respawn: { x: 240, y: 46 },
 
-    build() { return { sky: makeSky(), aurora: makeAurora(), land: makeLand(), stage: makeGlacier() }; },
+    build() {
+      // el mar por separado, para poder ondularlo fila a fila
+      const land = makeLand(), sea = mkCanvas(W, SEA_H);
+      sea.getContext('2d').drawImage(land, 0, SEA_Y, W, SEA_H, 0, 0, W, SEA_H);
+      const r = rng(19), floes = [];
+      for (let i = 0; i < 7; i++) floes.push({ x: r() * W | 0, y: 222 + r() * 40 | 0, w: 8 + r() * 18 | 0, ph: r() * 6, v: (r() - 0.5) * 0.06 });
+      return { sky: makeSky(), aurora: makeAurora(), land, sea, floes, stage: makeGlacier() };
+    },
     init(st) {
       const r = rng(5);
       st.flakes = [];
@@ -266,6 +302,7 @@
       // reflejo suave de la aurora sobre el cielo
       glow(c, 150, 70, 90, '#3df2b0', 0.05 + 0.04 * Math.sin(t * 0.02), 4);
       c.drawImage(A.land, 0, 0);
+      drawSea(c, A, t);
     },
     renderFront(c, st) {
       for (const f of st.flakes) {
