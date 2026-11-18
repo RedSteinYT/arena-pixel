@@ -236,6 +236,7 @@
   .cur i { position: absolute; left: -.15em; top: -.15em; width: 2.2em; height: 2.8em; background: var(--c, #fff);
     clip-path: polygon(0 0, 100% 62%, 58% 64%, 82% 100%, 62% 100%, 40% 70%, 0 92%);
     filter: drop-shadow(.18em .18em 0 #120d24) drop-shadow(-.1em 0 0 #120d24) drop-shadow(0 -.1em 0 #120d24); }
+  .cur.ghost { opacity: .8; transition: transform .07s linear; }
   .cur span { position: absolute; left: 1.9em; top: 2.2em; font-size: .85em; background: var(--c, #fff); color: #120d24; padding: .25em .45em; border: .2em solid #120d24; white-space: nowrap; }
 
   /* =====================================================================
@@ -398,8 +399,14 @@
   .onlPlayers li b { color: var(--gold); margin-right: 6px; }
   .onlPlayers li.me { border-color: var(--gold); }
   .onlPlayers li.free { opacity: .45; }
+  #toast { position: absolute; left: 50%; bottom: 4%; z-index: 80; transform: translate(-50%, 30%); opacity: 0; pointer-events: none;
+    font-size: clamp(8px, 1cqw, 16px); color: #fff; background: #120d24; border: .25em solid var(--gold); padding: .7em 1.2em; white-space: nowrap;
+    box-shadow: 0 .3em 0 rgba(0,0,0,.5); transition: opacity .25s, transform .25s; }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
   #sndHint { margin: 6px 0 0; text-align: center; color: var(--gold); font-size: 9px; }
   body.sound-on #sndHint { display: none; }
+  #padHint { margin: 4px 0 0; text-align: center; color: #9fd8ff; font-size: 8px; }
+  body.pad-on #padHint { display: none; }
   #resWait { display: none; margin: 14px 0 0; font-size: 10px; text-align: center; }
   #results.remote #resWait { display: block; }
   #results.remote .row { display: none !important; }
@@ -421,6 +428,7 @@
       <button id="bCtrlTitle">CONTROLES</button>
       <p style="margin-top:18px;text-align:center">Teclado o mando: Xbox · PlayStation · Nintendo</p>
       <p id="sndHint" class="blink">🔊 Pulsa cualquier tecla o haz clic para activar el sonido</p>
+      <p id="padHint">🎮 ¿Mando? Pulsa cualquier botón para que el navegador lo detecte</p>
     </div>
   </div>
 
@@ -524,6 +532,7 @@
     </div>
   </div>
   <div id="cursors"></div>
+  <div id="toast"></div>
 </div>
 
 <script src="js/core.js"></script>

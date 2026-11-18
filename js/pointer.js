@@ -50,11 +50,40 @@ const Pointer = (() => {
   });
   addEventListener('contextmenu', e => { if (host) e.preventDefault(); });
 
+  // punteros de otros jugadores en línea (solo se dibujan, no eligen nada)
+  const ghosts = {};
+  function setGhosts(list) {
+    const r = wrapRect(), seen = new Set();
+    for (const g of list || []) {
+      seen.add(g.id);
+      let el = ghosts[g.id];
+      if (!el) { el = document.createElement('div'); el.className = 'cur ghost'; el.innerHTML = '<i></i><span></span>'; document.getElementById('cursors').appendChild(el); ghosts[g.id] = el; }
+      el.style.display = host ? '' : 'none';
+      el.style.transform = `translate(${Math.round(g.x * r.width)}px, ${Math.round(g.y * r.height)}px)`;
+      el.style.setProperty('--c', g.color);
+      const lab = el.querySelector('span'); if (lab.textContent !== g.label) lab.textContent = g.label;
+    }
+    for (const id in ghosts) if (!seen.has(id)) { ghosts[id].remove(); delete ghosts[id]; }
+  }
+
   return {
     get cursors() { return curs; },
+    setGhosts,
+    // mis punteros, en proporción a la pantalla del juego (para mandarlos por la red)
+    mine() {
+      if (!host) return [];
+      const r = wrapRect(), out = [];
+      for (const dev in curs) {
+        const c = curs[dev]; if (c.el.style.display === 'none') continue;
+        const info = host.info(dev);
+        out.push({ x: Math.round((c.x - r.left) / r.width * 1000) / 1000, y: Math.round((c.y - r.top) / r.height * 1000) / 1000, label: info.label, color: info.color });
+      }
+      return out;
+    },
     attach(h) { host = h; document.body.classList.add('pointer-ui'); for (const d in curs) curs[d].el.style.display = ''; },
     detach() {
       host = null; document.body.classList.remove('pointer-ui');
+      setGhosts([]);
       for (const d in curs) { setHover(curs[d], null); curs[d].el.style.display = 'none'; }
     },
     hovered(dev) { return curs[dev] && curs[dev].hov; },

@@ -330,6 +330,18 @@ function soundOn() {
 for (const ev of ['keydown', 'pointerdown', 'touchstart']) addEventListener(ev, soundOn, { capture: true, passive: true });
 if (navigator.userActivation && navigator.userActivation.hasBeenActive) document.body.classList.add('sound-on');
 
+// aviso cuando el navegador detecta (o pierde) un mando
+let toastT = 0;
+function toast(msg) {
+  const el = $('toast'); el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600);
+}
+addEventListener('gamepadconnected', e => {
+  document.body.classList.add('pad-on');
+  toast('🎮 Mando ' + (e.gamepad.index + 1) + ' conectado: ' + (e.gamepad.id.split('(')[0].trim().slice(0, 28) || 'mando'));
+});
+addEventListener('gamepaddisconnected', e => toast('🎮 Mando ' + (e.gamepad.index + 1) + ' desconectado'));
+
 validateCharacters();
 newDemo();
 // enlace de invitación: ?sala=CODIGO entra directamente en esa sala

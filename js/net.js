@@ -177,6 +177,7 @@ const Net = (() => {
     const P = peers[pid]; if (!P || !d) return;
     if (d.t === 'i') { if (d.s > P.seq) { P.seq = d.s; P.inp = unpackInput(d.i); P.ack = d.a; } }
     else if (d.t === 'slot') Select.netSlot('net:' + pid, d);
+    else if (d.t === 'cur') { P.cur = Array.isArray(d.c) ? d.c.slice(0, 4) : []; P.curT = performance.now(); }
     else if (d.t === 'bye') drop(pid);
   }
   // en qué pantalla está el anfitrión (los invitados le siguen)
@@ -188,6 +189,23 @@ const Net = (() => {
     if (screen === 'controls') return ctrlReturn === 'pause' ? 'fight' : ({ modeScr: 'mode', stageScr: 'stage', charScr: 'chars' })[ctrlReturn] || 'lobby';
     if (screen === 'results') return 'results';
     return 'lobby';
+  }
+  // punteros de la selección: cada uno ve los de los demás
+  let curTick = 0;
+  const ghostList = (list, pre) => (list || []).map((c, i) => ({ id: pre + i, x: +c.x || 0, y: +c.y || 0, label: String(c.label || '').slice(0, 12), color: /^#[0-9a-f]{3,8}$/i.test(c.color) ? c.color : '#ffffff' }));
+  function cursorsTick() {
+    if (++curTick % 3) return;
+    const onChars = Select.screen === 'chars';
+    if (role === 'client') { if (onChars && hostSt && hostSt.open) hostSt.send({ t: 'cur', c: Pointer.mine() }); return; }
+    if (!onChars) return;
+    const now = performance.now(), mine = ghostList(Pointer.mine(), 'h'), others = {};
+    for (const pid in peers) others[pid] = now - (peers[pid].curT || 0) < 1000 ? ghostList(peers[pid].cur, pid + ':') : [];
+    Pointer.setGhosts([].concat(...Object.values(others)));
+    for (const pid in peers) {
+      const ch = peers[pid].st; if (!ch || !ch.open) continue;
+      const list = mine.slice(); for (const q in others) if (q !== pid) list.push(...others[q]);
+      ch.send({ t: 'curs', c: list });
+    }
   }
   function hostTick() {
     const scr = hostScreen();
@@ -236,6 +254,7 @@ const Net = (() => {
   function onClientData(d) {
     if (!d) return;
     if (d.t === 'snap') return onSnap(d);
+    if (d.t === 'curs') { if (Select.screen === 'chars') Pointer.setGhosts(ghostList(d.c, '')); return; }
     if (d.t === 'welcome') { myNum = d.n; setUI('client'); return; }
     if (d.t === 'full') return fail({ type: 'full' });
     if (d.t === 'closed') return lost('El anfitrión cerró la sala.');
@@ -368,7 +387,7 @@ const Net = (() => {
     peerDevs: () => Object.keys(peers).filter(pid => peers[pid].ctl && peers[pid].ctl.open).map(pid => 'net:' + pid),
     connected: dev => role === 'host' ? !!peers[dev.slice(4)] : true,
     inputs() { const o = {}; for (const pid in peers) o['net:' + pid] = peers[pid].inp; return o; },
-    tick() { if (role === 'host') hostTick(); },
+    tick() { if (role === 'host') hostTick(); if (role) cursorsTick(); },
     record(v) { rec = v; },
     hostSend, clientFrame,
     sendStart(cfg) { lastCfg = cfg; sentFx = new WeakSet(); hostHist.clear(); for (const pid in peers) peers[pid].ack = -1; sendAll({ t: 'start', cfg }); },
