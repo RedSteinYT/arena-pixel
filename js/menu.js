@@ -6,13 +6,22 @@
 const $ = id => document.getElementById(id);
 const disp = $('screen'), dctx = disp.getContext('2d');
 const buf = mkCanvas(W, H), bctx = buf.getContext('2d');
+const ambient = document.getElementById('ambient'), actx = ambient.getContext('2d');
+actx.imageSmoothingEnabled = true; actx.imageSmoothingQuality = 'high';
 let S = 1;
 
+// El juego ocupa todo lo que permite la proporción 16:9 (no solo saltos enteros ×2, ×3…).
+// El lienzo se pinta a escala entera (S, píxeles nítidos) igual o mayor que la pantalla y el
+// navegador solo lo reduce un poco; si encaja exacto, se ve con píxeles perfectos.
 function resize() {
-  S = Math.max(1, Math.floor(Math.min(innerWidth / W, innerHeight / H)));
+  const dpr = window.devicePixelRatio || 1;
+  const view = Math.min(innerWidth / W, innerHeight / H);       // tamaño en pantalla (px CSS)
+  S = Math.max(1, Math.ceil(view * dpr - 0.02));
   disp.width = W * S; disp.height = H * S;
-  disp.style.width = W * S + 'px'; disp.style.height = H * S + 'px';
-  const wr = document.getElementById('wrap'); wr.style.width = W * S + 'px'; wr.style.height = H * S + 'px';
+  const cw = Math.floor(W * view), ch = Math.floor(H * view);
+  disp.style.width = cw + 'px'; disp.style.height = ch + 'px';
+  disp.style.imageRendering = Math.abs(view * dpr - S) < 0.02 ? 'pixelated' : 'auto';
+  const wr = document.getElementById('wrap'); wr.style.width = cw + 'px'; wr.style.height = ch + 'px';
   dctx.imageSmoothingEnabled = false;
 }
 addEventListener('resize', resize);
@@ -232,6 +241,8 @@ function frame(now) {
   requestAnimationFrame(frame);          // primero: aunque algo falle, el juego nunca se congela
   try { frameBody(now); }
   catch (e) { console.error('Error en un frame (el juego sigue):', e); }
+  // marco ambiente: una miniatura del juego que el navegador estira y difumina detrás
+  if (uiFrame % 3 === 0) actx.drawImage(buf, 0, 0, ambient.width, ambient.height);
 }
 function frameBody(now) {
   Input.update();
@@ -308,6 +319,16 @@ function frameBody(now) {
     TXT.text('el anfitrión ha pausado la pelea', W / 2, H / 2 + 8, 8, '#ffffff', 'center');
   }
 }
+
+// sonido: el navegador no deja sonar ninguna web hasta que el usuario la toca.
+// Cualquier tecla, clic o toque lo activa (los mandos no cuentan para el navegador).
+function soundOn() {
+  const ac = Sfx.unlock();
+  if (ac && ac.state === 'suspended') ac.resume();
+  document.body.classList.add('sound-on');
+}
+for (const ev of ['keydown', 'pointerdown', 'touchstart']) addEventListener(ev, soundOn, { capture: true, passive: true });
+if (navigator.userActivation && navigator.userActivation.hasBeenActive) document.body.classList.add('sound-on');
 
 validateCharacters();
 newDemo();
