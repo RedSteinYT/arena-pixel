@@ -26,6 +26,19 @@ const Net = (() => {
   const cliHist = new Map(); let latest = -1, applied = -1, pendFx = [], pendSnd = [], inSeq = 0;
 
   const stats = { on: false, n: 0, bytes: 0, full: 0 };
+  // ---------- tu nombre (se guarda en este navegador) ----------
+  const NAMES = ['Fénix', 'Rayo', 'Lobo', 'Tigre', 'Cometa', 'Trueno', 'Nova', 'Sombra', 'Bólido', 'Halcón', 'Titán', 'Ninja', 'Dragón', 'Píxel'];
+  const cleanName = v => String(v || '').replace(/[<>&"'`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12);
+  let nick = null;
+  try { nick = cleanName(localStorage.getItem('arenaPixel.nick')); } catch (e) {}
+  if (!nick) nick = NAMES[Math.random() * NAMES.length | 0] + (100 + (Math.random() * 900 | 0));
+  function setNick(v) {
+    const n = cleanName(v); if (!n || n === nick) return nick;
+    nick = n; try { localStorage.setItem('arenaPixel.nick', nick); } catch (e) {}
+    if (role === 'client' && hostCtl && hostCtl.open) hostCtl.send({ t: 'name', name: nick });
+    if (role) { lastStatus = ''; renderUI(); }
+    return nick;
+  }
   // ---------- sonidos: el anfitrión graba los que suenan durante la pelea ----------
   for (const k of Object.keys(Sfx)) {
     if (typeof Sfx[k] !== 'function' || k === 'unlock' || k === 'vsSwing') continue;
@@ -148,7 +161,7 @@ const Net = (() => {
     const pid = c.peer;
     if (!peers[pid]) {
       if (Object.keys(peers).length >= MAX_GUESTS) { c.on('open', () => { c.send({ t: 'full' }); setTimeout(() => c.close(), 400); }); return; }
-      peers[pid] = { n: nextNum++, inp: blankInput(), seq: -1, ack: -1 };
+      peers[pid] = { n: nextNum++, inp: blankInput(), seq: -1, ack: -1, name: cleanName(c.metadata && c.metadata.name) || 'Amigo' };
     }
     const P = peers[pid];
     P[c.label === 'st' ? 'st' : 'ctl'] = c;
@@ -177,6 +190,7 @@ const Net = (() => {
     const P = peers[pid]; if (!P || !d) return;
     if (d.t === 'i') { if (d.s > P.seq) { P.seq = d.s; P.inp = unpackInput(d.i); P.ack = d.a; } }
     else if (d.t === 'slot') Select.netSlot('net:' + pid, d);
+    else if (d.t === 'name') { P.name = cleanName(d.name) || 'Amigo'; lastStatus = ''; renderUI(); if (Select.screen === 'chars') Select.refresh(); }
     else if (d.t === 'cur') { P.cur = Array.isArray(d.c) ? d.c.slice(0, 4) : []; P.curT = performance.now(); }
     else if (d.t === 'bye') drop(pid);
   }
@@ -210,7 +224,8 @@ const Net = (() => {
   function hostTick() {
     const scr = hostScreen();
     fighting = scr === 'fight' || scr === 'results';
-    const st = { t: 'status', scr, players: Object.keys(peers).length + 1, sel: scr === 'chars' ? Select.netState() : null, paused: !!(scr === 'fight' && paused) };
+    const players = [{ n: 1, name: nick, host: true }].concat(Object.keys(peers).map(pid => ({ n: peers[pid].n, name: peers[pid].name })));
+    const st = { t: 'status', scr, players, sel: scr === 'chars' ? Select.netState() : null, paused: !!(scr === 'fight' && paused) };
     const js = JSON.stringify(st);
     if (js !== lastStatus) { lastStatus = js; sendAll(st); }
   }
@@ -244,7 +259,7 @@ const Net = (() => {
     catch (e) { return fail(e); }
     role = 'client'; code = c; cliHist.clear(); latest = applied = -1;
     peer.on('error', e => { if (e.type === 'peer-unavailable') fail({ type: 'peer-unavailable' }); else console.warn('Red:', e.type || e); });
-    hostCtl = peer.connect(PREFIX + c, { label: 'ctl', reliable: true, serialization: 'json' });
+    hostCtl = peer.connect(PREFIX + c, { label: 'ctl', reliable: true, serialization: 'json', metadata: { name: nick } });
     hostSt = peer.connect(PREFIX + c, { label: 'st', reliable: false, serialization: 'json' });
     const t = setTimeout(() => { if (ui === 'connecting') fail({ type: 'peer-unavailable' }); }, 15000);
     hostCtl.on('open', () => clearTimeout(t));
@@ -315,11 +330,13 @@ const Net = (() => {
   function playerList() {
     const rows = [];
     if (role === 'host') {
-      rows.push(`<li class="me"><b>J1</b> Tú · anfitrión</li>`);
-      for (const pid in peers) rows.push(`<li><b>J${peers[pid].n}</b> Amigo conectado</li>`);
-    } else if (hostStatus) {
-      rows.push(`<li><b>J1</b> Anfitrión</li>`);
-      for (let i = 2; i <= hostStatus.players; i++) rows.push(`<li class="${i === myNum ? 'me' : ''}"><b>J${i}</b> ${i === myNum ? 'Tú' : 'Amigo'}</li>`);
+      rows.push(`<li class="me"><b>J1</b> ${nick} <small>(tú · anfitrión)</small></li>`);
+      for (const pid in peers) rows.push(`<li><b>J${peers[pid].n}</b> ${peers[pid].name} conectado</li>`);
+    } else if (hostStatus && Array.isArray(hostStatus.players)) {
+      for (const p of hostStatus.players) {
+        const nm = cleanName(p.name) || 'Amigo';
+        rows.push(`<li class="${p.n === myNum ? 'me' : ''}"><b>J${p.n}</b> ${nm} <small>${p.host ? '(anfitrión)' : p.n === myNum ? '(tú)' : 'conectado'}</small></li>`);
+      }
     }
     for (let i = rows.length; i < 4; i++) rows.push(`<li class="free"><b>J${i + 1}</b> libre</li>`);
     return `<ul class="onlPlayers">${rows.join('')}</ul>`;
@@ -378,6 +395,10 @@ const Net = (() => {
     get online() { return !!role; },
     get hostPaused() { return hostPaused; },
     get code() { return code; },
+    get nick() { return nick; },
+    setNick, cleanName,
+    // nombre de quien usa ese dispositivo (anfitrión: sus amigos por la red)
+    nameOf(dev) { if (dev && dev.startsWith('net:')) { const P = peers[dev.slice(4)]; return P ? P.name : null; } return null; },
     stats,
     // abrir la pantalla "EN LÍNEA" (si ya hay sala, vuelve a su sala)
     open() { if (!role) setUI('menu'); else renderUI(); go('online'); },

@@ -248,7 +248,7 @@ const VS = (() => {
       const e = ease((T - 16 - i * 3) / 14); if (e < 0.98) return;
       const bx = (i + 0.5) * cw, y = BOT + 5;
       const names = col.mem.map(m => m.f.ch.name.toUpperCase());
-      const who = col.mem.map(m => m.f.cpu ? 'CPU ' + (LEVEL_NAMES[m.f.level] || '') : m.f.label).join(' + ');
+      const who = col.mem.map(m => m.f.cpu ? 'CPU ' + (LEVEL_NAMES[m.f.level] || '') : (m.f.cfg.name ? m.f.cfg.name.toUpperCase() : m.f.label)).join(' + ');
       if (info.big) {
         t.text(names[0], bx, y + 5, 16, '#ffffff', 'center');
         t.text(who, bx, y + 32, 8, col.pal.light, 'center');

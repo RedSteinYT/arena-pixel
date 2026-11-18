@@ -4,7 +4,7 @@
 // ============================================================
 
 
-function fullName(f) { return (f.cpu ? 'CPU ' + f.pal.name.toUpperCase() : f.label) + ' · ' + f.ch.name.toUpperCase(); }
+function fullName(f) { return (f.cpu ? 'CPU ' + f.pal.name.toUpperCase() : f.cfg && f.cfg.name ? f.cfg.name : f.label) + ' · ' + f.ch.name.toUpperCase(); }
 
 class Game {
   constructor(cfg) {

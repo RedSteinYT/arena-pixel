@@ -403,6 +403,17 @@
     font-size: clamp(8px, 1cqw, 16px); color: #fff; background: #120d24; border: .25em solid var(--gold); padding: .7em 1.2em; white-space: nowrap;
     box-shadow: 0 .3em 0 rgba(0,0,0,.5); transition: opacity .25s, transform .25s; }
   #toast.on { opacity: 1; transform: translate(-50%, 0); }
+  #nickBox { position: absolute; top: 3.5%; right: 2.5%; display: flex; flex-direction: column; gap: .35em; z-index: 5;
+    font-size: clamp(7px, .95cqw, 15px); padding: .7em 2.4em .7em 1em; cursor: text;
+    background: linear-gradient(135deg, rgba(40,28,90,.85), rgba(18,13,36,.85)); border: .2em solid #6c5aff;
+    clip-path: polygon(.8em 0, 100% 0, 100% calc(100% - .8em), calc(100% - .8em) 100%, 0 100%, 0 .8em);
+    box-shadow: inset 0 0 0 .12em rgba(255,255,255,.08); }
+  #nickBox small { color: #9fd8ff; font-size: .7em; letter-spacing: .1em; }
+  #nickBox input { font: inherit; font-size: 1.1em; color: var(--gold); background: transparent; border: 0; outline: none; width: 9.5em; padding: 0;
+    text-shadow: .12em .12em 0 #9c1f3c; }
+  #nickBox i { position: absolute; right: .8em; bottom: .75em; font-style: normal; color: #fff; opacity: .6; }
+  #nickBox:focus-within { border-color: var(--gold); }
+  #nickBox:focus-within i { opacity: 1; }
   #sndHint { margin: 6px 0 0; text-align: center; color: var(--gold); font-size: 9px; }
   body.sound-on #sndHint { display: none; }
   #padHint { margin: 4px 0 0; text-align: center; color: #9fd8ff; font-size: 8px; }
@@ -420,6 +431,7 @@
 
   <!-- portada -->
   <div id="title" class="ui dim on">
+    <label id="nickBox" title="Tu nombre en el modo en línea"><small>TU NOMBRE</small><input id="nick" maxlength="12" spellcheck="false" autocomplete="off"><i>✎</i></label>
     <div class="center">
       <h1>ARENA<br>PÍXEL</h1>
       <div class="sub">UN JUEGO DE REDSTEIN</div>

@@ -342,6 +342,15 @@ addEventListener('gamepadconnected', e => {
 });
 addEventListener('gamepaddisconnected', e => toast('🎮 Mando ' + (e.gamepad.index + 1) + ' desconectado'));
 
+// tu nombre para el modo en línea (recuadro arriba a la derecha de la portada)
+{
+  const inp = $('nick'); inp.value = Net.nick;
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter' || e.key === 'Escape') inp.blur(); });
+  inp.addEventListener('keyup', e => e.stopPropagation());
+  inp.addEventListener('input', () => Net.setNick(inp.value));          // se guarda mientras escribes
+  inp.addEventListener('blur', () => { inp.value = Net.setNick(inp.value); });
+}
+
 validateCharacters();
 newDemo();
 // enlace de invitación: ?sala=CODIGO entra directamente en esa sala

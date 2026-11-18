@@ -26,7 +26,7 @@ const Select = (() => {
 
   // ---------------- info para los punteros ----------------
   function info(dev) {
-    if (S.remote) { const i = S.slots.findIndex(x => x && x.mine); return { label: i >= 0 ? 'J' + humanNum(i) : 'TÚ', color: i >= 0 ? PCOL[i] : '#e8e2ff', badge: '' }; }
+    if (S.remote) { const i = S.slots.findIndex(x => x && x.mine); return { label: Net.nick, color: i >= 0 ? PCOL[i] : '#e8e2ff', badge: '' }; }
     const c = cs(dev);
     const label = c.slot >= 0 ? 'J' + humanNum(c.slot) : (dev === 'kb1' ? 'T1' : dev === 'kb2' ? 'T2' : 'M' + (+dev.slice(2) + 1));
     return { label, color: devColor(dev), badge: c.carry >= 0 ? 'CPU' : '' };
@@ -178,7 +178,7 @@ const Select = (() => {
       } else {
         const ch = s.char === 'random' ? MYSTERY : CHARACTERS[s.char];
         const who = s.type === 'cpu' ? 'CPU' : 'J' + humanNum(i);
-        const dev = s.type === 'cpu' ? LEVEL_NAMES[s.level] : Input.name(s.dev);
+        const dev = s.type === 'cpu' ? LEVEL_NAMES[s.level] : (s.name || Net.nameOf(s.dev) || Input.name(s.dev));
         const carrier = carriedBy(i);
         head = `<span class="ptag">${who}</span><span class="pdev">${dev}</span>`
           + (carrier && !s.locked ? `<span class="pcarry">EDITA ${info_(carrier).label}</span>` : '')
@@ -434,7 +434,7 @@ const Select = (() => {
     for (let i = 0; i < m.cap; i++) {
       const s = S.slots[i];
       players.push({ device: s.type === 'cpu' ? 'cpu' : s.dev, pal: palOf(i), team: m.teams ? slotTeam(i) : i, char: s.char === 'random' ? randomChar() : s.char,
-        level: s.level || 'normal', num: s.type === 'cpu' ? 0 : ++num });
+        level: s.level || 'normal', num: s.type === 'cpu' ? 0 : ++num, name: slotName(s) || undefined });
     }
     const stage = S.stage === 'random' ? STAGE_ORDER[Math.random() * STAGE_ORDER.length | 0] : S.stage;
     return { teams: m.teams, stocks: S.stocks, players, mode: S.mode, stage };
@@ -445,6 +445,13 @@ const Select = (() => {
   //  En línea
   // ============================================================
   const mySlot = () => S.slots.findIndex(x => x && x.mine);
+  // nombre que se ve en línea: el del amigo, o el tuyo si eres el único jugador de tu ordenador
+  function slotName(s) {
+    if (!s || s.type === 'cpu' || !Net.online) return null;
+    if (s.dev.startsWith('net:')) return Net.nameOf(s.dev);
+    const local = S.slots.filter(x => x && x.type === 'human' && !x.dev.startsWith('net:')).length;
+    return local === 1 ? Net.nick : null;
+  }
   function pushMine() {
     const s = S.slots[mySlot()]; if (!s) return;
     S.pend = 20;                                          // durante un momento manda lo local, no el eco
@@ -455,7 +462,7 @@ const Select = (() => {
     const cap = mode().cap;
     return { mode: S.mode, stocks: S.stocks, stage: S.stage,
       slots: S.slots.slice(0, cap).map((s, i) => s && { type: s.type, owner: s.type === 'cpu' ? null : (s.dev.startsWith('net:') ? s.dev : 'host'),
-        char: s.char, locked: !!s.locked, level: s.level || null, team: s.team, hover: hoverOf(i) }) };
+        char: s.char, locked: !!s.locked, level: s.level || null, team: s.team, hover: hoverOf(i), name: slotName(s) }) };
   }
   function netJoin(dev) { if (S.screen !== 'chars' || S.slots.some(x => x && x.dev === dev)) return; join(dev); renderPanels(); }
   function netLeave(dev) { const i = S.slots.findIndex(x => x && x.dev === dev); if (i >= 0) { removeSlot(i); if (S.screen === 'chars') renderPanels(); } }
@@ -472,11 +479,11 @@ const Select = (() => {
   function remoteSel(sel, me) {
     const old = S.remote ? S.slots[mySlot()] : null;
     const slots = sel.slots.map(x => x && { type: x.type, dev: x.owner === me ? 'me' : (x.owner ? 'net:' + x.owner : 'cpu'), mine: x.owner === me,
-      char: x.char, locked: x.locked, level: x.level, team: x.team, hover: x.hover });
+      char: x.char, locked: x.locked, level: x.level, team: x.team, hover: x.hover, name: x.owner === me ? Net.nick : Net.cleanName(x.name) || null });
     while (slots.length < 4) slots.push(null);
     const mi = slots.findIndex(x => x && x.mine);
     if (mi >= 0 && old && S.pend > 0) Object.assign(slots[mi], { char: old.char, locked: old.locked, team: old.team });
-    const structural = JSON.stringify([sel.mode, sel.stocks, sel.stage, slots.map(x => x && [x.type, x.dev, x.char, x.locked, x.level, x.team])]);
+    const structural = JSON.stringify([sel.mode, sel.stocks, sel.stage, slots.map(x => x && [x.type, x.dev, x.char, x.locked, x.level, x.team, x.name])]);
     const fresh = S.screen !== 'chars' || !S.remote;
     S.remote = me; S.mode = sel.mode; S.stocks = sel.stocks; S.stage = sel.stage; S.slots = slots;
     if (fresh) {
@@ -516,5 +523,6 @@ const Select = (() => {
   }
   return { openMode, openStage, openChars, tick, get screen() { return S.screen; }, state: S, ready, MODES,
     netState, netJoin, netLeave, netSlot, remoteSel, leaveRemote,
+    refresh() { if (S.screen === 'chars') renderPanels(); },
     reattach() { if (S.screen) attach(S.screen); } };
 })();
