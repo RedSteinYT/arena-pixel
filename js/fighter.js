@@ -6,6 +6,18 @@
 //  están en js/characters/<luchador>.js
 // ============================================================
 
+// nivel de cada ataque para los combos: solo se encadena hacia uno de nivel igual o mayor
+//  1 golpes rápidos · 2 con dirección, carrera y aéreos · 3 fuertes · 4 especiales
+function moveTier(n) {
+  if (!n) return 0;
+  if (n.startsWith('jab')) return 1;
+  if (/smash$/.test(n)) return 3;
+  if (/spc/.test(n)) return 4;
+  if (/throw|grab/.test(n)) return 5;
+  return 2;
+}
+const JAB_NEXT = { jab: 'jab2', jab2: 'jab3' };
+
 class Fighter {
   constructor(slot, cfg, stocks) {
     this.slot = slot; this.cfg = cfg;
@@ -25,6 +37,7 @@ class Fighter {
     this.flickX = 99; this.flickY = 99;
     this.animT = 0;
     this.baseS = Object.assign({}, this.S); this.item = null; this.buffs = {}; this.frozen = 0;   // objetos
+    this.comboN = 0; this.comboT = 0; this.comboBy = null; this.bestCombo = 0; this.remateT = 0;      // combos
     const sp = STAGE.spawns[slot];
     this.spawn(sp[0], sp[2] ?? STAGE.main.y, sp[1]);
   }
@@ -71,9 +84,16 @@ class Fighter {
   // --------- ataques ---------
   startMove(name, g, mv) {
     if (this.chainT > 0 && name === this.noRepeat) { this.setSt(this.grounded ? 'ground' : 'air'); return; }
+    if (this.comboTier) {                                   // combo: solo hacia arriba en el nivel
+      const ok = moveTier(name) >= this.comboTier;
+      this.comboTier = 0;
+      if (!ok) { this.chain = 0; this.setSt(this.grounded ? 'ground' : 'air'); return; }
+    }
     this.move = mv || this.ch.moves[name]; this.moveName = name;
     this.setSt('attack'); this.hitSet = new Set(); this.charge = 0; this.hidden = false; this.landedHit = false; this.grabFail = false;
     if (mv && mv.item && this.item) this.item.uses -= mv.cost ?? 1;          // las armas se gastan
+    // al encadenar en el suelo, un pasito hacia delante para que el siguiente golpe llegue
+    if (this.grounded && (this.chain > 0 || name === 'jab2' || name === 'jab3') && !this.move.special) this.vx = this.dir * Math.max(Math.abs(this.vx), 1.5);
     if (this.move.onStart) this.move.onStart(this, g);
     if (this.moveName === name && !this.move.special && this.move.sfx !== false) { if (this.move.sfx) Sfx[this.move.sfx](); else Sfx.swing(); }
   }
@@ -98,8 +118,9 @@ class Fighter {
     if (forced) { d = forced.y < 0 ? 'up' : forced.y > 0 ? 'down' : 'side'; smash = true; if (forced.x) this.dir = forced.x; }
     else {
       d = this.dirOf(I.mx, I.my);
-      if (d === 'side' && this.flickX <= 4) smash = true;
-      if ((d === 'up' || d === 'down') && this.flickY <= 4) smash = true;
+      const inCombo = this.chainT > 0;                    // en mitad de un combo, dirección + ataque = ataque con dirección
+      if (d === 'side' && this.flickX <= 4 && !inCombo) smash = true;
+      if ((d === 'up' || d === 'down') && this.flickY <= 4 && !inCombo) smash = true;
       if (d === 'side') this.dir = sgn(I.mx);
     }
     if (this.itemAttack(g, smash ? 'smash' : d === 'up' ? 'up' : d === 'down' ? 'down' : 'side')) return;
@@ -158,7 +179,9 @@ class Fighter {
       if (this.burn % 30 === 0) this.dmg = Math.min(999, this.dmg + 1);
       if (this.burn % 3 === 0) g.burst(this.x + (Math.random() * 2 - 1) * this.S.hw, this.y - Math.random() * this.S.hh, 1, 'fire');
     }
-    if (this.chainT > 0 && --this.chainT <= 0) { this.chain = 0; this.noRepeat = null; }
+    if (this.chainT > 0 && --this.chainT <= 0) { this.chain = 0; this.noRepeat = null; this.comboTier = 0; }
+    if (this.comboT > 0) this.comboT--;
+    if (this.remateT > 0) this.remateT--;
     if (this.st !== 'shield' && this.shieldHP < 50) this.shieldHP = Math.min(50, this.shieldHP + 0.1);
 
     const I = this.inp;
@@ -261,12 +284,22 @@ class Fighter {
       this.placeHeld(m.path ? m.path(this.t, this) : null);
       if (this.t === m.s) g.throwHit(this, this.holding, m.throw);
     }
-    // cancelar la recuperación con salto/ataque si el golpe acertó
-    if (m.cancel && this.landedHit && (this.chain || 0) < 3 && this.t > this.landedAt + 1 && (this.buf.jump || this.buf.atk || this.buf.spc)) {
-      if (!(this.buf.jump && !this.buf.atk && !this.buf.spc && !this.grounded && this.jumps <= 0)) {
+    // cadena 1-2-3: volver a atacar (sin dirección) sigue la cadena, acierte o no
+    const nx = JAB_NEXT[this.moveName];
+    const jabOpen = this.t >= m.s + m.a - 1 || (this.landedHit && this.t > this.landedAt + 1);
+    if (nx && this.grounded && !this.item && this.buf.atk && jabOpen && this.dirOf(this.inp.mx, this.inp.my) === 'neutral') {
+      this.buf.atk = 0; const keepChain = this.chain; this.startMove(nx, g); this.chain = keepChain; return;
+    }
+    // COMBOS: si el golpe acertó, se cancela la recuperación con un ataque de nivel igual o mayor (o con un salto)
+    const free = m.cancel, canChain = free || (!m.special && !m.throw && this.moveName !== 'grab');
+    const wants = this.buf.jump || this.buf.atk || this.buf.spc || this.buf.str || this.cstick;
+    if (canChain && this.landedHit && (this.chain || 0) < (free ? 3 : 4) && this.t > this.landedAt + 1 && wants) {
+      if (!(this.buf.jump && !this.buf.atk && !this.buf.spc && !this.buf.str && !this.grounded && this.jumps <= 0)) {
         this.chain = (this.chain || 0) + 1; this.chainT = 40; this.noRepeat = this.moveName;
+        this.comboTier = free ? 0 : moveTier(this.moveName);
         this.move = null; this.setSt(this.grounded ? 'ground' : 'air');
         g.burst(this.x, this.y - this.S.hh * 0.6, 2, 'star', this.pal.light);
+        if (this.grounded) this.stGround(g); else this.stAir(g);     // el siguiente golpe sale ya, con la dirección de ahora
         return;
       }
     }

@@ -5,9 +5,9 @@
 // ============================================================
 const AI_LEVELS = {
   //          reacción(frames)  escudo  esquiva  se recupera  agarre  fuerte  %para fuerte  proyectil  se queda quieta  persigue saltando  machaca  castiga
-  easy:   { wait: [14, 26], shield: 0.06, dodge: 0.1, recover: 0.55, grab: 0.04, smash: 0.15, smashDmg: 110, proj: 0.03, idle: 0.25, chase: 0.3, mash: 0.08, punish: 0 },
-  normal: { wait: [3, 9],   shield: 0.3,  dodge: 0.3, recover: 0.92, grab: 0.1,  smash: 0.4,  smashDmg: 80,  proj: 0.08, idle: 0.03, chase: 0.6, mash: 0.25, punish: 0.3 },
-  hard:   { wait: [1, 4],   shield: 0.55, dodge: 0.45, recover: 1,   grab: 0.18, smash: 0.55, smashDmg: 65,  proj: 0.12, idle: 0,    chase: 0.85, mash: 0.5, punish: 0.85 },
+  easy:   { combo: 0.03, wait: [14, 26], shield: 0.06, dodge: 0.1, recover: 0.55, grab: 0.04, smash: 0.15, smashDmg: 110, proj: 0.03, idle: 0.25, chase: 0.3, mash: 0.08, punish: 0 },
+  normal: { combo: 0.12, wait: [3, 9],   shield: 0.3,  dodge: 0.3, recover: 0.92, grab: 0.1,  smash: 0.4,  smashDmg: 80,  proj: 0.08, idle: 0.03, chase: 0.6, mash: 0.25, punish: 0.3 },
+  hard:   { combo: 0.32, wait: [1, 4],   shield: 0.55, dodge: 0.45, recover: 1,   grab: 0.18, smash: 0.55, smashDmg: 65,  proj: 0.12, idle: 0,    chase: 0.85, mash: 0.5, punish: 0.85 },
 };
 const LEVEL_NAMES = { easy: 'FÁCIL', normal: 'MEDIO', hard: 'DIFÍCIL' };
 
@@ -69,6 +69,19 @@ function aiInput(f, g) {
   const armed = f.item && ITEMS[f.item.id].kind === 'weapon';
   const reach = f.S.hw + tgt.S.hw + 12 * z + (armed ? 14 * z : 0), vreach = 10 + f.S.hh * 0.5 + (armed ? 8 : 0);
 
+  // combos: si su golpe ha acertado, sigue la cadena (cuanto más difícil, más a menudo)
+  if (f.st === 'attack' && f.landedHit && (f.chain || 0) < 4 && Math.random() < L.combo) {
+    const press = k => { I[k] = !f.prev[k]; };
+    if (JAB_NEXT[f.moveName] && Math.random() < 0.7) { press('atk'); return I; }
+    const tier = moveTier(f.moveName), r = Math.random();
+    if (tier <= 1) { press('atk'); if (dy < -14) I.my = -1; else I.mx = sgn(dx) || f.dir; return I; }
+    if (tier === 2) {
+      if (f.grounded && dy < -16 && r < 0.4) { press('jump'); return I; }
+      if (r < 0.45) { I.cx = sgn(dx) || f.dir; if (dy < -18) { I.cx = 0; I.cy = -1; } return I; }
+      press('spc'); I.mx = Math.abs(dx) > 10 ? sgn(dx) : 0; if (dy < -24) { I.mx = 0; I.my = -1; } return I;
+    }
+    if (tier === 3) { press('spc'); I.mx = sgn(dx) || f.dir; return I; }
+  }
   // mantener un escudo un rato
   if (A.shieldT > 0) { A.shieldT--; I.shd = true; return I; }
   // castigar: si el rival está recuperándose de un ataque cerca, reaccionar ya

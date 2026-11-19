@@ -103,6 +103,9 @@ const Sfx = (() => {
     land() { noise(0.05, 0.05, 1200); },
     grab() { tone(300, 'square', 0.12, 0.08, 200); noise(0.15, 0.06, 800); },
     brk() { tone(500, 'square', 0.2, 0.5, 80); noise(0.4, 0.3, 600); },
+    // ---- combos ----
+    combo(n) { tone(440 + Math.min(n, 10) * 70, 'square', 0.05, 0.08, null); },
+    remate() { [392, 523, 659, 1047].forEach((f, i) => tone(f, 'square', 0.08, 0.16, null, i * 0.05)); noise(0.3, 0.3, 300); },
     // ---- objetos ----
     saber() { tone(180, 'sawtooth', 0.07, 0.16, 420); tone(360, 'square', 0.03, 0.12, 900); noise(0.05, 0.1, 3000); },
     saberHum() { tone(120, 'sawtooth', 0.03, 0.25, 110); },

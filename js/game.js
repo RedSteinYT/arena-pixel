@@ -116,6 +116,12 @@ class Game {
   applyHit(a, d, h, dirSign, mult, hx, hy) {
     if (ItemSys.absorbs(d, this, hx, hy)) { a.landedHit = true; a.landedAt = a.t; a.hitlag = 3; return; }   // burbuja / invencible
     if (a.buffs && a.buffs.power > 0) { mult *= 1.35; h = Object.assign({}, h, { burn: Math.max(h.burn || 0, 70) }); }   // aura de fuego
+    // combo: golpes seguidos mientras el rival no se ha recuperado
+    const inCombo = a !== d && d.comboBy === a && (d.st === 'hitstun' || d.st === 'grabbed') && d.st !== 'shield';
+    d.comboN = inCombo ? d.comboN + 1 : 1; d.comboBy = a; d.comboT = 110;
+    if (a !== d && d.comboN > a.bestCombo) a.bestCombo = d.comboN;
+    if (d.comboN > 1) mult *= Math.max(0.65, 1 - 0.06 * (d.comboN - 1));          // cada golpe del combo pega algo menos
+    const remate = d.comboN >= 4 && a.move && (a.move.smash || a.move.special || a.move.finisher || moveTier(a.moveName) >= 3);
     const dmg = Math.round(h.d * mult);
     a.landedHit = true; a.landedAt = a.t;
     if (d.holding) d.releaseHeld(1.5);
@@ -133,6 +139,9 @@ class Game {
     a.dealt += dmg;
     let kb = (h.b + h.g * (d.dmg / 100)) * (1 + (mult - 1) * 0.6);
     kb *= 200 / (100 + d.S.weight);           // peso: los pesados vuelan menos
+    if (remate) kb *= 1.25;                    // ¡REMATE!: el final de un buen combo lanza más
+    const link = a.moveName === 'jab' || a.moveName === 'jab2';   // golpes de enlace: empujan poco para que entre el siguiente
+    if (link) kb = Math.min(kb, 0.8);
     kb = Math.min(kb, 22);
     const ang = h.ang * Math.PI / 180;
     let lx = Math.cos(ang) * kb * dirSign, ly = -Math.sin(ang) * kb;
@@ -144,6 +153,8 @@ class Game {
     d.move = null; d.hidden = false;
     d.setSt('hitstun');
     d.stun = Math.round(kb * 3.6);
+    // aturdimiento mínimo para que los combos encadenen (los golpes normales, no los fuertes ni los especiales)
+    if (a.move && a.st === 'attack' && !a.move.smash && !a.move.special) d.stun = Math.max(d.stun, link ? 15 : 13);
     d.flash = 4;
     d.upUsed = false; d.sideUsed = false; d.dodgeUsed = false;
     d.lastHitBy = a; d.lastHitT = this.frame;
@@ -152,6 +163,11 @@ class Game {
     this.spark(hx, hy, 5 + dmg * 0.8 + kb * 0.4, kb > 9 ? '#ffd34a' : a.pal.light);
     if (kb > 8) { this.shake = Math.max(this.shake, Math.min(10, kb * 0.5)); }
     Sfx.hit(kb);
+    if (remate) {
+      d.remateT = 70; this.slow = Math.max(this.slow, 24); this.shake = Math.max(this.shake, 8);
+      this.spark(hx, hy, 24, '#ffd34a'); this.burst(hx, hy, 10, 'star', '#ffd34a');
+      Sfx.remate();
+    } else if (d.comboN >= 3) Sfx.combo(d.comboN);
   }
 
   // ---------- proyectiles ----------
@@ -335,6 +351,19 @@ class Game {
       const shakeX = f.flash > 0 ? (Math.random() * 2 - 1) : 0;
       t.text(d + '%', x + 104 + shakeX, y + 10, 16, col, 'right');
       if (f.stocks > 5) t.text('x' + f.stocks, x + 66, y + 22, 8, '#c9c1e8');
+    }
+    // contador de combo sobre el rival y ¡REMATE!
+    for (const f of this.fighters) {
+      if (!f.alive() || f.st === 'respawn' || !f.comboBy) continue;
+      const x = clamp(f.x, 30, W - 30), y = clamp(f.y - f.S.hh - 26, 26, H - 60);
+      if (f.remateT > 0) {
+        const pop = f.remateT > 62 ? 24 : 16;
+        t.text('¡REMATE!', x, y - (pop > 16 ? 30 : 22), pop, '#ffd34a', 'center');
+      }
+      if (f.comboN >= 2 && f.comboT > 0 && ((f.comboT > 20) || (f.comboT >> 2) % 2)) {
+        const big = f.comboN >= 5, col = f.comboBy.pal ? f.comboBy.pal.light : '#ffffff';
+        t.text(f.comboN + (big ? ' GOLPES!' : ' GOLPES'), x, y, big ? 16 : 8, col, 'center');
+      }
     }
     if (this.phase === 'count') {
       const n = 3 - Math.floor(this.phaseT / 60);

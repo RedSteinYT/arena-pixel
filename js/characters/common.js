@@ -66,6 +66,20 @@ function defaultGrabMoves(st) {
 function defineCharacter(def) {
   const st = Object.assign({}, BASE_STATS, def.stats);
   def.moves = Object.assign(defaultGrabMoves(st), def.moves);
+  const M = def.moves;
+  // cadena 1-2-3 del ataque normal: el 2.º golpe con la otra mano, el 3.º remata (usa la animación del ataque lateral)
+  if (!M.jab2) {
+    const P = M.jab.pose;
+    M.jab2 = Object.assign({}, M.jab, {
+      s: Math.max(2, M.jab.s - 1),
+      hit: M.jab.hit.map(h => Object.assign({}, h, { d: h.d + 1, b: h.b * 0.9, g: h.g * 0.5, ang: 30 })),
+      pose: typeof P === 'function' || !P || !P.fh ? P : Object.assign({}, P, { fh: P.bh, bh: P.fh, wind: undefined }),
+    });
+  }
+  if (!M.jab3) M.jab3 = Object.assign({}, M.ftilt, {
+    s: Math.max(3, M.ftilt.s - 2), finisher: true,
+    hit: M.ftilt.hit.map(h => Object.assign({}, h, { d: Math.max(3, Math.round(h.d * 0.8)), b: h.b + 0.6, g: h.g * 0.85, ang: 40 })),
+  });
   def.z = st.hh / 24;      // escala respecto a un luchador normal
   CHARACTERS[def.id] = def;
   CHAR_ORDER.push(def.id);

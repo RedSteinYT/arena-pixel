@@ -191,8 +191,8 @@ function showResults() {
   resultsShown = true;
   const r = game.result();
   $('resTitle').textContent = r.teams ? `¡GANA EL ${r.winner.toUpperCase()}!` : `¡GANA ${r.winner}!`;
-  const rows = r.order.map((f, i) => `<tr><td>${i + 1}º</td><td><span class="dot" style="background:${f.pal.main}"></span>${fullName(f)}${f.cpu ? ` <small>(${LEVEL_NAMES[f.level]})</small>` : ''}</td><td>${f.kos}</td><td>${f.falls}</td><td>${f.dealt}%</td></tr>`).join('');
-  $('resTable').innerHTML = `<tr><th>#</th><th>Jugador</th><th>KOs</th><th>Caídas</th><th>Daño</th></tr>${rows}`;
+  const rows = r.order.map((f, i) => `<tr><td>${i + 1}º</td><td><span class="dot" style="background:${f.pal.main}"></span>${fullName(f)}${f.cpu ? ` <small>(${LEVEL_NAMES[f.level]})</small>` : ''}</td><td>${f.kos}</td><td>${f.falls}</td><td>${f.dealt}%</td><td>${f.bestCombo || 0}</td></tr>`).join('');
+  $('resTable').innerHTML = `<tr><th>#</th><th>Jugador</th><th>KOs</th><th>Caídas</th><th>Daño</th><th>Combo</th></tr>${rows}`;
   $('results').classList.toggle('remote', Net.isClient);
   go('results');
 }
