@@ -23,6 +23,8 @@ class Game {
     this.slow = 0;
     this.placing = [];           // orden de eliminación
     this.cloudX = 0;
+    // objetos
+    this.items = []; this.itemsOn = cfg.items !== false; this.itemT = 240 + (Math.random() * 180 | 0);
   }
 
   allies(a, b) { return this.teams && a.team === b.team; }
@@ -46,6 +48,7 @@ class Game {
     }
     this.hitDetection();
     this.stepProjectiles();
+    ItemSys.step(this);
     this.checkBlast();
     this.stepFx();
     if (this.shake > 0) this.shake *= 0.85;
@@ -111,6 +114,8 @@ class Game {
   }
 
   applyHit(a, d, h, dirSign, mult, hx, hy) {
+    if (ItemSys.absorbs(d, this, hx, hy)) { a.landedHit = true; a.landedAt = a.t; a.hitlag = 3; return; }   // burbuja / invencible
+    if (a.buffs && a.buffs.power > 0) { mult *= 1.35; h = Object.assign({}, h, { burn: Math.max(h.burn || 0, 70) }); }   // aura de fuego
     const dmg = Math.round(h.d * mult);
     a.landedHit = true; a.landedAt = a.t;
     if (d.holding) d.releaseHeld(1.5);
@@ -164,7 +169,7 @@ class Game {
       delay: spec.delay || 0, fire: !!spec.fire,
       h: spec.h || { d: 6, b: 2.0, g: 2.2, ang: 35 },
     });
-    Sfx.shoot();
+    if (!spec.silent) Sfx.shoot();
   }
   stepProjectiles() {
     const M = STAGE.main;
@@ -209,6 +214,7 @@ class Game {
     Sfx.ko();
     if (f.holding) f.releaseHeld();
     if (f.heldBy) { f.heldBy.holding = null; f.heldBy = null; }
+    ItemSys.onKO(f);                                       // se pierden el objeto y los poderes
     f.falls++;
     if (f.lastHitBy && this.frame - f.lastHitT < 480 && f.lastHitBy !== f) f.lastHitBy.kos++;
     f.stocks--;
@@ -248,6 +254,7 @@ class Game {
     if (def.renderMid) def.renderMid(c, st, this);
 
     for (const f of this.fighters) if (f.st === 'respawn') drawRespawnPad(c, f, this.frame);
+    ItemSys.drawGround(c, this);
     // luchadores (el que está atacando, delante)
     const order = this.fighters.filter(f => f.alive()).sort((a, b) => (a.st === 'attack') - (b.st === 'attack'));
     for (const f of order) {
@@ -258,6 +265,8 @@ class Game {
     for (const f of order) {
       renderFighter(c, f, this.frame);
       if (f.ch.overlay) f.ch.overlay(c, f, this.frame);
+      ItemSys.drawHeld(c, f, this);
+      ItemSys.drawBuffs(c, f, this);
       if (f.st === 'shield') drawShield(c, f, this.frame);
       for (const hb of f.activeHits()) if (!hb.h0.grab && !hb.h0.noFx) drawSwoosh(c, hb, f.dir, f.pal.light, f.move.smash);
     }
@@ -312,6 +321,7 @@ class Game {
         rect(c, sx - 1, sy - 2, 3, 5, OUTLINE); rect(c, sx - 2, sy - 1, 5, 3, OUTLINE);
         px(c, sx, sy - 1, pal.glow); rect(c, sx - 1, sy, 3, 1, pal.light); px(c, sx, sy + 1, pal.main);
       }
+      if (!f.out) ItemSys.drawHud(c, f, x + 2, y - 18);    // objeto en la mano y poderes activos
     }
   }
 

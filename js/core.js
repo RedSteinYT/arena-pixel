@@ -103,6 +103,20 @@ const Sfx = (() => {
     land() { noise(0.05, 0.05, 1200); },
     grab() { tone(300, 'square', 0.12, 0.08, 200); noise(0.15, 0.06, 800); },
     brk() { tone(500, 'square', 0.2, 0.5, 80); noise(0.4, 0.3, 600); },
+    // ---- objetos ----
+    saber() { tone(180, 'sawtooth', 0.07, 0.16, 420); tone(360, 'square', 0.03, 0.12, 900); noise(0.05, 0.1, 3000); },
+    saberHum() { tone(120, 'sawtooth', 0.03, 0.25, 110); },
+    laser() { tone(1500, 'square', 0.07, 0.14, 300); tone(900, 'sawtooth', 0.04, 0.1, 200); },
+    crack() { noise(0.6, 0.12, 1800); tone(900, 'square', 0.15, 0.08, 1400); tone(220, 'triangle', 0.25, 0.2, 90); },
+    boom() { noise(0.9, 0.6, 60); tone(90, 'sine', 0.7, 0.6, 30); noise(0.4, 0.25, 900, 0.03); },
+    freeze() { tone(1800, 'triangle', 0.08, 0.3, 2600); tone(2400, 'sine', 0.06, 0.4, 3200, 0.05); noise(0.12, 0.2, 5000); },
+    pickup() { tone(520, 'square', 0.06, 0.05); tone(780, 'square', 0.06, 0.07, null, 0.05); },
+    toss() { noise(0.12, 0.12, 1200); tone(300, 'triangle', 0.06, 0.1, 160); },
+    powerup() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 'square', 0.06, 0.12, null, i * 0.06)); },
+    heal() { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 'triangle', 0.08, 0.2, null, i * 0.07)); },
+    appear() { tone(1200, 'sine', 0.05, 0.25, 2400); tone(1800, 'sine', 0.03, 0.3, 3600, 0.08); },
+    whoosh() { noise(0.1, 0.18, 2200); },
+    smashStone() { noise(0.7, 0.35, 120); tone(70, 'sine', 0.6, 0.4, 35); },
     // pantalla VS: un "swinggg" de espada que cruza de izquierda a derecha y choca
     vsSwing() {
       if (api.muted) return;

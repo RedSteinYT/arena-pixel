@@ -24,6 +24,7 @@ class Fighter {
     this.buf = { jump: 0, atk: 0, spc: 0, shd: 0, grab: 0, str: 0 };
     this.flickX = 99; this.flickY = 99;
     this.animT = 0;
+    this.baseS = Object.assign({}, this.S); this.item = null; this.buffs = {}; this.frozen = 0;   // objetos
     const sp = STAGE.spawns[slot];
     this.spawn(sp[0], sp[2] ?? STAGE.main.y, sp[1]);
   }
@@ -68,12 +69,23 @@ class Fighter {
   }
 
   // --------- ataques ---------
-  startMove(name, g) {
+  startMove(name, g, mv) {
     if (this.chainT > 0 && name === this.noRepeat) { this.setSt(this.grounded ? 'ground' : 'air'); return; }
-    this.move = this.ch.moves[name]; this.moveName = name;
+    this.move = mv || this.ch.moves[name]; this.moveName = name;
     this.setSt('attack'); this.hitSet = new Set(); this.charge = 0; this.hidden = false; this.landedHit = false; this.grabFail = false;
+    if (mv && mv.item && this.item) this.item.uses -= mv.cost ?? 1;          // las armas se gastan
     if (this.move.onStart) this.move.onStart(this, g);
-    if (this.moveName === name && !this.move.special) Sfx.swing();
+    if (this.moveName === name && !this.move.special && this.move.sfx !== false) { if (this.move.sfx) Sfx[this.move.sfx](); else Sfx.swing(); }
+  }
+  // con un objeto en la mano, el ataque normal es el del objeto
+  itemAttack(g, kind) {
+    if (!this.item) return false;
+    const def = ITEMS[this.item.id];
+    if (def.kind === 'throw') { ItemSys.throwItem(this, g, Math.abs(this.inp.my) > 0.5 && Math.abs(this.inp.my) >= Math.abs(this.inp.mx) ? 0 : (sgn(this.inp.mx) || this.dir)); return true; }
+    const m = ItemSys.weaponMove(this, kind);
+    if (!m) return false;
+    this.startMove(m.key, g, m);
+    return true;
   }
   dirOf(mx, my) {
     if (Math.abs(my) > 0.5 && Math.abs(my) >= Math.abs(mx)) return my < 0 ? 'up' : 'down';
@@ -90,6 +102,7 @@ class Fighter {
       if ((d === 'up' || d === 'down') && this.flickY <= 4) smash = true;
       if (d === 'side') this.dir = sgn(I.mx);
     }
+    if (this.itemAttack(g, smash ? 'smash' : d === 'up' ? 'up' : d === 'down' ? 'down' : 'side')) return;
     if (smash) return this.startMove(d === 'up' ? 'usmash' : d === 'down' ? 'dsmash' : 'fsmash', g);
     if (d === 'side' && Math.abs(this.vx) > 1.8 && this.runT > 8) return this.startMove('dash', g);
     this.startMove(d === 'up' ? 'utilt' : d === 'down' ? 'dtilt' : d === 'side' ? 'ftilt' : 'jab', g);
@@ -99,6 +112,8 @@ class Fighter {
     let d, x;
     if (forced) { d = forced.y < 0 ? 'up' : forced.y > 0 ? 'down' : 'side'; x = forced.x; }
     else { d = this.dirOf(I.mx, I.my); x = sgn(I.mx); }
+    if (d === 'side' && x) this.dir = this.item ? x : this.dir;
+    if (this.itemAttack(g, 'air')) return;
     if (d === 'up') return this.startMove('uair', g);
     if (d === 'down') return this.startMove('dair', g);
     if (d === 'side') return this.startMove(x === this.dir ? 'fair' : 'bair', g);
@@ -121,7 +136,8 @@ class Fighter {
     m.hit.forEach((h, i) => {
       const on = h.on || [m.s, m.s + m.a - 1];
       if (t < on[0] || t > on[1]) return;
-      const [bx, by, bw, bh] = h.box;
+      let [bx, by, bw, bh] = h.box;
+      if (m.item) { const z = this.ch.z || 1, zx = 1 + (z - 1) * 0.55; bx *= zx; by *= z; bw *= zx; bh *= z; }   // armas a la escala del luchador
       const key = i + ':' + (h.rehit ? Math.floor((t - on[0]) / h.rehit) : 0);
       out.push({ x: this.dir > 0 ? this.x + bx : this.x - bx - bw, y: this.y + by, w: bw, h: bh, h0: h, mult, key });
     });
@@ -196,7 +212,7 @@ class Fighter {
     if (this.cstick) { this.groundAttack(g, this.cstick); return; }
     if (this.use('str')) { this.groundAttack(g, this.strongDir()); return; }
     if (this.use('jump')) { this.setSt('jumpsquat'); return; }
-    if (this.use('grab')) { this.startMove('grab', g); return; }     // botón propio de agarre
+    if (this.use('grab')) { if (!ItemSys.grabButton(this, g)) this.startMove('grab', g); return; }   // agarre · recoger · lanzar objeto
     if (I.shd) {
       if (Math.abs(I.mx) > 0.6 && this.flickX <= 3) { this.dodge(sgn(I.mx), 0, g); return; }
       if (I.my > 0.6 && this.flickY <= 3) { this.dodge(0, 0, g); return; }
@@ -232,6 +248,7 @@ class Fighter {
       if (Math.abs(I.mx) > 0.3) { this.vx = I.mx * this.S.airSpd; this.dir = sgn(I.mx); }
       g.burst(this.x, this.y, 4, 'dust'); Sfx.djump(); return;
     }
+    if (this.use('grab')) { ItemSys.grabButton(this, g); return; }    // en el aire: atrapar o lanzar objetos
     if (this.use('shd') && !this.dodgeUsed) { this.dodge(I.mx, I.my, g, true); return; }
     if (this.use('spc')) { this.special(g); return; }
     if (this.use('atk')) { this.airAttack(g); return; }
@@ -276,7 +293,7 @@ class Fighter {
     this.shieldHP -= 0.14;
     if (this.shieldHP <= 0) { this.breakShield(g); return; }
     if (this.use('jump')) { this.setSt('jumpsquat'); return; }
-    if (this.use('grab')) { this.startMove('grab', g); return; }
+    if (this.use('grab')) { if (!ItemSys.grabButton(this, g)) this.startMove('grab', g); return; }
     if (Math.abs(I.mx) > 0.6 && this.flickX <= 3) { this.dodge(sgn(I.mx), 0, g); return; }
     if (I.my > 0.6 && this.flickY <= 3) { this.dodge(0, 0, g); return; }
     if (!I.shd) this.setSt('ground');

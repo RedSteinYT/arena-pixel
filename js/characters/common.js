@@ -176,6 +176,7 @@ function poseAttack(f, p) {
 // ---------- dibujo ----------
 function renderFighter(c, f, frame) {
   const p = poseFor(f);
+  f._pose = p;                                   // la mano sostiene el objeto
   let tint = null;
   if (f.flash > 0) tint = 'rgba(255,255,255,0.85)';
   else if (f.st === 'helpless') tint = 'rgba(20,10,50,0.35)';

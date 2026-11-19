@@ -383,6 +383,14 @@ function drawParticle(c, p) {
 function drawProjectile(c, pr, frame) {
   const x = Math.round(pr.x), y = Math.round(pr.y), pal = pr.pal;
   switch (pr.kind) {
+    case 'laser': {                                       // rayo del bláster
+      const d = sgn(pr.vx) || 1;
+      withAlpha(c, 0.35, () => rect(c, d > 0 ? x - 12 : x - 2, y - 2, 14, 5, '#3df2b0'));
+      pline(c, x - d * 11, y, x + d * 2, y, 2, '#3df2b0');
+      pline(c, x - d * 9, y, x + d * 2, y, 1, '#eafff8');
+      px(c, x + d * 3, y, '#ffffff');
+      break;
+    }
     case 'rock': {
       disc(c, x, y, 5, OUTLINE); disc(c, x, y, 4, '#6d6a9e'); disc(c, x - 1, y - 1, 2, '#8f8dc0');
       px(c, x + 1, y + 1, '#3d3a68'); px(c, x + 2, y, '#3d3a68'); px(c, x - 2, y - 2, '#c6c3ee');

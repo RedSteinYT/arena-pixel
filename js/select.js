@@ -13,7 +13,7 @@ const Select = (() => {
   const MODE_ORDER = ['1v1', '2v2', '3ffa', '4ffa'];
   const PCOL = ['#ff6b5e', '#5aa0ff', '#ffd34a', '#5ee08a'];           // color de cada jugador (J1..J4)
   const S = {
-    mode: '1v1', stocks: 3, stage: 'cielo', screen: null,
+    mode: '1v1', stocks: 3, stage: 'cielo', screen: null, items: true,
     slots: [null, null, null, null],      // { type:'human'|'cpu', dev, char, locked, level, team }
     cur: {},                              // por dispositivo: { slot, carry }
     prevGame: null, prevStage: null, prevRandom: 0,
@@ -50,6 +50,7 @@ const Select = (() => {
       modeCanvases[id] = d.querySelector('canvas');
     }
     $('mLives').textContent = S.stocks;
+    $('mItems').textContent = 'OBJETOS: ' + (S.items ? 'SÍ' : 'NO');
   }
   function tickModeArt(frame) {
     for (const id of MODE_ORDER) if (modeCanvases[id]) ModeArt.draw(id, modeCanvases[id], frame);
@@ -326,6 +327,7 @@ const Select = (() => {
       if (a === 'back') return backScreen();
       if (a === 'controls') return openControls();
       if (a.startsWith('lives:')) { S.stocks = clamp(S.stocks + +a.slice(6), 1, 9); $('mLives').textContent = S.stocks; Sfx.blip(); return; }
+      if (a === 'items') { S.items = !S.items; $('mItems').textContent = 'OBJETOS: ' + (S.items ? 'SÍ' : 'NO'); Sfx.blip(); return; }
       if (a.startsWith('mode:')) { S.mode = a.slice(5); Sfx.join(); openStage(); }
       return;
     }
@@ -416,7 +418,7 @@ const Select = (() => {
     });
   }
   function openMode() { go('modeScr'); buildMode(); attach('mode'); }
-  function openStage() { go('stageScr'); $('sModeTag').textContent = mode().name + ' · ' + S.stocks + ' VIDAS'; buildStageGrid(); attach('stage'); }
+  function openStage() { go('stageScr'); $('sModeTag').textContent = mode().name + ' · ' + S.stocks + ' VIDAS' + (S.items ? ' · OBJETOS' : ''); buildStageGrid(); attach('stage'); }
   // keep = true solo al volver de una partida (se conservan las elecciones para la revancha)
   function openChars(keep = false) {
     S.remote = null;
@@ -437,7 +439,7 @@ const Select = (() => {
         level: s.level || 'normal', num: s.type === 'cpu' ? 0 : ++num, name: slotName(s) || undefined });
     }
     const stage = S.stage === 'random' ? STAGE_ORDER[Math.random() * STAGE_ORDER.length | 0] : S.stage;
-    return { teams: m.teams, stocks: S.stocks, players, mode: S.mode, stage };
+    return { teams: m.teams, stocks: S.stocks, players, mode: S.mode, stage, items: S.items };
   }
   function start() { Pointer.detach(); S.screen = null; startFight(cfg()); }
 

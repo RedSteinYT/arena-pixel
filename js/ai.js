@@ -66,7 +66,8 @@ function aiInput(f, g) {
   if (Math.abs(dx) < 0.5) dx = f.dir * 0.5;          // encima del rival: usar hacia donde mira
   const adx = Math.abs(dx), ady = Math.abs(dy);
   const z = f.ch.z || 1;
-  const reach = f.S.hw + tgt.S.hw + 12 * z, vreach = 10 + f.S.hh * 0.5;
+  const armed = f.item && ITEMS[f.item.id].kind === 'weapon';
+  const reach = f.S.hw + tgt.S.hw + 12 * z + (armed ? 14 * z : 0), vreach = 10 + f.S.hh * 0.5 + (armed ? 8 : 0);
 
   // mantener un escudo un rato
   if (A.shieldT > 0) { A.shieldT--; I.shd = true; return I; }
@@ -85,6 +86,25 @@ function aiInput(f, g) {
   const busy = f.st === 'attack' || f.st === 'landing' || f.st === 'hitstun' || f.st === 'jumpsquat';
   if (busy) return I;
   if (Math.random() < L.idle) return I;                  // la fácil a veces se queda pensando
+
+  // ---- objetos ----
+  if (f.item) {
+    const def = ITEMS[f.item.id], face = sgn(dx) !== f.dir;
+    if (def.kind === 'throw' && adx > 26 && adx < 150 && ady < 34 && Math.random() < 0.35) { I.grab = true; I.mx = sgn(dx); return I; }
+    if (f.item.id === 'blaster' && f.grounded && ady < 16 && adx > reach && adx < 230) { if (face) { I.mx = sgn(dx); return I; } I.atk = !f.prev.atk; return I; }
+    if (f.item.id === 'bumeran' && f.grounded && ady < 22 && adx > reach && adx < 140 && Math.random() < 0.3) { if (face) { I.mx = sgn(dx); return I; } I.atk = true; return I; }
+  } else if (g.items && g.items.length && f.grounded) {
+    let it = null, bd = 1e9;
+    for (const o of g.items) {
+      if (o.st !== 'ground' || Math.abs(o.y - f.y) > 18) continue;
+      const d = Math.abs(o.x - f.x); if (d < bd) { bd = d; it = o; }
+    }
+    if (it && bd < 150 && (adx > 46 || bd < 20) && Math.random() < L.chase + 0.15) {
+      const power = ITEMS[it.id].kind === 'power';
+      if (!power && bd < f.S.hw + 8) { I.grab = true; return I; }
+      I.mx = sgn(it.x - f.x); A.hold = { mx: I.mx, my: 0 }; return I;
+    }
+  }
 
   // defenderse si el rival ataca de cerca
   if (tgt.st === 'attack' && adx < reach + 6 && ady < vreach + 4 && f.grounded && Math.random() < L.shield) {

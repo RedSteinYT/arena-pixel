@@ -86,6 +86,7 @@ const Net = (() => {
     if (MOVES) return MOVES;
     MOVES = new Map();
     for (const id in CHARACTERS) for (const n in CHARACTERS[id].moves) MOVES.set(CHARACTERS[id].moves[n], id + '.' + n);
+    for (const id in ITEMS) for (const n in ITEMS[id].moves || {}) MOVES.set(ITEMS[id].moves[n], 'I:' + id + '.' + n);
     return MOVES;
   }
   function enc(v, g, d = 0) {
@@ -108,13 +109,13 @@ const Net = (() => {
     if (v === null || typeof v !== 'object') return v;
     if (Array.isArray(v)) return v.map(x => dec(x, g));
     if ('$F' in v) return g.fighters[v.$F];
-    if ('$M' in v) { const [c, n] = v.$M.split('.'); return CHARACTERS[c].moves[n]; }
+    if ('$M' in v) { const [c, n] = v.$M.split('.'); return c.startsWith('I:') ? ITEMS[c.slice(2)].moves[n] : CHARACTERS[c].moves[n]; }
     if ('$P' in v) return v.$P === 'm' ? g.stage.main : g.stage.plats[v.$P];
     if ('$S' in v) return new Set(v.$S.map(x => dec(x, g)));
     const o = {}; for (const k in v) o[k] = dec(v[k], g); return o;
   }
-  const FSKIP = new Set(['cfg', 'ch', 'S', 'pal', 'ai', 'prev', 'buf', 'flickX', 'flickY', 'cstick', 'cHeld', 'hitSet']);
-  const GKEYS = ['frame', 'phase', 'phaseT', 'shake', 'slow', 'placing', 'cloudX'];
+  const FSKIP = new Set(['cfg', 'ch', 'S', 'baseS', 'pal', 'ai', 'prev', 'buf', 'flickX', 'flickY', 'cstick', 'cHeld', 'hitSet', '_pose']);
+  const GKEYS = ['frame', 'phase', 'phaseT', 'shake', 'slow', 'placing', 'cloudX', 'items'];
   const SSKIP = new Set(['def', 'id', 'spawns', 'respawn', 'blast', 'grav', 'main', 'plats', 'flakes', 'embers', 'motes']);
   function snapshot(g) {
     const v = {}, s = {};

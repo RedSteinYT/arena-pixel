@@ -144,6 +144,7 @@
   .sbtn.go { background: #c7362f; box-shadow: inset 0 -.25em 0 #7a1730, inset 0 .15em 0 #ff8a6b; }
   .sbtn.dim { opacity: .75; }
   .lives { display: flex; align-items: center; gap: .6em; font-size: 1em; color: #cfc8f0; }
+  .itemsBtn { margin-left: 1em; white-space: nowrap; }
   .lives b { font-size: 1.6em; color: var(--gold); min-width: 1.4em; text-align: center; }
   .hov { outline: .3em solid var(--hc, var(--gold)); outline-offset: .15em; filter: brightness(1.15); z-index: 2; position: relative; }
   .hintbar { margin-top: auto; font-size: .8em; line-height: 1.9; color: var(--muted); text-align: center; background: rgba(11,10,36,.6); padding: .6em; border: .2em solid var(--line); }
@@ -458,7 +459,8 @@
       <div class="seltop">
         <span class="sbtn back" data-act="back">◀ VOLVER</span>
         <h2>MODO DE BATALLA</h2>
-        <div class="lives">VIDAS <span class="sbtn" data-act="lives:-1">−</span><b id="mLives">3</b><span class="sbtn" data-act="lives:1">+</span></div>
+        <div class="lives">VIDAS <span class="sbtn" data-act="lives:-1">−</span><b id="mLives">3</b><span class="sbtn" data-act="lives:1">+</span>
+          <span class="sbtn itemsBtn" data-act="items" id="mItems">OBJETOS: SÍ</span></div>
         <span class="sbtn" data-act="controls">CONTROLES</span>
       </div>
       <div class="mcards" id="mCards"></div>
@@ -564,6 +566,10 @@
 <script src="js/characters/runa.js"></script>
 <script src="js/characters/coloso.js"></script>
 <script src="js/characters/redstein.js"></script>
+<script src="js/items/common.js"></script>
+<script src="js/items/armas.js"></script>
+<script src="js/items/lanzables.js"></script>
+<script src="js/items/poderes.js"></script>
 <script src="js/fighter.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/game.js"></script>
