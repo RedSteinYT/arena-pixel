@@ -54,6 +54,17 @@ const Music = (() => {
       },
       order: ['I', 'A', 'B', 'A', 'B'],
     },
+    // Arena de entrenamiento: tranquila y concentrada, para practicar sin cansarse
+    entrenamiento: {
+      bpm: 96, lead: 'square', loop: 0,
+      parts: {
+        A: { chords: ['C2', 'A1m', 'F1', 'G1'], drums: 'soft', bass: 'root', pad: true, arp: 'bell',
+             lead: 'E5:4 G5:4 C6:4 G5:4 | E5:4 A5:4 C6:4 A5:4 | F5:4 A5:4 C6:4 A5:4 | G5:4 B5:4 D6:8' },
+        B: { chords: ['F1', 'G1', 'E2m', 'A1m'], drums: 'half', bass: 'root', pad: true, arp: 'bell',
+             lead: 'A5:6 G5:2 F5:4 E5:4 | D5:6 E5:2 G5:8 | B5:6 A5:2 G5:4 E5:4 | A5:16' },
+      },
+      order: ['A', 'A', 'B', 'A'],
+    },
     // Isla Celeste: pop-rock luminoso en re mayor, con arpegios de cielo
     cielo: {
       bpm: 142, lead: 'square', loop: 0,

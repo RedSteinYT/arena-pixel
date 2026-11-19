@@ -135,6 +135,7 @@ class Game {
       return;
     }
     d.dmg = Math.min(999, d.dmg + dmg);
+    d.comboDmg = (d.comboN > 1 ? (d.comboDmg || 0) : 0) + dmg;            // daño del combo (para la práctica)
     if (h.burn) d.burn = Math.max(d.burn || 0, h.burn);        // quemadura
     a.dealt += dmg;
     let kb = (h.b + h.g * (d.dmg / 100)) * (1 + (mult - 1) * 0.6);
@@ -350,7 +351,7 @@ class Game {
       const col = d < 50 ? '#ffffff' : d < 90 ? '#ffe27a' : d < 130 ? '#ff9a4a' : d < 180 ? '#ff4a3a' : '#d01a3a';
       const shakeX = f.flash > 0 ? (Math.random() * 2 - 1) : 0;
       t.text(d + '%', x + 104 + shakeX, y + 10, 16, col, 'right');
-      if (f.stocks > 5) t.text('x' + f.stocks, x + 66, y + 22, 8, '#c9c1e8');
+      if (f.stocks > 5 && !this.cfg.practice && !this.cfg.tutorial) t.text('x' + f.stocks, x + 66, y + 22, 8, '#c9c1e8');
     }
     // contador de combo sobre el rival y ¡REMATE!
     for (const f of this.fighters) {

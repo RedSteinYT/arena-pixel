@@ -119,8 +119,10 @@ class Fighter {
     else {
       d = this.dirOf(I.mx, I.my);
       const inCombo = this.chainT > 0;                    // en mitad de un combo, dirección + ataque = ataque con dirección
-      if (d === 'side' && this.flickX <= 4 && !inCombo) smash = true;
-      if ((d === 'up' || d === 'down') && this.flickY <= 4 && !inCombo) smash = true;
+      // con teclado (tiene su tecla de fuerte) dirección + ataque es siempre el ataque con dirección
+      const kb = this.noFlick || (this.device && this.device.startsWith('kb'));
+      if (d === 'side' && this.flickX <= 4 && !inCombo && !kb) smash = true;
+      if ((d === 'up' || d === 'down') && this.flickY <= 4 && !inCombo && !kb) smash = true;
       if (d === 'side') this.dir = sgn(I.mx);
     }
     if (this.itemAttack(g, smash ? 'smash' : d === 'up' ? 'up' : d === 'down' ? 'down' : 'side')) return;

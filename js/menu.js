@@ -45,7 +45,7 @@ let screen = 'title';
 let game = null, demo = null, paused = false, lastCfg = null;
 let uiLock = 0;              // frames en los que se ignoran botones tras cambiar de pantalla
 let lastPadKind = null;      // último tipo de mando usado (para la pestaña de controles)
-const SCREENS = ['title', 'online', 'modeScr', 'stageScr', 'charScr', 'controls', 'pause', 'results'];
+const SCREENS = ['title', 'online', 'tutScr', 'modeScr', 'stageScr', 'charScr', 'controls', 'pause', 'results'];
 const POINTER_SCREENS = ['modeScr', 'stageScr', 'charScr'];
 
 function show(id) {
@@ -123,6 +123,10 @@ function startFight(cfg, opts = {}) {
   paused = false; resultsShown = false;
   if (Net.isHost) Net.sendStart(cfg);
   if (opts.late) { game = new Game(cfg); go('game'); return; }   // entró con la pelea ya empezada
+  if (cfg.practice || cfg.tutorial) {                 // sin pantalla VS ni cuenta atrás
+    if (cfg.practice) Practice.begin();
+    game = new Game(cfg); game.phase = 'play'; game.phaseT = 60; go('game'); return;
+  }
   // pantalla VS: unos segundos de cara a cara antes de pelear
   const vsGame = new Game(cfg);
   screen = 'vs'; show(null); acc = 0;
@@ -165,17 +169,51 @@ document.querySelectorAll('#ctrlTabs button').forEach(b => b.onclick = () => { S
 // ---------- botones ----------
 $('bPlay').onclick = () => { Sfx.unlock(); Sfx.blip(); if (Net.isHost) Net.showLobby(); else Select.openMode(); };
 $('bOnline').onclick = () => { Sfx.unlock(); Sfx.blip(); Net.open(); };
+const notOnline = () => { if (Net.online) { toast('Sal de la sala en línea para practicar'); return false; } return true; };
+$('bPrac').onclick = () => { Sfx.unlock(); Sfx.blip(); if (notOnline()) Select.openPractice(); };
+$('bTut').onclick = () => { Sfx.unlock(); Sfx.blip(); if (notOnline()) Tutorial.openMenu(); };
+$('bTutBack').onclick = () => { Sfx.blip(); go('title'); };
 $('bCtrlTitle').onclick = () => { Sfx.blip(); openControls(); };
 $('bCtrlPause').onclick = () => { Sfx.blip(); openControls(); };
 $('bCtrlBack').onclick = () => closeControls();
 $('bResume').onclick = () => setPause(false);
-$('bQuit').onclick = () => { game = null; paused = false; Select.openChars(true); };
+$('bQuit').onclick = () => {
+  const c = game && game.cfg; game = null; paused = false;
+  if (c && c.tutorial) Tutorial.quit();
+  else if (c && c.practice) Select.openPractice(true);
+  else Select.openChars(true);
+};
 $('bRematch').onclick = () => { if (!Net.isClient) startFight(lastCfg); };
 $('bLobby').onclick = () => { if (Net.isClient) return; game = null; Select.openChars(true); };
 
 function setPause(v) {
   if (!game || game.phase === 'end' || Net.isClient) return;   // en línea pausa el anfitrión
   paused = v; screen = 'game'; show(v ? 'pause' : null); Sfx.blip();
+  if (v) pauseExtra();
+}
+// opciones propias de la práctica y del tutorial en la pausa
+function pauseExtra() {
+  const el = $('pauseExtra'); el.innerHTML = '';
+  const add = (txt, fn) => { const b = document.createElement('button'); b.textContent = txt; b.onclick = () => { Sfx.blip(); fn(b); }; el.appendChild(b); return b; };
+  const c = game && game.cfg;
+  if (c && c.practice) {
+    add('DUMMY: ' + Practice.behaviour, b => { b.textContent = 'DUMMY: ' + Practice.cycle(); });
+    add('OBJETOS: ' + (game.itemsOn ? 'SÍ' : 'NO'), b => { game.itemsOn = !game.itemsOn; b.textContent = 'OBJETOS: ' + (game.itemsOn ? 'SÍ' : 'NO'); if (!game.itemsOn) game.items = []; else game.itemT = 30; });
+    add('REINICIAR DAÑO (R)', () => { Practice.reset(game); setPause(false); });
+  } else if (c && c.tutorial) {
+    add('REINTENTAR TAREA', () => { Tutorial.retry(game); setPause(false); });
+    add('SALTAR TAREA', () => { Tutorial.skip(game); setPause(false); });
+  }
+}
+// en tutorial: el jugador usa cualquier teclado o mando
+function anyInput() {
+  const I = blankInput();
+  for (const d of Input.devices()) {
+    const r = Input.read(d); if (!r) continue;
+    for (const k of ['mx', 'my', 'cx', 'cy']) if (Math.abs(r[k]) > Math.abs(I[k])) I[k] = r[k];
+    for (const k of ['jump', 'atk', 'spc', 'shd', 'grab', 'str', 'start']) if (r[k]) I[k] = true;
+  }
+  return I;
 }
 addEventListener('keydown', e => {
   if (e.repeat) return;
@@ -226,6 +264,7 @@ function padUI() {
     if (screen === 'results' && start) { startFight(lastCfg); return; }
     if (screen === 'results' && back) { $('bLobby').click(); return; }
     if (screen === 'title' && start) { $('bPlay').click(); return; }
+    if (screen === 'tutScr' && back) { $('bTutBack').click(); return; }
     if (dir || ok) { Nav.padMode = true; Nav.ensure(); }
     if (dir) Nav.move(dir[0], dir[1]);
     if (ok) { Nav.press(); return; }
@@ -246,7 +285,7 @@ function frame(now) {
 }
 function frameBody(now) {
   Input.update();
-  const dt = Math.min(100, now - last); last = now;
+  const dt = Math.max(0, Math.min(100, now - last)); last = now;   // nunca negativo (relojes que retroceden)
   uiFrame++;
   if (uiLock > 0) uiLock--;
   padUI();
@@ -296,9 +335,15 @@ function frameBody(now) {
     for (const dev of Input.devices()) inputs[dev] = Input.read(dev);
     const host = Net.isHost && active === game;
     if (host) Object.assign(inputs, Net.inputs());
+    const mode = active === game && game ? game.cfg : null;
+    if (mode && (mode.practice || mode.tutorial)) { inputs.any = anyInput(); inputs.dummy = mode.practice ? Practice.input(game) : blankInput(); }
     let stepped = false;
     Net.record(host);
-    while (acc >= STEP) { active.step(inputs); acc -= STEP; stepped = true; }
+    while (acc >= STEP) {
+      active.step(inputs); acc -= STEP; stepped = true;
+      if (mode && mode.practice) Practice.tick(game);
+      if (mode && mode.tutorial) { Tutorial.tick(game); if (!game) break; }
+    }
     Net.record(false);
     if (host && stepped) Net.hostSend(game);
     Sfx.muted = false;
@@ -307,12 +352,18 @@ function frameBody(now) {
   if (screen === 'game' && game && game.phase === 'end' && game.phaseT > 150 && !resultsShown) showResults();
 
   // dibujo
-  if (active) active.render(bctx);
+  const act = (screen === 'game' || screen === 'results' || (screen === 'controls' && ctrlReturn === 'pause')) && game ? game : active;
+  if (act) act.render(bctx);
+  if (act === game && game && game.cfg.tutorial) Tutorial.renderWorld(bctx, game);
   const shake = active && !frozen ? active.shake : 0;
   const ox = shake ? Math.round((Math.random() * 2 - 1) * shake) * S : 0, oy = shake ? Math.round((Math.random() * 2 - 1) * shake) * S : 0;
   dctx.fillStyle = OUTLINE; dctx.fillRect(0, 0, disp.width, disp.height);
   dctx.drawImage(buf, ox, oy, W * S, H * S);
-  if (active === game && game) game.renderText(TXT);
+  if (act === game && game) {
+    game.renderText(TXT);
+    if (game.cfg.practice) Practice.renderText(TXT, game);
+    if (game.cfg.tutorial) Tutorial.renderText(TXT, game);
+  }
   if (active === game && Net.isClient && Net.hostPaused && screen === 'game') {
     dctx.fillStyle = 'rgba(18,13,36,.55)'; dctx.fillRect(0, 0, disp.width, disp.height);
     TXT.text('PAUSA', W / 2, H / 2 - 16, 16, '#ffd34a', 'center');

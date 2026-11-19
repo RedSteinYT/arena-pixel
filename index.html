@@ -415,6 +415,19 @@
   #nickBox i { position: absolute; right: .8em; bottom: .75em; font-style: normal; color: #fff; opacity: .6; }
   #nickBox:focus-within { border-color: var(--gold); }
   #nickBox:focus-within i { opacity: 1; }
+  .titleRow { display: flex; gap: .6em; justify-content: center; }
+  #title .titleRow button { padding: .8em 1.4em; }
+  #pauseExtra { display: flex; flex-direction: column; gap: 6px; }
+  #pauseExtra:empty { display: none; }
+  .tutPanel { width: min(640px, 100%); display: flex; flex-direction: column; gap: 10px; text-align: center; }
+  #tutList { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tutCard { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto auto; column-gap: 10px; text-align: left; padding: 12px !important; align-items: center; }
+  .tutCard .ti { grid-row: 1 / 4; font-size: 26px; color: var(--gold); }
+  .tutCard b { font-size: 13px; color: #fff; }
+  .tutCard small { font-size: 8px; color: #cfc8f0; line-height: 1.6; }
+  .tutCard em { font-style: normal; font-size: 8px; color: #43c6f0; }
+  .tutCard.done { border-color: #5ee08a; }
+  .tutCard.done em { color: #5ee08a; }
   #sndHint { margin: 6px 0 0; text-align: center; color: var(--gold); font-size: 9px; }
   body.sound-on #sndHint { display: none; }
   #padHint { margin: 4px 0 0; text-align: center; color: #9fd8ff; font-size: 8px; }
@@ -438,10 +451,21 @@
       <div class="sub">UN JUEGO DE REDSTEIN</div>
       <button class="go" id="bPlay">▶ JUGAR</button>
       <button id="bOnline">🌐 EN LÍNEA</button>
+      <div class="titleRow"><button id="bPrac">🎯 PRÁCTICA</button><button id="bTut">📘 TUTORIAL</button></div>
       <button id="bCtrlTitle">CONTROLES</button>
       <p style="margin-top:18px;text-align:center">Teclado o mando: Xbox · PlayStation · Nintendo</p>
       <p id="sndHint" class="blink">🔊 Pulsa cualquier tecla o haz clic para activar el sonido</p>
       <p id="padHint">🎮 ¿Mando? Pulsa cualquier botón para que el navegador lo detecte</p>
+    </div>
+  </div>
+
+  <!-- tutorial: elegir lección -->
+  <div id="tutScr" class="ui dim">
+    <div class="panel tutPanel">
+      <h2>📘 TUTORIAL</h2>
+      <p class="onlInfo">¿Qué quieres aprender? Cada lección tiene sus tareas: te enseña qué pulsar y, si fallas, en qué paso.</p>
+      <div id="tutList"></div>
+      <button id="bTutBack">◀ VOLVER</button>
     </div>
   </div>
 
@@ -528,6 +552,7 @@
     <div class="panel center">
       <h2>PAUSA</h2>
       <button class="go" id="bResume">CONTINUAR</button>
+      <div id="pauseExtra"></div>
       <button id="bCtrlPause">CONTROLES</button>
       <button id="bQuit">SALIR AL MENÚ</button>
     </div>
@@ -558,6 +583,7 @@
 <script src="js/stages/hielo.js"></script>
 <script src="js/stages/balanza.js"></script>
 <script src="js/stages/fortaleza.js"></script>
+<script src="js/stages/entrenamiento.js"></script>
 <script src="js/characters/common.js"></script>
 <!-- Un archivo por luchador: se pueden editar por separado -->
 <script src="js/characters/maniqui.js"></script>
@@ -566,6 +592,7 @@
 <script src="js/characters/runa.js"></script>
 <script src="js/characters/coloso.js"></script>
 <script src="js/characters/redstein.js"></script>
+<script src="js/characters/dummy.js"></script>
 <script src="js/items/common.js"></script>
 <script src="js/items/armas.js"></script>
 <script src="js/items/lanzables.js"></script>
@@ -576,6 +603,8 @@
 <script src="js/music.js"></script>
 <script src="js/vs.js"></script>
 <script src="js/net.js"></script>
+<script src="js/modes/practica.js"></script>
+<script src="js/modes/tutorial.js"></script>
 <script src="js/controls.js"></script>
 <script src="js/modeart.js"></script>
 <script src="js/pointer.js"></script>

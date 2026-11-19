@@ -82,7 +82,7 @@ function defineCharacter(def) {
   });
   def.z = st.hh / 24;      // escala respecto a un luchador normal
   CHARACTERS[def.id] = def;
-  CHAR_ORDER.push(def.id);
+  if (!def.hidden) CHAR_ORDER.push(def.id);      // los ocultos (el Dummy) no salen en la selección
 }
 
 // ---------- utilidades de pose ----------
@@ -281,7 +281,7 @@ function drawChain(c, f, from, width, cols) {
 
 // Comprueba que un luchador tiene todos los huecos (ayuda al crear nuevos)
 function validateCharacters() {
-  for (const id of CHAR_ORDER) {
+  for (const id in CHARACTERS) {
     const missing = MOVE_SLOTS.filter(s => !CHARACTERS[id].moves[s]);
     if (missing.length) console.warn(`Al luchador "${id}" le faltan movimientos:`, missing.join(', '));
   }

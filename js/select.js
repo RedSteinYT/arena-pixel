@@ -9,6 +9,7 @@ const Select = (() => {
     '2v2':  { cap: 4, teams: true,  name: '2 VS 2',             sub: 'Equipo rojo contra azul' },
     '3ffa': { cap: 3, teams: false, name: 'TRIPLE AMENAZA',     sub: 'Tres luchadores, todos contra todos' },
     '4ffa': { cap: 4, teams: false, name: 'TODOS CONTRA TODOS', sub: 'Cuatro luchadores, caos total' },
+    practice: { cap: 1, teams: false, name: 'PRÁCTICA', sub: 'Tú contra el Dummy' },
   };
   const MODE_ORDER = ['1v1', '2v2', '3ffa', '4ffa'];
   const PCOL = ['#ff6b5e', '#5aa0ff', '#ffd34a', '#5ee08a'];           // color de cada jugador (J1..J4)
@@ -381,6 +382,7 @@ const Select = (() => {
   // botón ◀ VOLVER: siempre a la pantalla anterior
   function backScreen() {
     Sfx.blip();
+    if (S.screen === 'chars' && S.mode === 'practice') { Pointer.detach(); S.screen = null; go('title'); return; }
     if (S.screen === 'chars') openStage();
     else if (S.screen === 'stage') openMode();
     else if (S.screen === 'mode') { Pointer.detach(); S.screen = null; if (Net.isHost) Net.showLobby(); else go('title'); }
@@ -400,7 +402,7 @@ const Select = (() => {
         if (s && s.locked) { s.locked = false; Sfx.blip(); } else removeSlot(c.slot);
         renderPanels(); return;
       }
-      Sfx.blip(); openStage(); return;
+      Sfx.blip(); if (S.mode === 'practice') { Pointer.detach(); S.screen = null; go('title'); } else openStage(); return;
     }
     if (S.screen === 'stage') { Sfx.blip(); openMode(); return; }
     if (S.screen === 'mode') { Sfx.blip(); Pointer.detach(); S.screen = null; if (Net.isHost) Net.showLobby(); else go('title'); }
@@ -417,7 +419,7 @@ const Select = (() => {
       hover(dev, el) { const a = el.dataset.act; if (scr === 'stage' && a.startsWith('stage:')) { S.hoverStage = a.slice(6); setPreview(S.hoverStage); } },
     });
   }
-  function openMode() { go('modeScr'); buildMode(); attach('mode'); }
+  function openMode() { if (S.mode === 'practice') { S.mode = S.prevMode || '1v1'; S.stage = S.prevStage || 'cielo'; } go('modeScr'); buildMode(); attach('mode'); }
   function openStage() { go('stageScr'); $('sModeTag').textContent = mode().name + ' · ' + S.stocks + ' VIDAS' + (S.items ? ' · OBJETOS' : ''); buildStageGrid(); attach('stage'); }
   // keep = true solo al volver de una partida (se conservan las elecciones para la revancha)
   function openChars(keep = false) {
@@ -427,10 +429,22 @@ const Select = (() => {
     for (let i = mode().cap; i < 4; i++) if (S.slots[i]) removeSlot(i);
     go('charScr');
     const st = S.stage === 'random' ? 'ARENA ALEATORIA' : STAGES[S.stage].name.toUpperCase();
-    $('cModeTag').textContent = `${mode().name} · ${S.stocks} VIDAS · ${st}`;
+    $('cModeTag').textContent = S.mode === 'practice' ? 'PRÁCTICA · CONTRA EL DUMMY · ARENA DE ENTRENAMIENTO' : `${mode().name} · ${S.stocks} VIDAS · ${st}`;
     buildCharGrid(); renderPanels(); attach('chars');
   }
+  // PRÁCTICA: eliges tu luchador y peleas contra el Dummy en la arena de entrenamiento
+  function openPractice(keep = false) {
+    if (S.mode !== 'practice') { S.prevMode = S.mode; S.prevStage = S.stage; }
+    S.mode = 'practice'; S.stage = 'entrenamiento';
+    openChars(keep);
+  }
   function cfg() {
+    if (S.mode === 'practice') {
+      const s = S.slots[0];
+      return { practice: true, teams: false, stocks: 99, stage: 'entrenamiento', items: !!S.practiceItems, mode: 'practice',
+        players: [{ device: s.dev, pal: 0, team: 0, char: s.char === 'random' ? randomChar() : s.char, num: 1 },
+                  { device: 'dummy', pal: 2, team: 1, char: 'dummy', num: 0 }] };
+    }
     const m = mode(), used = [0, 0], players = [];
     let num = 0;
     for (let i = 0; i < m.cap; i++) {
@@ -524,7 +538,7 @@ const Select = (() => {
     }
   }
   return { openMode, openStage, openChars, tick, get screen() { return S.screen; }, state: S, ready, MODES,
-    netState, netJoin, netLeave, netSlot, remoteSel, leaveRemote,
+    netState, netJoin, netLeave, netSlot, remoteSel, leaveRemote, openPractice,
     refresh() { if (S.screen === 'chars') renderPanels(); },
     reattach() { if (S.screen) attach(S.screen); } };
 })();

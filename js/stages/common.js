@@ -28,7 +28,7 @@ const DEFAULT_BLAST = { l: -64, r: W + 64, t: -56, b: H + 56 };
 function defineStage(def) {
   def.renderBack = def.renderBack || ((c, st) => c.drawImage(st.def.art.bg, 0, 0));
   STAGES[def.id] = def;
-  STAGE_ORDER.push(def.id);
+  if (!def.hidden) STAGE_ORDER.push(def.id);     // la de entrenamiento no sale en la selección
 }
 
 // Crea una copia "viva" de la arena para una partida
