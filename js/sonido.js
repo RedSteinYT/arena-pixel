@@ -54,10 +54,10 @@ const Sonido = (() => {
 
   // ---------- menús: botones flotantes con deslizador desplegable ----------
   function buildDock() {
-    const dock = document.createElement('div'); dock.id = 'audioDock';
+    const dock = document.createElement('div'); dock.id = 'volDock';
     for (const k of ['sfx', 'music']) {
       const v = control(k, false), item = document.createElement('div'), pop = document.createElement('div');
-      item.className = 'adItem'; pop.className = 'adPop';
+      item.className = 'volItem'; pop.className = 'volPop';
       pop.innerHTML = `<small>${NAMES[k]}</small>`; pop.appendChild(v.range);
       v.range.addEventListener('input', () => uiTick++);
       item.append(pop, v.btn); dock.appendChild(item);
@@ -76,7 +76,7 @@ const Sonido = (() => {
     }
   }
   // el dock solo se ve en los menús (no en la pelea, la pantalla VS ni la pausa)
-  function showDock(on) { const d = document.getElementById('audioDock'); if (d) d.classList.toggle('on', on); }
+  function showDock(on) { const d = document.getElementById('volDock'); if (d) d.classList.toggle('on', on); }
 
   buildDock(); buildPause(); refresh(); apply();
   showDock(screen !== 'game' && screen !== 'vs');              // la portada ya está en pantalla al cargar

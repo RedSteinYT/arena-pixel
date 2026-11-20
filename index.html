@@ -445,15 +445,15 @@
   .sndRange::-webkit-slider-thumb { -webkit-appearance: none; width: .9em; height: 1.5em; margin-top: -.6em; background: #fff; border: .2em solid var(--line); box-shadow: inset 0 -.2em 0 #c9c1e8; }
   .sndRange::-moz-range-thumb { width: .9em; height: 1.5em; background: #fff; border: .2em solid var(--line); border-radius: 0; }
   .sndRange.focus { outline: .2em solid var(--gold); outline-offset: .3em; }
-  #audioDock { position: absolute; right: 2.5%; bottom: 4%; z-index: 6; display: none; gap: .45em; font-size: clamp(7px, .95cqw, 15px); }
-  #audioDock.on { display: flex; }
+  #volDock { position: absolute; right: 2.5%; bottom: 4%; z-index: 6; display: none; gap: .45em; font-size: clamp(7px, .95cqw, 15px); }
+  #volDock.on { display: flex; }
   .selscr .hintbar { margin-right: 9.6em; }       /* hueco para los botones de volumen (abajo a la derecha) */
-  #audioDock .adItem { position: relative; }
-  #audioDock .adPop { position: absolute; right: 0; bottom: 100%; display: none; padding: .7em .9em; margin-bottom: 0;
+  #volDock .volItem { position: relative; }
+  #volDock .volPop { position: absolute; right: 0; bottom: 100%; display: none; padding: .7em .9em; margin-bottom: 0;
     background: linear-gradient(135deg, rgba(40,28,90,.95), rgba(18,13,36,.95)); border: .2em solid #6c5aff; white-space: nowrap; }
-  #audioDock .adPop::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: .6em; }   /* puente: el ratón no pierde el desplegable */
-  #audioDock .adPop small { display: block; margin-bottom: .45em; font-size: .7em; color: #9fd8ff; letter-spacing: .1em; }
-  #audioDock .adItem:hover .adPop, #audioDock .adItem:focus-within .adPop { display: block; }
+  #volDock .volPop::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: .6em; }   /* puente: el ratón no pierde el desplegable */
+  #volDock .volPop small { display: block; margin-bottom: .45em; font-size: .7em; color: #9fd8ff; letter-spacing: .1em; }
+  #volDock .volItem:hover .volPop, #volDock .volItem:focus-within .volPop { display: block; }
   #pauseAudio { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 2px; font-size: 10px; }
   #pauseAudio .paRow { display: flex; align-items: center; gap: 10px; }
   #pauseAudio .paRow span { width: 6.5em; text-align: left; font-size: 9px; color: #cfc8f0; }
