@@ -4,7 +4,7 @@
 
 # Arena Píxel
 
-**Un juego de lucha de plataformas en pixel art, hecho por [RedStein](https://github.com/RedSteinYT).**
+**Un juego de lucha de plataformas en pixel art, hecho por [RedStein](https://www.youtube.com/@RedStein).**
 Hasta 4 jugadores en el mismo teclado o con mandos, o en línea con tus amigos sin instalar nada.
 
 ### [▶ JUGAR AHORA](https://redsteinyt.github.io/arena-pixel/)
@@ -13,6 +13,10 @@ Hasta 4 jugadores en el mismo teclado o con mandos, o en línea con tus amigos s
 ![Jugadores](https://img.shields.io/badge/jugadores-1_a_4-43c6f0?style=for-the-badge)
 ![En línea](https://img.shields.io/badge/en_línea-P2P_sin_servidores-5ee08a?style=for-the-badge)
 ![Sin instalar](https://img.shields.io/badge/instalar-nada-ffd34a?style=for-the-badge)
+
+[![YouTube](https://img.shields.io/badge/YouTube-@RedStein-ff0000?style=flat-square&logo=youtube&logoColor=white)](https://www.youtube.com/@RedStein)
+[![TikTok](https://img.shields.io/badge/TikTok-@redstein__la-000000?style=flat-square&logo=tiktok&logoColor=white)](https://www.tiktok.com/@redstein_la)
+[![GitHub](https://img.shields.io/badge/GitHub-RedSteinYT-24292f?style=flat-square&logo=github&logoColor=white)](https://github.com/RedSteinYT)
 
 </div>
 
@@ -30,8 +34,10 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 - **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo con un ataque fuerte o un especial.
 - **14 objetos** que caen en plena pelea: armas que cambian tu ataque (espada láser, bláster, bumerán…), cosas para lanzar y poderes temporales.
 - **Pantalla VS** con pullas antes de cada combate y música rock propia para cada arena.
-- **Finales de película:** cámara lenta en el golpe final, zoom al ganador y animaciones de victoria y derrota propias de cada luchador.
-- **Temporizador** (2, 3, 5 u 8 minutos, o sin límite). Si se acaba el tiempo con empate en vidas: **¡MUERTE SÚBITA!**, todos al 300 % y el primer golpe decide.
+- **Finales de película:** cámara lenta en el golpe final, zoom al ganador y animaciones de victoria y derrota propias de cada luchador. Si el ganador (o su compañero de equipo) ya había caído, vuelve por un portal para celebrarlo.
+- **Opciones de combate:** vidas (1 a 9), tiempo (2, 3, 5 u 8 minutos, o sin límite) y objetos sí o no.
+- **¡MUERTE SÚBITA!** Si se acaba el tiempo con empate en vidas: un solo corazón, todos al 300 % y el más mínimo roce te saca de la arena.
+- **Resultados** con una tarjeta por luchador: su puesto, sus estadísticas y su animación de victoria o derrota.
 - **Modo en línea** con código de sala: uno crea la sala, los demás escriben el código y a pelear.
 - **PRÁCTICA y TUTORIAL** para aprender todo lo anterior paso a paso.
 
@@ -64,7 +70,7 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 | Modo | |
 |---|---|
 | **1 contra 1** | El duelo clásico. |
-| **2 contra 2** | Por equipos. |
+| **2 contra 2** | Por equipos: rojo contra azul. |
 | **Triple amenaza** | Tres luchadores, todos contra todos. |
 | **Todos contra todos** | Cuatro luchadores, caos total. |
 | **🌐 En línea** | Hasta 4 amigos, cada uno desde su casa, con un código de sala. |
@@ -100,6 +106,18 @@ Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difí
 
 La conexión va directa entre vuestros navegadores (WebRTC con [PeerJS](https://peerjs.com/)): no hay servidor del juego ni cuentas. Pon tu nombre en el recuadro de arriba a la derecha para que tus amigos sepan quién eres.
 
+## 🎬 El creador
+
+<img src="docs/img/redstein-logo.png" alt="Logo de RedStein" width="120" align="left">
+
+**RedStein** hace vídeos de videojuegos y este es su juego. Si te gusta, pásate por sus redes:
+
+- ▶ **YouTube:** [youtube.com/@RedStein](https://www.youtube.com/@RedStein)
+- ♪ **TikTok:** [tiktok.com/@redstein_la](https://www.tiktok.com/@redstein_la)
+- 🐙 **GitHub:** [github.com/RedSteinYT](https://github.com/RedSteinYT)
+
+<br clear="left">
+
 ## 🛠️ Para desarrolladores
 
 Es HTML, CSS y JavaScript puro, sin dependencias de instalación ni paso de compilación. Todo el arte se dibuja con código y la música es un secuenciador de WebAudio.
@@ -129,6 +147,6 @@ js/modes/           práctica y tutorial
 
 <div align="center">
 
-Hecho con 🔥 por **RedStein** · [Jugar](https://redsteinyt.github.io/arena-pixel/)
+Hecho con 🔥 por **RedStein** · [Jugar](https://redsteinyt.github.io/arena-pixel/) · [YouTube](https://www.youtube.com/@RedStein) · [TikTok](https://www.tiktok.com/@redstein_la)
 
 </div>

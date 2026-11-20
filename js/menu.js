@@ -178,6 +178,8 @@ document.querySelectorAll('#ctrlTabs button').forEach(b => b.onclick = () => { S
 
 // ---------- botones ----------
 $('bPlay').onclick = () => { Sfx.unlock(); Sfx.blip(); if (Net.isHost) Net.showLobby(); else Select.openMode(); };
+// enlaces del creador: se abren en otra pestaña (el juego sigue aquí)
+for (const b of document.querySelectorAll('#creator .crBtn')) b.onclick = () => { Sfx.blip(); window.open(b.dataset.url, '_blank', 'noopener'); };
 $('bOnline').onclick = () => { Sfx.unlock(); Sfx.blip(); Net.open(); };
 const notOnline = () => { if (Net.online) { toast('Sal de la sala en línea para practicar'); return false; } return true; };
 $('bPrac').onclick = () => { Sfx.unlock(); Sfx.blip(); if (notOnline()) Select.openPractice(); };
