@@ -101,7 +101,7 @@ class Game {
     const best = Math.max(...Object.values(score));
     const top = Object.keys(score).filter(k => score[k] === best);
     Sfx.ko();
-    if (top.length === 1) return this.beginEnd('time', this.fighters.filter(f => !f.out && this.sideOf(f) === top[0]));
+    if (top.length === 1) return this.beginEnd('time', this.fighters.filter(f => this.sideOf(f) === top[0]));
     this.startSuddenDeath(top);
   }
   startSuddenDeath(top) {
@@ -141,7 +141,7 @@ class Game {
   beginEnd(reason, winners) {
     if (!winners) {
       const left = this.fighters.filter(f => !f.out);
-      if (left.length) winners = left.filter(f => this.sideOf(f) === this.sideOf(left[0]));
+      if (left.length) winners = this.fighters.filter(f => this.sideOf(f) === this.sideOf(left[0]));
       else {                                                // cayeron los últimos a la vez: gana el que cayó el último
         const lastOut = this.placing[this.placing.length - 1];
         winners = this.fighters.filter(f => this.sideOf(f) === this.sideOf(lastOut));
@@ -165,13 +165,22 @@ class Game {
       if (!(ready && E.t > 20) && E.t < 110) return;
       for (const f of E.losers) if (this.standing(f)) { f.move = null; f.setSt('lose'); f.animT = 0; f.vx = 0; }
       const lost = E.winners.filter(f => !this.standing(f));
-      if (lost.length) {                                    // el ganador ya no está: aparece por un portal en el centro
+      if (lost.length) {                                    // un ganador ya no está: vuelve por un portal
+        const anchor = E.winners.find(f => this.standing(f));
+        const P = anchor && anchor.plat ? anchor.plat : M;
         lost.forEach((f, i) => {
-          const x = Math.round((M.x1 + M.x2) / 2 + (i - (lost.length - 1) / 2) * 34);
-          f.out = false; f.spawn(x, M.y, x < W / 2 ? 1 : -1); f.setSt('portal'); f.invuln = 9999;
+          let x;
+          if (anchor) {                                     // al lado de su compañero, alternando lados
+            const side = i % 2 ? -1 : 1, step = Math.ceil((i + 1) / 2);
+            x = anchor.x + side * anchor.dir * step * (anchor.S.hw + f.S.hw + 12);
+            if (x < P.x1 + f.S.hw + 2 || x > P.x2 - f.S.hw - 2) x = anchor.x - side * anchor.dir * step * (anchor.S.hw + f.S.hw + 12);
+            x = clamp(x, P.x1 + f.S.hw + 2, P.x2 - f.S.hw - 2);
+          } else x = (M.x1 + M.x2) / 2 + (i - (lost.length - 1) / 2) * 34;   // nadie en pie: en el centro
+          x = Math.round(x);
+          f.out = false; f.spawn(x, P.y, anchor ? sgn(anchor.x - x) || 1 : (x < W / 2 ? 1 : -1)); f.setSt('portal'); f.invuln = 9999;
         });
         E.step = 'portal'; E.t = 0; E.portal = lost;
-        E.focus = { x: (M.x1 + M.x2) / 2, y: M.y - 34, z: 2 };
+        E.focus = this.focusOn(anchor ? [anchor, ...lost] : lost) || { x: (M.x1 + M.x2) / 2, y: M.y - 34, z: 2 };
         Sfx.powerup();
         return;
       }
@@ -200,14 +209,16 @@ class Game {
     for (const f of E.winners) if (this.standing(f)) { f.move = null; f.setSt('win'); f.animT = 0; f.vx = 0; this.burst(f.x, f.y - f.S.hh, 10, 'star', '#ffd34a'); }
     // cámara: zoom a los protagonistas si están cerca; si están muy separados, sin zoom
     const who = (E.reason === 'time' ? [...E.winners, ...E.losers] : E.winners).filter(f => f.st === 'win' || f.st === 'lose');
-    if (!E.focus && who.length) {
-      let x1 = 1e9, x2 = -1e9, y1 = 1e9, y2 = -1e9;
-      for (const f of who) { x1 = Math.min(x1, f.x - f.S.hw); x2 = Math.max(x2, f.x + f.S.hw); y1 = Math.min(y1, f.y - f.S.hh); y2 = Math.max(y2, f.y); }
-      const z = Math.min(2.2, W / (x2 - x1 + 120), H / (y2 - y1 + 90));
-      if (z >= 1.35) E.focus = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 - 6, z };
-    }
+    if (!E.focus && who.length) E.focus = this.focusOn(who);
     E.step = 'pose'; E.t = 0;
     Sfx.vsSwing();
+  }
+  // encuadre para un grupo: zoom si están cerca; si están muy separados, sin zoom (null)
+  focusOn(list) {
+    let x1 = 1e9, x2 = -1e9, y1 = 1e9, y2 = -1e9;
+    for (const f of list) { x1 = Math.min(x1, f.x - f.S.hw); x2 = Math.max(x2, f.x + f.S.hw); y1 = Math.min(y1, f.y - f.S.hh); y2 = Math.max(y2, f.y); }
+    const z = Math.min(2.2, W / (x2 - x1 + 120), H / (y2 - y1 + 90));
+    return z >= 1.35 ? { x: (x1 + x2) / 2, y: (y1 + y2) / 2 - 6, z } : null;
   }
   // cámara suave hacia el objetivo (sin salirse del escenario)
   stepCam() {
@@ -590,7 +601,7 @@ class Game {
       const txt = E.reason === 'time' ? '¡TIEMPO!' : '¡FIN!';
       t.text(txt, W / 2, 88, 48, E.reason === 'time' ? '#ffd34a' : '#ffffff', 'center');
     } else if (E.step === 'pose') {
-      const name = this.result().winner, txt = '¡GANA ' + name + '!';
+      const name = this.result().winner, txt = this.teams ? '¡GANA EL ' + name.toUpperCase() + '!' : '¡GANA ' + name + '!';
       const size = txt.length * 16 > W - 20 ? 8 : 16, k = Math.min(1, E.t / 12);
       t.text(txt, W / 2, Math.round(-20 + 34 * k), size, '#ffd34a', 'center');
     }
