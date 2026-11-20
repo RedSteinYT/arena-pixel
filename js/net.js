@@ -18,7 +18,7 @@ const Net = (() => {
   let role = null, peer = null, code = null, ui = 'menu', uiMsg = '';
   // anfitrión
   const peers = {};                 // pid -> { n, ctl, st, inp, seq, ack }
-  let lastStatus = '', lastCfg = null, fighting = false, roomCap = 4;
+  let lastStatus = '', lastCfg = null, fighting = false, roomCap = 4, roomMode = null, lastCode = '', padShown = null;
   const hostHist = new Map();       // frame -> { v, s }
   let sentFx = new WeakSet(), sndBuf = [], rec = false;
   // invitado
@@ -153,7 +153,7 @@ const Net = (() => {
       }
       if (!peer) throw { type: 'unavailable-id' };
     } catch (e) { return fail(e); }
-    role = 'host'; lastStatus = ''; roomCap = Select.MODES[Select.state.mode].cap;
+    role = 'host'; lastStatus = ''; roomMode = Select.state.mode; roomCap = Select.MODES[roomMode].cap;
     peer.on('connection', onConn);
     peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
     peer.on('error', e => console.warn('Red:', e.type || e));
@@ -281,6 +281,7 @@ const Net = (() => {
     if (d.t === 'welcome') { myNum = d.n; setUI('client'); return; }
     if (d.t === 'full') return fail({ type: 'full', cap: d.cap });
     if (d.t === 'closed') return lost('El anfitrión cerró la sala.');
+    if (d.t === 'kicked') { const c = code; lost(`El anfitrión cambió el modo de la sala. Vuelve a entrar con el mismo código: ${c}`); lastCode = c; renderUI(); return; }
     if (d.t === 'start') { Select.leaveRemote(); cliHist.clear(); latest = applied = -1; pendFx = []; pendSnd = []; startFight(d.cfg, { late: !!d.late, remote: true }); return; }
     if (d.t === 'status') {
       hostStatus = d; hostPaused = d.paused;
@@ -358,7 +359,8 @@ const Net = (() => {
     if (ui === 'menu') {
       h = `<p class="onlInfo">Juega con tus amigos por internet: uno crea la sala y los demás entran con su código.</p>
         <button class="go big" id="oCreate">✚ CREAR SALA</button>
-        <div class="onlJoin"><input id="oCode" maxlength="5" placeholder="CÓDIGO" autocomplete="off" spellcheck="false"><button id="oJoin">ENTRAR ▶</button></div>
+        <div class="onlJoin"><input id="oCode" maxlength="5" placeholder="CÓDIGO" autocomplete="off" spellcheck="false" value="${lastCode}"><button id="oJoin">ENTRAR ▶</button></div>
+        ${padKeyboard()}
         ${uiMsg ? `<p class="onlErr">${uiMsg}</p>` : ''}
         <button id="oBack">◀ VOLVER</button>`;
     } else if (ui === 'connecting') {
@@ -371,7 +373,7 @@ const Net = (() => {
         ${roomTags(roomInfo())}
         <p class="onlCount${full ? ' full' : ''}">Jugadores: <b>${n} / ${roomCap}</b></p>
         ${playerList()}
-        <p class="onlHint">${uiMsg || (full ? '¡Sala llena! Ya podéis empezar.' : `Faltan ${roomCap - n} para empezar: la sala tiene que estar llena.`)}</p>
+        <p class="onlHint">${uiMsg || (full ? '¡Sala llena! Ya podéis empezar.' : `${roomCap - n === 1 ? 'Falta 1 jugador' : 'Faltan ' + (roomCap - n) + ' jugadores'} para empezar: la sala tiene que estar llena.`)}</p>
         <div class="row onlRow"><button class="go" id="oGo"${full ? '' : ' disabled'}>EMPEZAR ▶</button><button id="oOpts">CAMBIAR MODO</button><button id="oClose">CERRAR SALA</button></div>`;
     } else if (ui === 'client') {
       const R = hostStatus && hostStatus.room;
@@ -392,11 +394,27 @@ const Net = (() => {
     on('oOpts', () => Select.openOnlineSetup());
     on('oClose', () => close());
     on('oLeave', () => close());
+    for (const b of el.querySelectorAll('.okb button')) b.onclick = () => {
+      const i = $('oCode'), k = b.dataset.k; Sfx.blip();
+      if (k === 'del') i.value = i.value.slice(0, -1);
+      else if (i.value.length < 5) i.value += k;
+      lastCode = i.value;
+    };
     const inp = $('oCode');
     if (inp) {
+      inp.addEventListener('input', () => { lastCode = inp.value; });
       inp.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') join(inp.value); };
       inp.oninput = () => { inp.value = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); };
     }
+  }
+  // teclado en pantalla para escribir el código con el mando (solo si estás usando mando).
+  // Los códigos usan letras y números sin I, L, O, 0 ni 1 (para no confundirlos)
+  function padKeyboard() {
+    padShown = !!(typeof Nav !== 'undefined' && Nav.padMode);
+    if (!padShown) return '';
+    const rows = ['23456789', 'QWERTYUP', 'ASDFGHJK', 'ZXCVBNM'];
+    return `<div class="okb">${rows.map(r => `<div>${[...r].map(ch => `<button data-k="${ch}">${ch}</button>`).join('')}</div>`).join('')}
+      <div><button data-k="del" class="okbDel">⌫ BORRAR</button></div></div>`;
   }
   // resumen de la sala: modo, vidas, tiempo, objetos y cómo se elige la arena
   function roomTags(R) {
@@ -429,7 +447,10 @@ const Net = (() => {
     peerDevs: () => Object.keys(peers).filter(pid => peers[pid].ctl && peers[pid].ctl.open).map(pid => 'net:' + pid),
     connected: dev => role === 'host' ? !!peers[dev.slice(4)] : true,
     inputs() { const o = {}; for (const pid in peers) o['net:' + pid] = peers[pid].inp; return o; },
-    tick() { if (role === 'host') hostTick(); if (role) cursorsTick(); },
+    tick() {
+      if (role === 'host') hostTick(); if (role) cursorsTick();
+      if (!role && ui === 'menu' && screen === 'online' && padShown !== !!Nav.padMode) renderUI();
+    },
     record(v) { rec = v; },
     hostSend, clientFrame,
     sendStart(cfg) { lastCfg = cfg; sentFx = new WeakSet(); hostHist.clear(); for (const pid in peers) peers[pid].ack = -1; sendAll({ t: 'start', cfg }); },
@@ -439,7 +460,16 @@ const Net = (() => {
     // anfitrión: quiénes están en la sala (para la votación) y cuántos son
     roster: () => [{ key: 'host', n: 1, name: nick }].concat(Object.keys(peers).map(pid => ({ key: 'net:' + pid, n: peers[pid].n, name: peers[pid].name }))),
     playerCount: () => 1 + Object.keys(peers).length,
-    roomChanged() { roomCap = Select.MODES[Select.state.mode].cap; lastStatus = ''; renderUI(); },
+    // el anfitrión guardó modo y opciones: si cambió el modo, los invitados salen y vuelven a entrar con el mismo código
+    roomChanged() {
+      const mode = Select.state.mode;
+      if (mode !== roomMode && Object.keys(peers).length) {
+        for (const pid in peers) { const c = peers[pid].ctl; if (c && c.open) c.send({ t: 'kicked' }); }
+        const ids = Object.keys(peers); setTimeout(() => ids.forEach(drop), 300);    // tiempo para que llegue el aviso
+        uiMsg = 'Cambiaste el modo: tus amigos tienen que volver a entrar con el mismo código.';
+      }
+      roomMode = mode; roomCap = Select.MODES[mode].cap; lastStatus = ''; renderUI();
+    },
     get roomCap() { return roomCap; },
   };
 })();

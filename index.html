@@ -408,6 +408,11 @@
     color: #fff; background: #120d24; border: 4px solid var(--line); box-shadow: inset 0 0 0 2px var(--hi); padding: 8px; outline: none; }
   .onlJoin input:focus { border-color: var(--gold); }
   .onlJoin button { width: auto !important; }
+  /* teclado en pantalla (mando) */
+  .okb { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .okb > div { display: flex; gap: 4px; }
+  .okb button { width: 30px !important; height: 28px; padding: 0 !important; font-size: 11px; }
+  .okb button.okbDel { width: auto !important; padding: 0 12px !important; }
   .onlCode { font-size: 34px; letter-spacing: .25em; padding: 12px 0 10px .25em; color: var(--gold); background: #120d24;
     text-shadow: 3px 3px 0 #9c1f3c; border: 4px solid var(--line); box-shadow: inset 0 0 0 2px var(--hi); user-select: all; }
   .onlRow { gap: 8px; justify-content: center; }

@@ -342,8 +342,6 @@ const Select = (() => {
       if (a === 'back') return backScreen();
       if (a === 'controls') return openControls();
       if (a.startsWith('mode:')) {
-        const m = MODES[a.slice(5)];
-        if (S.onlineSetup && Net.isHost && m.cap < Net.playerCount()) { Sfx.blip(); toast(`En la sala hay ${Net.playerCount()} jugadores: ese modo es para ${m.cap}`); return; }
         S.mode = a.slice(5); Sfx.join(); openOpts();
       }
       return;
