@@ -151,7 +151,7 @@
     }
   };
   defineItem({
-    id: 'bumeran', name: 'Bumerán', kind: 'weapon', weight: 0.9, uses: 99, rest: -0.5,
+    id: 'bumeran', name: 'Bumerán', kind: 'weapon', weight: 0.9, uses: 6, rest: -0.5,      // 6 lanzamientos
     icon(c) { shape(c, 8, 9, -Math.PI / 2, 1, '#ffb040', '#a8461f'); px(c, 8, 9, '#fff0c0'); },
     held(c, x, y, ang, dir, t, f, k) { shape(c, x, y - 2 * k, -Math.PI / 2 - dir * 0.4, k, '#ffb040', '#a8461f'); },
     moves: {
@@ -174,6 +174,9 @@
         const dx = tx - it.x, dy = ty - it.y, d = Math.hypot(dx, dy) || 1, sp = Math.min(6.5, 2 + it.t * 0.08);
         it.vx = dx / d * sp; it.vy = dy / d * sp;
         if (o && o.alive() && d < 10) {                       // ¡atrapado!
+          if (it.uses <= 0) {                                 // era el último lanzamiento: se rompe al atraparlo
+            g.burst(it.x, it.y, 10, 'spark', '#ffb040'); Sfx.brk(); it.dead = true; return false;
+          }
           if (!o.item) { o.item = { id: 'bumeran', uses: it.uses, t: 0 }; ItemSys.refreshStats(o); Sfx.pickup(); it.dead = true; return false; }
         }
       }
@@ -198,7 +201,6 @@
     const [hx, hy] = ItemSys.handPos(f);
     const it = ItemSys.spawn(g, 'bumeran', hx, hy, { st: 'boomer', owner: f, dir: f.dir, uses: held.uses, hit: [], k: ItemSys.kOf(f) });
     it.t = 0;
-    f.item = null; ItemSys.refreshStats(f);
-    if (it.uses <= 0) it.uses = 1;
+    f.item = null; ItemSys.refreshStats(f);               // (los usos ya se descontaron al lanzarlo)
   }
 })();
