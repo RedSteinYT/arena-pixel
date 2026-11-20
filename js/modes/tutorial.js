@@ -176,7 +176,7 @@ const Tutorial = (() => {
         if (T.hit && ctx.step >= T.seq.length) { if (d.comboN >= T.seq.length && d.comboBy === p) return ok(); }
         else if (!T.hit && ctx.step >= T.seq.length) return ok();
         // el combo se cortó: el Dummy se recuperó o tardaste demasiado
-        if (T.hit && ctx.seqT > 12 && d.st !== 'hitstun' && p.st !== 'attack') return fail(`El combo se cortó después del paso ${ctx.step}: ${ctx.step >= T.seq.length ? 'el último golpe no acertó' : 'encadena el siguiente golpe justo al acertar'}.`);
+        if (T.hit && ctx.seqT > 12 && !d.stunned(g) && p.st !== 'attack' && !(p.st === 'jumpsquat' || (!p.grounded && ctx.seqT < 50))) return fail(`El combo se cortó después del paso ${ctx.step}: ${ctx.step >= T.seq.length ? 'el último golpe no acertó' : 'encadena el siguiente golpe justo al acertar'}.`);
         if (ctx.seqT > 120) return fail(`Tardaste demasiado en el paso ${ctx.step + 1}.`);
       }
       return;

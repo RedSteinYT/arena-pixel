@@ -154,7 +154,10 @@ class Game {
     if (d.grounded && kb < 4 && Math.abs(h.ang) < 50) ly = 0;     // golpes flojos: se queda en el suelo
     // en mitad de un combo, los golpes normales empujan menos (el rival no se escapa por el propio golpe)
     if (d.comboN >= 2 && !long && !remate && a.move && !a.move.smash && !a.move.special && !a.move.finisher && d.grounded) lx *= 0.5;
-    if (a.move && a.move.popup && !long && ly > -6.2) ly = -6.2;    // el ataque hacia arriba siempre levanta (también a 0 %)
+    if (a.move && a.move.popup && !long) {           // el ataque hacia arriba siempre levanta (también a 0 %) y el rival flota un poco: da tiempo a saltar y seguir
+      if (ly > -5.4) ly = -5.4;
+      d.floatT = 44;
+    }
     d.lvx = lx; d.lvy = ly; d.vx = 0; d.vy = 0; d.ff = false;
     if (ly < -0.5) { d.grounded = false; d.plat = null; }
     if (d.st === 'ledge') { d.grounded = false; }
@@ -163,6 +166,7 @@ class Game {
     d.stun = Math.round(kb * 3.6);
     // aturdimiento mínimo para que los combos encadenen (los golpes normales, no los fuertes ni los especiales)
     if (!long && a.move && a.st === 'attack' && !a.move.smash && !a.move.special) d.stun = Math.max(d.stun, link ? 22 : 20);
+    if (d.floatT > 0 && a.move && a.move.popup) d.stun = Math.max(d.stun, 40);   // mientras flota sigue aturdido
     d.flash = 4;
     d.upUsed = false; d.sideUsed = false; d.dodgeUsed = false;
     d.lastHitBy = a; d.lastHitT = this.frame;

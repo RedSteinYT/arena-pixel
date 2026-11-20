@@ -98,7 +98,7 @@ class Fighter {
     // COMBO ASISTIDO: si el rival sigue aturdido por tus golpes, el siguiente ataque te acerca a él
     // y los fuertes salen más rápido, para que el combo no dependa de reflejos sobrehumanos
     this.lunge = 0; this.lungeTo = null;
-    const vic = g && g.fighters && g.fighters.find(o => o !== this && o.comboBy === this && o.comboN <= 5 && o.stunned(g) && Math.abs(o.x - this.x) < 64 && Math.abs(o.y - this.y) < 40);
+    const vic = g && g.fighters && g.fighters.find(o => o !== this && o.comboBy === this && o.comboN <= 5 && o.stunned(g) && Math.abs(o.x - this.x) < 64 && Math.abs(o.y - this.y) < 64);
     if (vic && !this.move.special && !this.move.throw && name !== 'grab') {
       const dx = vic.x - this.x;
       if (Math.abs(dx) > 2 && !this.move.air) this.dir = sgn(dx);
@@ -195,6 +195,7 @@ class Fighter {
     if (this.chainT > 0 && --this.chainT <= 0) { this.chain = 0; this.noRepeat = null; this.comboTier = 0; }
     if (this.comboT > 0) this.comboT--;
     if (this.remateT > 0) this.remateT--;
+    if (this.floatT > 0 && --this.floatT > 0 && this.st !== 'hitstun') this.floatT = 0;
     if (this.st !== 'shield' && this.shieldHP < 50) this.shieldHP = Math.min(50, this.shieldHP + 0.1);
 
     const I = this.inp;
@@ -300,6 +301,12 @@ class Fighter {
       let nx = this.x + sgn(v.x - this.x) * st;
       if (this.grounded && this.plat) nx = clamp(nx, this.plat.x1 + 2, this.plat.x2 - 2);
       this.x = nx;
+      // en el aire también se ajusta la altura, para que el golpe aéreo encuentre al rival
+      if (!this.grounded) {
+        const dy = (v.y - v.S.hh * 0.5) - (this.y - this.S.hh * 0.5);
+        const sy = Math.min(this.lunge, 4, Math.max(0, Math.abs(dy) - 3)); this.lunge -= sy;
+        this.y += sgn(dy) * sy; if (sy > 0 && Math.sign(this.vy) !== sgn(dy)) this.vy *= 0.5;
+      }
     }
     // lanzamiento: el agarrado sigue la mano hasta que sale disparado
     if (m.throw && this.holding) {
@@ -456,7 +463,7 @@ class Fighter {
     const noGrav = this.st === 'attack' && this.move && this.move.noGrav && this.move.noGrav(this, this.t);
     const freeze = this.st === 'dodge' && this.dodgeKind === 'air' && this.t < 18;
     if (!this.grounded && !noGrav && !freeze) {
-      const grav = (this.st === 'hitstun' ? this.S.grav * 0.9 : this.S.grav) * (STAGE.grav || 1);
+      const grav = (this.st === 'hitstun' ? this.S.grav * (this.floatT > 0 ? 0.45 : 0.9) : this.S.grav) * (STAGE.grav || 1);   // tras un ataque hacia arriba flota un poco
       this.vy += grav;
       const cap = this.ff ? this.S.fastFall : this.S.maxFall;
       if (this.vy > cap) this.vy = this.ff ? cap : Math.max(cap, this.vy - 0.6);
