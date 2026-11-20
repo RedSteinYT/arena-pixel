@@ -1,0 +1,132 @@
+<div align="center">
+
+<img src="docs/img/portada.png" alt="Portada de Arena Píxel" width="820">
+
+# Arena Píxel
+
+**Un juego de lucha de plataformas en pixel art, hecho por [RedStein](https://github.com/RedSteinYT).**
+Hasta 4 jugadores en el mismo teclado o con mandos, o en línea con tus amigos sin instalar nada.
+
+### [▶ JUGAR AHORA](https://redsteinyt.github.io/arena-pixel/)
+
+![Navegador](https://img.shields.io/badge/se_juega_en-el_navegador-e8344e?style=for-the-badge)
+![Jugadores](https://img.shields.io/badge/jugadores-1_a_4-43c6f0?style=for-the-badge)
+![En línea](https://img.shields.io/badge/en_línea-P2P_sin_servidores-5ee08a?style=for-the-badge)
+![Sin instalar](https://img.shields.io/badge/instalar-nada-ffd34a?style=for-the-badge)
+
+</div>
+
+---
+
+## 🥊 De qué va
+
+Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen volando con cada golpe. Gana el último que conserve vidas.
+
+<p align="center">
+  <img src="docs/img/vs.png" alt="Pantalla VS: RedStein contra Coloso" width="49%">
+  <img src="docs/img/isla-celeste.png" alt="Pelea a cuatro en la Isla Celeste" width="49%">
+</p>
+
+- **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo largo con un golpe fuerte.
+- **14 objetos** que caen en plena pelea: armas que cambian tu ataque (espada láser, bláster, bumerán…), cosas para lanzar y poderes temporales.
+- **Pantalla VS** con pullas antes de cada combate y música rock propia para cada arena.
+- **Modo en línea** con código de sala: uno crea la sala, los demás escriben el código y a pelear.
+- **PRÁCTICA y TUTORIAL** para aprender todo lo anterior paso a paso.
+
+## 🧙 Luchadores
+
+| | Luchador | Estilo |
+|---|---|---|
+| 🔥 | **RedStein** | El luchador del canal. Espada de cristal en llamas, arco que se carga y golpes que queman. |
+| 🌪️ | **Brisa** | Exploradora del viento. Ataques de varios golpes que se encadenan, triple salto y muy ligera. |
+| 🔮 | **Runa** | Hechicera rúnica. Bastón largo, flota, se teletransporta y deja trampas. Mejor lejos que cerca. |
+| 🪨 | **Bloque** | Gólem de roca. Lento y torpe en el aire, pero cada golpe pesa una tonelada. |
+| 🤖 | **Maniquí** | Robot de entrenamiento. Equilibrado: ni muy rápido ni muy pesado. |
+| ⛰️ | **Coloso** | Gigante de la montaña. Lentísimo, pero sus golpes ocupan medio escenario. No se le puede agarrar. |
+
+## 🗺️ Arenas
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/img/isla-celeste.png" alt="Isla Celeste"><br><b>Isla Celeste</b><br>Isla flotante sobre un mar de nubes. La arena clásica, sin trucos.</td>
+    <td width="50%"><img src="docs/img/fortaleza.png" alt="Fortaleza RedStein"><br><b>Fortaleza RedStein</b><br>El castillo del canal sobre un mar de lava. Las rejillas echan humo antes de lanzar géiseres de fuego.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/img/glaciar.png" alt="Glaciar Boreal"><br><b>Glaciar Boreal</b><br>Isla de hielo bajo la aurora. El suelo es hielo pulido: se patina al frenar y al arrancar.</td>
+    <td><img src="docs/img/templo.png" alt="Templo del Equilibrio"><br><b>Templo del Equilibrio</b><br>Una balanza gigante: el plato con más peso baja y el otro sube. Coloso hunde su lado; Brisa apenas lo mueve.</td>
+  </tr>
+</table>
+
+## 🎮 Modos
+
+| Modo | |
+|---|---|
+| **1 contra 1** | El duelo clásico. |
+| **2 contra 2** | Por equipos. |
+| **Triple amenaza** | Tres luchadores, todos contra todos. |
+| **Todos contra todos** | Cuatro luchadores, caos total. |
+| **🌐 En línea** | Hasta 4 amigos, cada uno desde su casa, con un código de sala. |
+| **🎯 Práctica** | Tú contra el Dummy, con vidas infinitas y tu mejor combo apuntado. |
+| **📘 Tutorial** | Lecciones de básicos, combos, avanzados y objetos, con tareas que te dicen qué pulsar. |
+
+Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difícil.
+
+<p align="center">
+  <img src="docs/img/practica.png" alt="Modo práctica en la Arena de entrenamiento" width="70%"><br>
+  <sub>La Arena de entrenamiento: una arena que todavía no ha terminado de cargar.</sub>
+</p>
+
+## ⌨️ Controles
+
+| Acción | Teclado 1 | Teclado 2 |
+|---|---|---|
+| Moverse | `W` `A` `S` `D` | Flechas |
+| Saltar | `Espacio` | `Shift der.` / `Num 0` |
+| Ataque | `J` / `F` | `.` / `Num 1` |
+| Especial | `K` / `G` | `-` / `Num 2` |
+| Escudo | `L` / `Shift izq.` | `Ctrl der.` / `Num 3` |
+| Agarre / objeto | `Ñ` / `H` | `,` / `Num 4` |
+| Ataque fuerte | `U` | `M` / `Num 5` |
+
+**Mandos:** Xbox, PlayStation y Nintendo, sin configurar nada. Si el navegador no detecta tu mando, pulsa cualquier botón con la página abierta. Todos los botones están en **CONTROLES**, en el menú principal.
+
+## 🌐 Jugar en línea
+
+1. Uno entra en **EN LÍNEA → CREAR SALA** y comparte el código de 5 letras (o el enlace, con **COPIAR ENLACE**).
+2. Los demás entran en **EN LÍNEA**, escriben ese código y pulsan **ENTRAR**.
+3. Escoged modo, arena y luchador como siempre, y a pelear.
+
+La conexión va directa entre vuestros navegadores (WebRTC con [PeerJS](https://peerjs.com/)): no hay servidor del juego ni cuentas. Pon tu nombre en el recuadro de arriba a la derecha para que tus amigos sepan quién eres.
+
+## 🛠️ Para desarrolladores
+
+Es HTML, CSS y JavaScript puro, sin dependencias de instalación ni paso de compilación. Todo el arte se dibuja con código y la música es un secuenciador de WebAudio.
+
+```bash
+git clone https://github.com/RedSteinYT/arena-pixel.git
+cd arena-pixel
+python -m http.server 8080
+```
+
+Después abre `http://localhost:8080`.
+
+```
+index.html          menú, estilos y orden de carga
+js/core.js          lienzo, utilidades y efectos de sonido
+js/fighter.js       física, estados y combos de los luchadores
+js/game.js          la pelea: golpes, cámara, HUD y reglas
+js/ai.js            las CPU
+js/net.js           modo en línea (PeerJS, el anfitrión manda)
+js/characters/      un archivo por luchador
+js/stages/          un archivo por arena
+js/items/           armas, lanzables y poderes
+js/modes/           práctica y tutorial
+```
+
+---
+
+<div align="center">
+
+Hecho con 🔥 por **RedStein** · [Jugar](https://redsteinyt.github.io/arena-pixel/)
+
+</div>
