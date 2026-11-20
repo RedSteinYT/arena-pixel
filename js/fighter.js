@@ -571,7 +571,7 @@ class Fighter {
 
   respawn() {
     const R = STAGE.respawn;
-    this.x = R.x; this.y = R.y; this.vx = this.vy = this.lvx = this.lvy = 0;
+    this.x = R.x; this.y = R.y; this.vx = this.vy = this.lvx = this.lvy = 0; this.sdLaunch = false;
     this.dmg = 0; this.burn = 0; this.grounded = false; this.plat = null; this.dir = 1;
     this.setSt('respawn'); this.invuln = 120; this.scarf = null;
     this.jumps = this.S.jumps; this.upUsed = this.sideUsed = this.dodgeUsed = false; this.shieldHP = 50;
