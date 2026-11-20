@@ -21,7 +21,7 @@
 
   // ---------------------------------------------------------- ESPADA LÁSER
   defineItem({
-    id: 'sable', name: 'Espada láser', kind: 'weapon', weight: 1.2, uses: 26, rest: -1.0,
+    id: 'sable', name: 'Espada láser', kind: 'weapon', weight: 1.2, uses: 20, rest: -1.0,
     icon(c) {
       rect(c, 7, 10, 2, 5, '#9aa3b8'); rect(c, 7, 12, 2, 1, '#4a5068'); rect(c, 6, 10, 4, 1, '#cfd6e8');
       rect(c, 7, 1, 2, 9, '#5ff2ff'); rect(c, 7, 1, 1, 9, '#e8ffff');
@@ -151,7 +151,7 @@
     }
   };
   defineItem({
-    id: 'bumeran', name: 'Bumerán', kind: 'weapon', weight: 0.9, uses: 6, rest: -0.5,      // 6 lanzamientos
+    id: 'bumeran', name: 'Bumerán', kind: 'weapon', weight: 0.9, uses: 10, rest: -0.5,      // 10 lanzamientos
     icon(c) { shape(c, 8, 9, -Math.PI / 2, 1, '#ffb040', '#a8461f'); px(c, 8, 9, '#fff0c0'); },
     held(c, x, y, ang, dir, t, f, k) { shape(c, x, y - 2 * k, -Math.PI / 2 - dir * 0.4, k, '#ffb040', '#a8461f'); },
     moves: {
