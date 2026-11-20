@@ -248,7 +248,7 @@ function showResults() {
     const who = f.cpu ? 'CPU ' + f.pal.name.toUpperCase() : (f.cfg && f.cfg.name) || f.label;
     return `<div class="rc${win ? ' win' : ' out'}" style="--pc:${f.pal.main};--pd:${f.pal.dark};--pl:${f.pal.light}">
       <div class="rcTop"><b class="rcPlace">${place}º</b><span class="rcWho">${esc(who)}</span></div>
-      <div class="rcStage"><canvas width="96" height="120"></canvas></div>
+      <div class="rcStage"><canvas width="192" height="240"></canvas></div>
       <div class="rcName">${esc(f.ch.name.toUpperCase())}<small>${f.cpu ? LEVEL_NAMES[f.level] : '&nbsp;'}</small></div>
       <div class="rcStats"><div><span>KOs</span><b>${f.kos}</b></div><div><span>Caídas</span><b>${f.falls}</b></div>
         <div><span>Daño</span><b>${f.dealt}%</b></div><div><span>Combo</span><b>${f.bestCombo || 0}</b></div></div>
@@ -275,12 +275,14 @@ function drawResSprites() {
     resTmpC.clearRect(0, 0, SPR, SPR);
     renderFighter(resTmpC, f, uiFrame);
     // escala entera que cabe en la tarjeta (el gigante se dibuja más pequeño)
-    const h = f.S.hh + 16, k = Math.max(1, Math.min(3, Math.floor((Hc - 12) / h)));
-    const fit = h * k > Hc - 8 ? (Hc - 8) / h : k;
+    // misma escala para todos (así el gigante se ve gigante); solo baja si no cabe
+    const h = f.S.hh + 16;
+    let fit = 4; while (fit > 1 && h * fit > Hc - 14) fit--;
     c.clearRect(0, 0, Wc, Hc); c.imageSmoothingEnabled = false;
-    c.fillStyle = 'rgba(12,10,36,.55)'; c.fillRect(Wc / 2 - 22, Hc - 10, 44, 3);           // sombra / plataforma
-    c.fillStyle = f.pal.dark; c.fillRect(Wc / 2 - 30, Hc - 7, 60, 2);
-    c.save(); c.translate(Math.round(Wc / 2), Hc - 9); c.scale(fit, fit); c.drawImage(resTmp, -OX, -OY); c.restore();
+    const sw = Math.max(44, f.S.hw * fit * 3);
+    c.fillStyle = 'rgba(12,10,36,.55)'; c.fillRect(Wc / 2 - sw / 2, Hc - 18, sw, 6);         // sombra / plataforma
+    c.fillStyle = f.pal.dark; c.fillRect(Wc / 2 - sw / 2 - 12, Hc - 12, sw + 24, 4);
+    c.save(); c.translate(Math.round(Wc / 2), Hc - 16); c.scale(fit, fit); c.drawImage(resTmp, -OX, -OY); c.restore();
   }
 }
 
