@@ -76,6 +76,12 @@ function defineCharacter(def) {
       pose: typeof P === 'function' || !P || !P.fh ? P : Object.assign({}, P, { fh: P.bh, bh: P.fh, wind: undefined }),
     });
   }
+  // ataque hacia arriba: que alcance la cabeza de un rival que está de pie a tu lado
+  // (antes solo tocaba al que estaba en el aire) y que siempre lo levante lo bastante para seguir en el aire
+  if (M.utilt && !M.utilt._fixed) {
+    M.utilt = Object.assign({}, M.utilt, { popup: true, _fixed: true,
+      hit: M.utilt.hit.map(h => !h.box || h.box[1] + h.box[3] >= -14 ? h : Object.assign({}, h, { box: [h.box[0], h.box[1], h.box[2], -14 - h.box[1]] })) });
+  }
   if (!M.jab3) M.jab3 = Object.assign({}, M.ftilt, {
     s: Math.max(3, M.ftilt.s - 2), finisher: true,
     hit: M.ftilt.hit.map(h => Object.assign({}, h, { d: Math.max(3, Math.round(h.d * 0.8)), b: h.b + 0.6, g: h.g * 0.85, ang: 40 })),
