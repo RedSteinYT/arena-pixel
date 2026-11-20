@@ -50,6 +50,7 @@ const POINTER_SCREENS = ['modeScr', 'optScr', 'stageScr', 'charScr'];
 
 function show(id) {
   for (const s of SCREENS) $(s).classList.toggle('on', s === id);
+  if (typeof Sonido !== 'undefined') Sonido.showDock(!!id && id !== 'pause');   // volumen flotante: solo en los menús
   uiLock = 15;
   Nav.clear();
 }
@@ -70,7 +71,7 @@ const Nav = {
   container() { const id = screen === 'game' ? (paused ? 'pause' : null) : screen; return id ? $(id) : null; },
   items() {
     const c = this.container(); if (!c) return [];
-    return [...c.querySelectorAll('button')].filter(b => !b.disabled && b.offsetParent !== null);
+    return [...c.querySelectorAll('button, input[type=range]')].filter(b => !b.disabled && b.offsetParent !== null);
   },
   set(b) {
     if (this.el) this.el.classList.remove('focus');
@@ -85,6 +86,9 @@ const Nav = {
   },
   move(dx, dy) {
     this.ensure(); if (!this.el) return;
+    if (dx && this.el.type === 'range') {                 // deslizador: ← → cambia el valor
+      this.el.value = +this.el.value + dx; this.el.dispatchEvent(new Event('input')); return;
+    }
     const r0 = this.el.getBoundingClientRect(), c0 = [r0.left + r0.width / 2, r0.top + r0.height / 2];
     // primero los botones "alineados" (que se solapan en el otro eje: misma fila al ir a los lados,
     // misma columna al subir/bajar); entre ellos, el más cercano. Así no se salta botones.
@@ -108,7 +112,7 @@ const Nav = {
     }
     if (best) { this.set(best); Sfx.blip(); }
   },
-  press() { this.ensure(); if (this.el) this.el.click(); },
+  press() { this.ensure(); if (!this.el) return; if (this.el.type === 'range') this.el.dispatchEvent(new Event('padpress')); else this.el.click(); },   // A sobre un deslizador: silenciar
 };
 addEventListener('mousemove', () => { if (Nav.padMode) { Nav.padMode = false; if (Nav.el) Nav.el.classList.remove('focus'); } });
 

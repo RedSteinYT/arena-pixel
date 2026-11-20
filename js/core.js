@@ -47,12 +47,12 @@ function boxHit(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y +
 
 // ---------------- Sonido sintetizado ----------------
 const Sfx = (() => {
-  let ac = null, master = null, noiseBuf = null;
+  let ac = null, master = null, noiseBuf = null, userLevel = 1;    // userLevel: volumen de efectos elegido (0-1)
   function ctx() {
     if (!ac) {
       try {
         ac = new (window.AudioContext || window.webkitAudioContext)();
-        master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+        master = ac.createGain(); master.gain.value = 0.5 * userLevel; master.connect(ac.destination);
       } catch (e) { return null; }
     }
     if (ac.state === 'suspended') ac.resume();
@@ -86,6 +86,7 @@ const Sfx = (() => {
   const api = {
     muted: false,
     unlock: ctx,
+    setLevel(v) { userLevel = v; if (master) master.gain.setTargetAtTime(0.5 * v, ac.currentTime, 0.03); },
     ctxState: () => ac ? ac.state : "none",
     hit(power) {
       const p = clamp(power / 14, 0.2, 1);

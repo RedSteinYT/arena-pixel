@@ -9,6 +9,7 @@ const Music = (() => {
   const VOL = 0.2;                       // volumen general de la música
   let ac = null, bus = null, gtrIn = null, leadIn = null, dlyIn = null, nbuf = null;
   let song = null, songId = null, want = null, ducked = false, switchAt = 0, vol = 0;
+  let userGain = null, userLevel = 1;                 // volumen de música elegido por el jugador (0-1)
   let nextT = 0, step = 0, bar = 0, sec = 0;
 
   // ---------- notas ----------
@@ -131,7 +132,8 @@ const Music = (() => {
     ac = Sfx.unlock(); if (!ac) return false;
     const comp = ac.createDynamicsCompressor();
     comp.threshold.value = -20; comp.ratio.value = 3.5; comp.attack.value = 0.01; comp.release.value = 0.2;
-    comp.connect(ac.destination);
+    userGain = ac.createGain(); userGain.gain.value = userLevel; userGain.connect(ac.destination);
+    comp.connect(userGain);
     bus = ac.createGain(); bus.gain.value = 0; bus.connect(comp);
     gtrIn = chain(2.4, 1900, 0.55);                    // guitarra rítmica: cálida, sin agudos que molesten
     leadIn = chain(1.7, 2900, 0.6);                    // guitarra solista
@@ -307,5 +309,6 @@ const Music = (() => {
       if (init() && ac.state === 'suspended') ac.resume();
     },
     get playing() { return songId; },
+    setLevel(v) { userLevel = v; if (userGain) userGain.gain.setTargetAtTime(v, ac.currentTime, 0.03); },
   };
 })();
