@@ -441,6 +441,8 @@ function soundOn() {
 }
 for (const ev of ['keydown', 'pointerdown', 'touchstart']) addEventListener(ev, soundOn, { capture: true, passive: true });
 if (navigator.userActivation && navigator.userActivation.hasBeenActive) document.body.classList.add('sound-on');
+// ?captura en la dirección: sin los avisos de sonido y de mando (para hacer capturas limpias)
+if (/[?&]captura/.test(location.search)) document.body.classList.add('sound-on', 'pad-on');
 
 // aviso cuando el navegador detecta (o pierde) un mando
 let toastT = 0;
