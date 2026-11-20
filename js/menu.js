@@ -235,14 +235,53 @@ addEventListener('keydown', e => {
 });
 
 let resultsShown = false;
+// resultados: una tarjeta por luchador con su sprite haciendo la animación de victoria o de derrota
+let resSprites = [];
 function showResults() {
   resultsShown = true;
-  const r = game.result();
+  const r = game.result(), winners = game.endSeq ? game.endSeq.winners : r.order.slice(0, 1);
   $('resTitle').textContent = r.teams ? `¡GANA EL ${r.winner.toUpperCase()}!` : `¡GANA ${r.winner}!`;
-  const rows = r.order.map((f, i) => `<tr><td>${i + 1}º</td><td><span class="dot" style="background:${f.pal.main}"></span>${fullName(f)}${f.cpu ? ` <small>(${LEVEL_NAMES[f.level]})</small>` : ''}</td><td>${f.kos}</td><td>${f.falls}</td><td>${f.dealt}%</td><td>${f.bestCombo || 0}</td></tr>`).join('');
-  $('resTable').innerHTML = `<tr><th>#</th><th>Jugador</th><th>KOs</th><th>Caídas</th><th>Daño</th><th>Combo</th></tr>${rows}`;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  resSprites = [];
+  $('resCards').innerHTML = r.order.map((f, i) => {
+    const win = winners.includes(f), place = win ? 1 : r.teams ? 2 : i + 1;     // por equipos: el equipo que pierde es 2º
+    const who = f.cpu ? 'CPU ' + f.pal.name.toUpperCase() : (f.cfg && f.cfg.name) || f.label;
+    return `<div class="rc${win ? ' win' : ' out'}" style="--pc:${f.pal.main};--pd:${f.pal.dark};--pl:${f.pal.light}">
+      <div class="rcTop"><b class="rcPlace">${place}º</b><span class="rcWho">${esc(who)}</span></div>
+      <div class="rcStage"><canvas width="96" height="120"></canvas></div>
+      <div class="rcName">${esc(f.ch.name.toUpperCase())}<small>${f.cpu ? LEVEL_NAMES[f.level] : '&nbsp;'}</small></div>
+      <div class="rcStats"><div><span>KOs</span><b>${f.kos}</b></div><div><span>Caídas</span><b>${f.falls}</b></div>
+        <div><span>Daño</span><b>${f.dealt}%</b></div><div><span>Combo</span><b>${f.bestCombo || 0}</b></div></div>
+    </div>`;
+  }).join('');
+  // copias de los luchadores para dibujarlas dentro de cada tarjeta
+  const cvs = $('resCards').querySelectorAll('canvas');
+  r.order.forEach((f, i) => {
+    const copy = Object.assign(Object.create(Object.getPrototypeOf(f)), f, {
+      x: OX, y: OY, dir: 1, st: winners.includes(f) ? 'win' : 'lose', animT: 0, flash: 0, invuln: 0, hidden: false,
+      move: null, item: null, scarf: null, holding: null, heldBy: null, vx: 0, vy: 0, grounded: true });
+    copy.inp = blankInput(); copy.buffs = {};
+    for (let k = 0; k < 10; k++) copy.updateScarf();
+    resSprites.push({ f: copy, cv: cvs[i] });
+  });
   $('results').classList.toggle('remote', Net.isClient);
   go('results');
+}
+const resTmp = mkCanvas(SPR, SPR), resTmpC = resTmp.getContext('2d');
+function drawResSprites() {
+  for (const s of resSprites) {
+    const f = s.f, c = s.cv.getContext('2d'), Wc = s.cv.width, Hc = s.cv.height;
+    f.animT++; f.updateScarf();
+    resTmpC.clearRect(0, 0, SPR, SPR);
+    renderFighter(resTmpC, f, uiFrame);
+    // escala entera que cabe en la tarjeta (el gigante se dibuja más pequeño)
+    const h = f.S.hh + 16, k = Math.max(1, Math.min(3, Math.floor((Hc - 12) / h)));
+    const fit = h * k > Hc - 8 ? (Hc - 8) / h : k;
+    c.clearRect(0, 0, Wc, Hc); c.imageSmoothingEnabled = false;
+    c.fillStyle = 'rgba(12,10,36,.55)'; c.fillRect(Wc / 2 - 22, Hc - 10, 44, 3);           // sombra / plataforma
+    c.fillStyle = f.pal.dark; c.fillRect(Wc / 2 - 30, Hc - 7, 60, 2);
+    c.save(); c.translate(Math.round(Wc / 2), Hc - 9); c.scale(fit, fit); c.drawImage(resTmp, -OX, -OY); c.restore();
+  }
 }
 
 // ---------- mandos en portada, pausa, resultados y controles ----------
@@ -369,6 +408,7 @@ function frameBody(now) {
   // dibujo
   const act = (screen === 'game' || screen === 'results' || (screen === 'controls' && ctrlReturn === 'pause')) && game ? game : active;
   if (act) act.render(bctx);
+  if (screen === 'results') drawResSprites();
   if (act === game && game && game.cfg.tutorial) Tutorial.renderWorld(bctx, game);
   const shake = active && !frozen ? active.shake : 0;
   const ox = shake ? Math.round((Math.random() * 2 - 1) * shake) * S : 0, oy = shake ? Math.round((Math.random() * 2 - 1) * shake) * S : 0;
