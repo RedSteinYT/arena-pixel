@@ -154,8 +154,7 @@ const Select = (() => {
   function slotTeam(i) { const s = S.slots[i]; return s && s.team != null ? s.team : (i < 2 ? 0 : 1); }
   function palOf(i) {
     if (!mode().teams) return i;
-    let n = 0; for (let k = 0; k < i; k++) if (S.slots[k] && slotTeam(k) === slotTeam(i)) n++;
-    return TEAM_PALS[slotTeam(i)][n % 2];
+    return TEAM_PALS[slotTeam(i)][0];          // por equipos, todos los compañeros con el mismo color
   }
   function carriedBy(i) { for (const d in S.cur) if (S.cur[d].carry === i) return d; return null; }
   function hoverChar(dev) {

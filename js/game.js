@@ -172,12 +172,13 @@ class Game {
           let x;
           if (anchor) {                                     // al lado de su compañero, alternando lados
             const side = i % 2 ? -1 : 1, step = Math.ceil((i + 1) / 2);
-            x = anchor.x + side * anchor.dir * step * (anchor.S.hw + f.S.hw + 12);
-            if (x < P.x1 + f.S.hw + 2 || x > P.x2 - f.S.hw - 2) x = anchor.x - side * anchor.dir * step * (anchor.S.hw + f.S.hw + 12);
+            const gap = anchor.S.hw + f.S.hw + Math.max(anchor.S.hw, f.S.hw) * 2.4 + 8;   // según el tamaño: el gigante (y sus brazos) no tapan al compañero
+            x = anchor.x + side * anchor.dir * step * gap;
+            if (x < P.x1 + f.S.hw + 2 || x > P.x2 - f.S.hw - 2) x = anchor.x - side * anchor.dir * step * gap;
             x = clamp(x, P.x1 + f.S.hw + 2, P.x2 - f.S.hw - 2);
           } else x = (M.x1 + M.x2) / 2 + (i - (lost.length - 1) / 2) * 34;   // nadie en pie: en el centro
           x = Math.round(x);
-          f.out = false; f.spawn(x, P.y, anchor ? sgn(anchor.x - x) || 1 : (x < W / 2 ? 1 : -1)); f.setSt('portal'); f.invuln = 9999;
+          f.out = false; f.spawn(x, P.y, anchor ? anchor.dir : (x < W / 2 ? 1 : -1)); f.setSt('portal'); f.invuln = 9999;   // mira al mismo lado que su compañero
         });
         E.step = 'portal'; E.t = 0; E.portal = lost;
         E.focus = this.focusOn(anchor ? [anchor, ...lost] : lost) || { x: (M.x1 + M.x2) / 2, y: M.y - 34, z: 2 };
@@ -470,7 +471,9 @@ class Game {
     for (const f of this.fighters) if (f.st === 'respawn') drawRespawnPad(c, f, this.frame);
     ItemSys.drawGround(c, this);
     // luchadores (el que está atacando, delante)
-    const order = this.fighters.filter(f => f.alive()).sort((a, b) => (a.st === 'attack') - (b.st === 'attack'));
+    const order = this.phase === 'end'
+      ? this.fighters.filter(f => f.alive()).sort((a, b) => b.S.hh - a.S.hh)            // al final: los grandes detrás
+      : this.fighters.filter(f => f.alive()).sort((a, b) => (a.st === 'attack') - (b.st === 'attack'));
     for (const f of order) {
       if (f.st === 'respawn' || f.st === 'grabbed' || f.st === 'gone' || f.st === 'portal') continue;
       const surf = surfaceBelow(f.x, f.y);
