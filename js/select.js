@@ -6,7 +6,7 @@
 const Select = (() => {
   const MODES = {
     '1v1':  { cap: 2, teams: false, name: '1 VS 1',             sub: 'Duelo clásico' },
-    '2v2':  { cap: 4, teams: true,  name: '2 VS 2',             sub: 'Equipo rojo contra azul' },
+    '2v2':  { cap: 4, teams: true,  name: 'EQUIPOS',            sub: 'Equipo rojo contra azul' },
     '3ffa': { cap: 3, teams: false, name: 'TRIPLE AMENAZA',     sub: 'Tres luchadores, todos contra todos' },
     '4ffa': { cap: 4, teams: false, name: 'TODOS CONTRA TODOS', sub: 'Cuatro luchadores, caos total' },
     practice: { cap: 1, teams: false, name: 'PRÁCTICA', sub: 'Tú contra el Dummy' },

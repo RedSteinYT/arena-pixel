@@ -70,7 +70,7 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 | Modo | |
 |---|---|
 | **1 contra 1** | El duelo clásico. |
-| **2 contra 2** | Por equipos: rojo contra azul. |
+| **Equipos** | Rojo contra azul: 2 contra 2, o incluso 3 contra 1 si alguien se atreve. |
 | **Triple amenaza** | Tres luchadores, todos contra todos. |
 | **Todos contra todos** | Cuatro luchadores, caos total. |
 | **🌐 En línea** | Hasta 4 amigos, cada uno desde su casa, con un código de sala. |

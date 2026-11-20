@@ -90,7 +90,7 @@ const VS = (() => {
     });
     for (const c of cols) for (const m of c.mem) { const f = m.f; f.st = 'taunt'; f.dir = 1; f.flash = 0; f.invuln = 0; f.hitlag = 0; f.charge = 0; }
     info = {
-      mode: g.teams ? '2 VS 2' : n === 2 ? '1 VS 1' : n === 3 ? 'TRIPLE AMENAZA' : 'TODOS CONTRA TODOS',
+      mode: g.teams ? 'EQUIPOS' : n === 2 ? '1 VS 1' : n === 3 ? 'TRIPLE AMENAZA' : 'TODOS CONTRA TODOS',
       stage: (g.stage.def.name || '').toUpperCase() + '  ·  ' + cfg.stocks + (cfg.stocks === 1 ? ' VIDA' : ' VIDAS'),
       big,
     };

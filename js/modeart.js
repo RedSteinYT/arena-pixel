@@ -79,10 +79,10 @@ const ModeArt = (() => {
       fighter(c, g, 1, 84, GY, -1, 'ftilt', T + 9, 3);
       burstAt(c, 64, GY - 16, T, '#ffd34a', 1.1);
     },
-    // 2 VS 2: equipo rojo (Brisa + Bloque) contra equipo azul (Runa + Coloso)
+    // EQUIPOS: equipo rojo (Brisa + Bloque) contra equipo azul (Runa + Coloso)
     '2v2'(c, T) {
       backdrop(c, ['#2a0a14', '#8a1a2a', '#f05a3a'], ['#0a1430', '#20408a', '#4a9aff'], T);
-      const g = game('2v2', [['bloque', 4], ['brisa', 0], ['runa', 1], ['coloso', 5]]);
+      const g = game('2v2', [['bloque', 0], ['brisa', 0], ['runa', 1], ['coloso', 1]]);
       fighter(c, g, 3, 108, GY + 4, -1, 'fsmash', T, 3);
       fighter(c, g, 0, 30, GY, 1, 'fsmash', T + 6, 3);
       fighter(c, g, 1, 50, GY - 20, 1, 'fair', T, 3);
