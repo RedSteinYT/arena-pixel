@@ -86,6 +86,7 @@ const Sfx = (() => {
   const api = {
     muted: false,
     unlock: ctx,
+    ctxState: () => ac ? ac.state : "none",
     hit(power) {
       const p = clamp(power / 14, 0.2, 1);
       noise(0.25 + p * 0.45, 0.08 + p * 0.2, 400 - p * 300);

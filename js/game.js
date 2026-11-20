@@ -6,6 +6,19 @@
 
 function fullName(f) { return (f.cpu ? 'CPU ' + f.pal.name.toUpperCase() : f.cfg && f.cfg.name ? f.cfg.name : f.label) + ' · ' + f.ch.name.toUpperCase(); }
 
+// corazón de rubí de 7×6 para las vidas. lit: si aún la tienes · ph: fase del destello (0-9 = brillando)
+const RUBY = ['.11.11.', '1222221', '1222223', '.12223.', '..133..', '...3...'];
+function drawRuby(c, x, y, lit, ph) {
+  const cols = lit ? { 1: '#ff5a7a', 2: '#d81e46', 3: '#8a0f2a' } : { 1: '#4a4468', 2: '#3a3555', 3: '#2c2844' };
+  for (let r = 0; r < 6; r++) for (let k = 0; k < 7; k++) if (RUBY[r][k] !== '.')            // contorno
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const rr = r + dy, kk = k + dx; if (rr < 0 || rr > 5 || kk < 0 || kk > 6 || RUBY[rr][kk] === '.') px(c, x + kk, y + rr, OUTLINE); }
+  for (let r = 0; r < 6; r++) for (let k = 0; k < 7; k++) { const ch = RUBY[r][k]; if (ch !== '.') px(c, x + k, y + r, cols[ch]); }
+  if (!lit) return;
+  px(c, x + 1, y + 1, '#ffd0da');                          // punto de luz fijo
+  if (ph < 10) for (let r = 0; r < 6; r++) for (let k = 0; k < 7; k++)   // destello diagonal que cruza la gema
+    if (RUBY[r][k] !== '.' && (k + r === ph - 1 || k + r === ph - 2)) px(c, x + k, y + r, '#ffffff', k + r === ph - 1 ? 0.9 : 0.5);
+}
+
 class Game {
   constructor(cfg) {
     // cfg: { players: [{device, pal, team, num}], teams: bool, stocks }
@@ -319,7 +332,7 @@ class Game {
   hudLayout() {
     const n = this.fighters.length, w = 108, gap = 6;
     const total = n * w + (n - 1) * gap, x0 = Math.round((W - total) / 2);
-    return this.fighters.map((f, i) => ({ f, x: x0 + i * (w + gap), y: 236, w, h: 30 }));
+    return this.fighters.map((f, i) => ({ f, x: x0 + i * (w + gap), y: 228, w, h: 38 }));
   }
   renderHudArt(c) {
     // tarjetas del marcador: esquinas recortadas, franja diagonal del jugador y cristal
@@ -341,14 +354,12 @@ class Game {
       rect(c, x + cut, y, w - cut, 1, pal.light, 0.8);                      // brillo superior
       if (hurt) shape(x, y, w, h, '#ffffff', 0.25);
       // retrato
-      f.ch.portrait(c, x + 14, y + 16, pal, 2);
+      f.ch.portrait(c, x + 14, y + 20, pal, 2);
       if (this.teams) rect(c, x + w - 9, y + 3, 4, 4, f.team === 0 ? '#e8443f' : '#3d7ef2');
-      // vidas: pequeños rombos
-      const shown = Math.min(f.stocks, 5);
-      for (let i = 0; i < shown; i++) {
-        const sx = x + 36 + i * 7, sy = y + 25;
-        rect(c, sx - 1, sy - 2, 3, 5, OUTLINE); rect(c, sx - 2, sy - 1, 5, 3, OUTLINE);
-        px(c, sx, sy - 1, pal.glow); rect(c, sx - 1, sy, 3, 1, pal.light); px(c, sx, sy + 1, pal.main);
+      // vidas: corazones de rubí (los perdidos quedan apagados), con un destello de gema de vez en cuando
+      if (!this.cfg.practice && !this.cfg.tutorial) {
+        const total = Math.min(5, Math.max(this.cfg.stocks || 0, f.stocks)), left = Math.min(f.stocks, 5);
+        for (let i = 0; i < total; i++) drawRuby(c, x + 37 + i * 10, y + 29, i < left, (this.frame + i * 7) % 170);
       }
       if (!f.out) ItemSys.drawHud(c, f, x + 2, y - 18);    // objeto en la mano y poderes activos
     }
@@ -357,13 +368,13 @@ class Game {
   // ---------- texto (pantalla a resolución real) ----------
   renderText(t) {
     for (const { f, x, y } of this.hudLayout()) {
-      t.text(f.label, x + 36, y + 4, 8, f.out ? '#6c6890' : '#ffffff');
-      if (f.out) { t.text('FUERA', x + 28, y + 13, 8, '#6c6890'); continue; }
+      t.text(f.label, x + 37, y + 3, 8, f.out ? '#6c6890' : '#ffffff');
+      if (f.out) { t.text('FUERA', x + 40, y + 16, 8, '#6c6890'); continue; }
       const d = Math.floor(f.dmg);
       const col = d < 50 ? '#ffffff' : d < 90 ? '#ffe27a' : d < 130 ? '#ff9a4a' : d < 180 ? '#ff4a3a' : '#d01a3a';
       const shakeX = f.flash > 0 ? (Math.random() * 2 - 1) : 0;
-      t.text(d + '%', x + 104 + shakeX, y + 10, 16, col, 'right');
-      if (f.stocks > 5 && !this.cfg.practice && !this.cfg.tutorial) t.text('x' + f.stocks, x + 66, y + 22, 8, '#c9c1e8');
+      t.text(d + '%', x + 104 + shakeX, y + 11, 16, col, 'right');          // debajo del nombre: 3 cifras no lo tapan
+      if (f.stocks > 5 && !this.cfg.practice && !this.cfg.tutorial) t.text('x' + f.stocks, x + 88, y + 29, 8, '#ff8aa0');
     }
     // contador de combo sobre el rival y ¡REMATE!
     for (const f of this.fighters) {

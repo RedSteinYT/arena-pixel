@@ -287,6 +287,11 @@ function frameBody(now) {
   Input.update();
   const dt = Math.max(0, Math.min(100, now - last)); last = now;   // nunca negativo (relojes que retroceden)
   uiFrame++;
+  // aviso de sonido: un botón del mando también intenta activarlo (y el aviso se quita en cuanto el audio suena, venga de donde venga)
+  if (!document.body.classList.contains('sound-on')) {
+    if (Input.devices().some(d => d.startsWith('gp') && (Input.read(d).raw || []).some(Boolean))) soundOn();
+    else if (uiFrame % 20 === 0 && Sfx.ctxState() === 'running') document.body.classList.add('sound-on');
+  }
   if (uiLock > 0) uiLock--;
   padUI();
   Net.tick();
@@ -375,8 +380,10 @@ function frameBody(now) {
 // Cualquier tecla, clic o toque lo activa (los mandos no cuentan para el navegador).
 function soundOn() {
   const ac = Sfx.unlock();
-  if (ac && ac.state === 'suspended') ac.resume();
-  document.body.classList.add('sound-on');
+  if (!ac) return;
+  const done = () => { if (ac.state === 'running') document.body.classList.add('sound-on'); };   // el aviso se quita solo si de verdad suena
+  if (ac.state === 'suspended') ac.resume().then(done, () => {});
+  done();
 }
 for (const ev of ['keydown', 'pointerdown', 'touchstart']) addEventListener(ev, soundOn, { capture: true, passive: true });
 if (navigator.userActivation && navigator.userActivation.hasBeenActive) document.body.classList.add('sound-on');
