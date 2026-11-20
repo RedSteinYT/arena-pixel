@@ -206,6 +206,13 @@ $('bQuit').onclick = () => {
 };
 $('bRematch').onclick = () => { if (!Net.isClient) startFight(lastCfg); };
 $('bLobby').onclick = () => { if (Net.isClient) return; game = null; Select.openChars(true); };
+// volver a la portada (en línea, el anfitrión vuelve a su sala: los amigos siguen conectados)
+$('bHome').onclick = () => {
+  if (Net.isClient) return;
+  Sfx.blip(); game = null; paused = false; resultsShown = false;
+  Pointer.detach(); Select.state.screen = null;
+  if (Net.isHost) Net.showLobby(); else go('title');
+};
 
 function setPause(v) {
   if (!game || game.phase === 'end' || Net.isClient) return;   // en línea pausa el anfitrión
