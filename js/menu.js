@@ -86,6 +86,11 @@ const Nav = {
   move(dx, dy) {
     this.ensure(); if (!this.el) return;
     const r0 = this.el.getBoundingClientRect(), c0 = [r0.left + r0.width / 2, r0.top + r0.height / 2];
+    // primero los botones "alineados" (que se solapan en el otro eje: misma fila al ir a los lados,
+    // misma columna al subir/bajar); entre ellos, el más cercano. Así no se salta botones.
+    // A los lados solo se va a uno de la misma fila; arriba/abajo, si no hay alineado, al más cercano.
+    const span = (r, horiz) => horiz ? [r.top, r.bottom] : [r.left, r.right];
+    const overlap = (a, b) => Math.min(a[1], b[1]) - Math.max(a[0], b[0]);
     let best = null, bestScore = 1e9;
     for (const b of this.items()) {
       if (b === this.el) continue;
@@ -93,7 +98,12 @@ const Nav = {
       const ddx = c[0] - c0[0], ddy = c[1] - c0[1];
       const main = dx ? ddx * dx : ddy * dy, side = dx ? Math.abs(ddy) : Math.abs(ddx);
       if (main <= 2) continue;
-      const score = main + side * 2.2;
+      const s0 = span(r0, !!dx), s1 = span(r, !!dx);
+      const aligned = overlap(s0, s1) > Math.min(s0[1] - s0[0], s1[1] - s1[0]) * 0.3;
+      if (dx && !aligned) continue;
+      // distancia de borde a borde: un botón ancho debajo no cuenta como "más lejos" que uno estrecho
+      const gap = dx ? (dx > 0 ? r.left - r0.right : r0.left - r.right) : (dy > 0 ? r.top - r0.bottom : r0.top - r.bottom);
+      const score = (aligned ? 0 : 1e5) + Math.max(0, gap) * 10 + side;
       if (score < bestScore) { bestScore = score; best = b; }
     }
     if (best) { this.set(best); Sfx.blip(); }
