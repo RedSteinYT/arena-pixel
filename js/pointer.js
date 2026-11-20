@@ -10,7 +10,7 @@
 const Pointer = (() => {
   const curs = {};
   let host = null;          // { act(dev, el, act), back(dev), info(dev) -> {label, color, badge}, root }
-  let mouseDown = false;
+  let mouseDown = false, ghostsForced = false;   // ghostsForced: ver punteros ajenos aunque el mío esté oculto
 
   const wrapRect = () => document.getElementById('wrap').getBoundingClientRect();
   function ensure(dev) {
@@ -64,7 +64,7 @@ const Pointer = (() => {
       seen.add(g.id);
       let el = ghosts[g.id];
       if (!el) { el = document.createElement('div'); el.className = 'cur ghost'; el.innerHTML = '<i></i><span></span>'; document.getElementById('cursors').appendChild(el); ghosts[g.id] = el; }
-      el.style.display = host ? '' : 'none';
+      el.style.display = host || ghostsForced ? '' : 'none';
       el.style.transform = `translate(${Math.round(g.x * r.width)}px, ${Math.round(g.y * r.height)}px)`;
       el.style.setProperty('--c', g.color);
       const lab = el.querySelector('span'); if (lab.textContent !== g.label) lab.textContent = g.label;
@@ -75,6 +75,7 @@ const Pointer = (() => {
   return {
     get cursors() { return curs; },
     setGhosts,
+    forceGhosts(v) { ghostsForced = v; if (!v && !host) setGhosts([]); },
     // mis punteros, en proporción a la pantalla del juego (para mandarlos por la red)
     mine() {
       if (!host) return [];

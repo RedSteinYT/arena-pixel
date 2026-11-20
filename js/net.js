@@ -18,7 +18,7 @@ const Net = (() => {
   let role = null, peer = null, code = null, ui = 'menu', uiMsg = '';
   // anfitrión
   const peers = {};                 // pid -> { n, ctl, st, inp, seq, ack }
-  let nextNum = 2, lastStatus = '', lastCfg = null, fighting = false;
+  let lastStatus = '', lastCfg = null, fighting = false, roomCap = 4;
   const hostHist = new Map();       // frame -> { v, s }
   let sentFx = new WeakSet(), sndBuf = [], rec = false;
   // invitado
@@ -143,6 +143,7 @@ const Net = (() => {
   // ============================================================
   async function create() {
     setUI('connecting', 'Creando la sala…');
+    if (screen !== 'online') go('online');                 // se ve el "creando…" y después la sala
     try {
       await loadLib();
       for (let i = 0; i < 5 && !peer; i++) {
@@ -152,7 +153,7 @@ const Net = (() => {
       }
       if (!peer) throw { type: 'unavailable-id' };
     } catch (e) { return fail(e); }
-    role = 'host'; nextNum = 2; lastStatus = '';
+    role = 'host'; lastStatus = ''; roomCap = Select.MODES[Select.state.mode].cap;
     peer.on('connection', onConn);
     peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
     peer.on('error', e => console.warn('Red:', e.type || e));
@@ -161,8 +162,9 @@ const Net = (() => {
   function onConn(c) {
     const pid = c.peer;
     if (!peers[pid]) {
-      if (Object.keys(peers).length >= MAX_GUESTS) { c.on('open', () => { c.send({ t: 'full' }); setTimeout(() => c.close(), 400); }); return; }
-      peers[pid] = { n: nextNum++, inp: blankInput(), seq: -1, ack: -1, name: cleanName(c.metadata && c.metadata.name) || 'Amigo' };
+      if (Object.keys(peers).length >= Math.min(MAX_GUESTS, roomCap - 1)) { c.on('open', () => { c.send({ t: 'full', cap: roomCap }); setTimeout(() => c.close(), 400); }); return; }
+      const used = new Set(Object.values(peers).map(p => p.n)); let n = 2; while (used.has(n)) n++;   // el número libre más bajo
+      peers[pid] = { n, inp: blankInput(), seq: -1, ack: -1, name: cleanName(c.metadata && c.metadata.name) || 'Amigo' };
     }
     const P = peers[pid];
     P[c.label === 'st' ? 'st' : 'ctl'] = c;
@@ -194,6 +196,7 @@ const Net = (() => {
     else if (d.t === 'name') { P.name = cleanName(d.name) || 'Amigo'; lastStatus = ''; renderUI(); if (Select.screen === 'chars') Select.refresh(); }
     else if (d.t === 'cur') { P.cur = Array.isArray(d.c) ? d.c.slice(0, 4) : []; P.curT = performance.now(); }
     else if (d.t === 'bye') drop(pid);
+    else if (d.t === 'vote' && typeof d.s === 'string') Select.netVote('net:' + pid, d.s);
   }
   // en qué pantalla está el anfitrión (los invitados le siguen)
   function hostScreen() {
@@ -210,7 +213,7 @@ const Net = (() => {
   const ghostList = (list, pre) => (list || []).map((c, i) => ({ id: pre + i, x: +c.x || 0, y: +c.y || 0, label: String(c.label || '').slice(0, 12), color: /^#[0-9a-f]{3,8}$/i.test(c.color) ? c.color : '#ffffff' }));
   function cursorsTick() {
     if (++curTick % 3) return;
-    const onChars = Select.screen === 'chars';
+    const onChars = Select.screen === 'chars' || Select.screen === 'stage';
     if (role === 'client') { if (onChars && hostSt && hostSt.open) hostSt.send({ t: 'cur', c: Pointer.mine() }); return; }
     if (!onChars) return;
     const now = performance.now(), mine = ghostList(Pointer.mine(), 'h'), others = {};
@@ -226,9 +229,13 @@ const Net = (() => {
     const scr = hostScreen();
     fighting = scr === 'fight' || scr === 'results';
     const players = [{ n: 1, name: nick, host: true }].concat(Object.keys(peers).map(pid => ({ n: peers[pid].n, name: peers[pid].name })));
-    const st = { t: 'status', scr, players, sel: scr === 'chars' ? Select.netState() : null, paused: !!(scr === 'fight' && paused) };
+    const st = { t: 'status', scr, players, room: roomInfo(), sel: scr === 'chars' ? Select.netState() : scr === 'stage' ? Select.stageState() : null, paused: !!(scr === 'fight' && paused) };
     const js = JSON.stringify(st);
     if (js !== lastStatus) { lastStatus = js; sendAll(st); }
+  }
+  function roomInfo() {
+    const S = Select.state, M = Select.MODES[S.mode] || Select.MODES['1v1'];
+    return { mode: M.name, cap: roomCap, stocks: S.stocks, time: S.time || 0, items: !!S.items, vote: !!S.arenaVote };
   }
   // tras simular: estado de la pelea para cada invitado (solo lo que cambió desde lo que confirmó)
   function hostSend(g) {
@@ -270,14 +277,15 @@ const Net = (() => {
   function onClientData(d) {
     if (!d) return;
     if (d.t === 'snap') return onSnap(d);
-    if (d.t === 'curs') { if (Select.screen === 'chars') Pointer.setGhosts(ghostList(d.c, '')); return; }
+    if (d.t === 'curs') { if (Select.screen === 'chars' || Select.screen === 'stage') Pointer.setGhosts(ghostList(d.c, '')); return; }
     if (d.t === 'welcome') { myNum = d.n; setUI('client'); return; }
-    if (d.t === 'full') return fail({ type: 'full' });
+    if (d.t === 'full') return fail({ type: 'full', cap: d.cap });
     if (d.t === 'closed') return lost('El anfitrión cerró la sala.');
     if (d.t === 'start') { Select.leaveRemote(); cliHist.clear(); latest = applied = -1; pendFx = []; pendSnd = []; startFight(d.cfg, { late: !!d.late, remote: true }); return; }
     if (d.t === 'status') {
       hostStatus = d; hostPaused = d.paused;
       if (d.scr === 'chars') Select.remoteSel(d.sel, 'net:' + peer.id);
+      else if (d.scr === 'stage' && d.sel) Select.remoteStage(d.sel, 'net:' + peer.id);
       else if (d.scr === 'lobby' || d.scr === 'mode' || d.scr === 'stage') {
         if (screen !== 'online' && screen !== 'controls') { Select.leaveRemote(); game = null; go('online'); }
         renderUI();
@@ -307,7 +315,7 @@ const Net = (() => {
   // ---------- fin ----------
   function fail(e) {
     const why = { 'peer-unavailable': 'No existe ninguna sala con ese código (o el anfitrión la cerró).', 'unavailable-id': 'No se pudo crear la sala. Prueba otra vez.',
-      full: 'La sala está llena (máximo 4 jugadores).', timeout: 'No hay respuesta del servicio de conexión. Revisa tu internet.',
+      full: `La sala está llena${e && e.cap ? ' (es para ' + e.cap + ' jugadores)' : ''}.`, timeout: 'No hay respuesta del servicio de conexión. Revisa tu internet.',
       network: 'Sin conexión con el servicio de salas. Revisa tu internet.', 'browser-incompatible': 'Tu navegador no permite juego en línea.' }[e && e.type] || (e && e.message) || 'Error de conexión.';
     close(true); setUI('menu', why);
     if (screen !== 'online') { Select.leaveRemote(); go('online'); }
@@ -339,7 +347,8 @@ const Net = (() => {
         rows.push(`<li class="${p.n === myNum ? 'me' : ''}"><b>J${p.n}</b> ${nm} <small>${p.host ? '(anfitrión)' : p.n === myNum ? '(tú)' : 'conectado'}</small></li>`);
       }
     }
-    for (let i = rows.length; i < 4; i++) rows.push(`<li class="free"><b>J${i + 1}</b> libre</li>`);
+    const cap = role === 'host' ? roomCap : hostStatus && hostStatus.room ? hostStatus.room.cap : 4;
+    for (let i = rows.length; i < cap; i++) rows.push(`<li class="free"><b>J${i + 1}</b> libre</li>`);
     return `<ul class="onlPlayers">${rows.join('')}</ul>`;
   }
   function renderUI() {
@@ -355,26 +364,32 @@ const Net = (() => {
     } else if (ui === 'connecting') {
       h = `<p class="onlInfo blink">${uiMsg}</p><button id="oCancel">CANCELAR</button>`;
     } else if (ui === 'host') {
+      const n = 1 + Object.keys(peers).length, full = n >= roomCap;
       h = `<p class="onlInfo">Comparte este código con tus amigos:</p>
         <div class="onlCode">${code}</div>
         <div class="row onlRow"><button id="oCopy">COPIAR CÓDIGO</button><button id="oLink">COPIAR ENLACE</button></div>
+        ${roomTags(roomInfo())}
+        <p class="onlCount${full ? ' full' : ''}">Jugadores: <b>${n} / ${roomCap}</b></p>
         ${playerList()}
-        <p class="onlHint">${uiMsg || 'Cuando estéis todos, elige el modo. Los que no quepan en el modo podrán mirar.'}</p>
-        <div class="row onlRow"><button class="go" id="oGo">ELEGIR MODO ▶</button><button id="oClose">CERRAR SALA</button></div>`;
+        <p class="onlHint">${uiMsg || (full ? '¡Sala llena! Ya podéis empezar.' : `Faltan ${roomCap - n} para empezar: la sala tiene que estar llena.`)}</p>
+        <div class="row onlRow"><button class="go" id="oGo"${full ? '' : ' disabled'}>EMPEZAR ▶</button><button id="oOpts">CAMBIAR MODO</button><button id="oClose">CERRAR SALA</button></div>`;
     } else if (ui === 'client') {
-      const what = { mode: 'El anfitrión está eligiendo el modo…', stage: 'El anfitrión está eligiendo la arena…' }[hostStatus && hostStatus.scr] || 'Esperando a que el anfitrión empiece…';
-      h = `<p class="onlInfo">Estás en la sala</p><div class="onlCode">${code}</div>${playerList()}
+      const R = hostStatus && hostStatus.room;
+      const what = { mode: 'El anfitrión está cambiando el modo…', stage: 'El anfitrión está eligiendo la arena…' }[hostStatus && hostStatus.scr] || (R && (hostStatus.players || []).length >= R.cap ? '¡Sala llena! Esperando a que el anfitrión empiece…' : 'Esperando a que la sala se llene…');
+      h = `<p class="onlInfo">Estás en la sala</p><div class="onlCode">${code}</div>${R ? roomTags(R) : ''}
+        ${R ? `<p class="onlCount">Jugadores: <b>${(hostStatus.players || []).length} / ${R.cap}</b></p>` : ''}${playerList()}
         <p class="onlHint blink">${what}</p><button id="oLeave">SALIR DE LA SALA</button>`;
     }
     el.innerHTML = h;
     const on = (id, fn) => { const b = $(id); if (b) b.onclick = () => { Sfx.blip(); fn(); }; };
-    on('oCreate', create);
+    on('oCreate', () => Select.openOnlineSetup());     // primero el modo y las opciones; después se crea la sala
     on('oJoin', () => join($('oCode').value));
     on('oBack', () => go('title'));
     on('oCancel', () => close());
     on('oCopy', () => copy(code, 'Código copiado'));
     on('oLink', () => copy(link, 'Enlace copiado: tus amigos solo tienen que abrirlo'));
-    on('oGo', () => Select.openMode());
+    on('oGo', () => { if (1 + Object.keys(peers).length >= roomCap) Select.openStage(); });
+    on('oOpts', () => Select.openOnlineSetup());
     on('oClose', () => close());
     on('oLeave', () => close());
     const inp = $('oCode');
@@ -382,6 +397,11 @@ const Net = (() => {
       inp.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') join(inp.value); };
       inp.oninput = () => { inp.value = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); };
     }
+  }
+  // resumen de la sala: modo, vidas, tiempo, objetos y cómo se elige la arena
+  function roomTags(R) {
+    return `<div class="onlRoom"><span>MODO <b>${R.mode}</b></span><span>VIDAS <b>${R.stocks}</b></span><span>TIEMPO <b>${R.time ? R.time + ' MIN' : 'SIN LÍMITE'}</b></span>
+      <span>OBJETOS <b>${R.items ? 'SÍ' : 'NO'}</b></span><span>ARENA <b>${R.vote ? 'VOTACIÓN' : 'ANFITRIÓN'}</b></span></div>`;
   }
   function copy(txt, ok) {
     const done = () => { uiMsg = ok; renderUI(); };
@@ -414,5 +434,12 @@ const Net = (() => {
     hostSend, clientFrame,
     sendStart(cfg) { lastCfg = cfg; sentFx = new WeakSet(); hostHist.clear(); for (const pid in peers) peers[pid].ack = -1; sendAll({ t: 'start', cfg }); },
     sendSlot(d) { if (hostCtl && hostCtl.open) hostCtl.send(Object.assign({ t: 'slot' }, d)); },
+    sendVote(id) { if (hostCtl && hostCtl.open) hostCtl.send({ t: 'vote', s: id }); },
+    create,
+    // anfitrión: quiénes están en la sala (para la votación) y cuántos son
+    roster: () => [{ key: 'host', n: 1, name: nick }].concat(Object.keys(peers).map(pid => ({ key: 'net:' + pid, n: peers[pid].n, name: peers[pid].name }))),
+    playerCount: () => 1 + Object.keys(peers).length,
+    roomChanged() { roomCap = Select.MODES[Select.state.mode].cap; lastStatus = ''; renderUI(); },
+    get roomCap() { return roomCap; },
   };
 })();

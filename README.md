@@ -100,9 +100,12 @@ Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difí
 
 ## 🌐 Jugar en línea
 
-1. Uno entra en **EN LÍNEA → CREAR SALA** y comparte el código de 5 letras (o el enlace, con **COPIAR ENLACE**).
-2. Los demás entran en **EN LÍNEA**, escriben ese código y pulsan **ENTRAR**.
-3. Escoged modo, arena y luchador como siempre, y a pelear.
+1. El anfitrión entra en **EN LÍNEA → CREAR SALA**, elige el **modo** y las **opciones de combate** (vidas, tiempo, objetos y cómo se elige la arena) y recibe un código de 5 letras (o el enlace, con **COPIAR ENLACE**).
+2. Los demás entran en **EN LÍNEA**, escriben ese código y pulsan **ENTRAR**. La sala admite justo los jugadores del modo (2 en 1 contra 1, 3 en Triple amenaza, 4 en el resto).
+3. Con la sala llena, el anfitrión pulsa **EMPEZAR** y se elige la arena:
+   - **Elige el anfitrión:** todos ven su puntero y la arena que va mirando, en vivo.
+   - **Votación:** cada uno deja su sello en la arena que quiere; gana la más votada y, si hay empate, se sortea entre las empatadas.
+4. Cada uno elige su luchador y a pelear.
 
 La conexión va directa entre vuestros navegadores (WebRTC con [PeerJS](https://peerjs.com/)): no hay servidor del juego ni cuentas. Pon tu nombre en el recuadro de arriba a la derecha para que tus amigos sepan quién eres.
 

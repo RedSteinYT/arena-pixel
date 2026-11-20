@@ -417,6 +417,26 @@
   .onlPlayers li b { color: var(--gold); margin-right: 6px; }
   .onlPlayers li.me { border-color: var(--gold); }
   .onlPlayers li.free { opacity: .45; }
+  .onlRoom { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; font-size: 8px; }
+  .onlRoom span { padding: 5px 8px; background: #120d24; border: 2px solid var(--line); color: #cfc8f0; }
+  .onlRoom span b { color: var(--gold); }
+  .onlCount { font-size: 11px; color: #fff; }
+  .onlCount b { color: var(--gold); }
+  .onlCount.full b { color: #5ee08a; }
+  #onlBody button:disabled { opacity: .45; filter: grayscale(.6); cursor: not-allowed; }
+  /* votación de arena */
+  .voteBar { display: none; text-align: center; font-size: 1em; padding: .55em 1em; color: #fff; background: rgba(12,10,36,.85);
+    border: .2em solid var(--line); box-shadow: inset 0 0 0 .15em #2a2456; text-shadow: .12em .12em 0 var(--line); }
+  .voteBar.on { display: block; }
+  .voteBar b { color: var(--gold); }
+  .voteBar.hot { border-color: var(--gold); animation: blink .5s steps(2) infinite; }
+  .stile .vstamps { position: absolute; top: .35em; right: .35em; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .2em; max-width: 70%; pointer-events: none; z-index: 2; }
+  .stile .vstamp { min-width: 2.2em; padding: .25em .3em; font-size: .62em; text-align: center; color: #fff; background: var(--sc);
+    border: .18em solid var(--line); box-shadow: inset 0 -.18em 0 rgba(0,0,0,.35); transform: rotate(-8deg); animation: stampIn .25s steps(4); text-shadow: .1em .1em 0 var(--line); }
+  @keyframes stampIn { from { transform: rotate(-20deg) scale(2.2); opacity: 0; } to { transform: rotate(-8deg) scale(1); opacity: 1; } }
+  .stile.vpick { outline: .35em solid #fff; outline-offset: .1em; filter: brightness(1.35); }
+  .stile.vwin { outline: .4em solid var(--gold); outline-offset: .15em; filter: brightness(1.3); transform: translateY(-.3em) scale(1.06); }
+  .stile.vlose { filter: brightness(.45) saturate(.5); }
   #toast { position: absolute; left: 50%; bottom: 4%; z-index: 80; transform: translate(-50%, 30%); opacity: 0; pointer-events: none;
     font-size: clamp(8px, 1cqw, 16px); color: #fff; background: #120d24; border: .25em solid var(--gold); padding: .7em 1.2em; white-space: nowrap;
     box-shadow: 0 .3em 0 rgba(0,0,0,.5); transition: opacity .25s, transform .25s; }
@@ -625,8 +645,13 @@
           <div class="ot"><b>OBJETOS</b><small>Armas, cosas para lanzar y poderes que caen en plena pelea.</small></div>
           <div class="ov"><span class="sbtn arr" data-act="opt:items:-1">◀</span><b data-act="opt:items:1" id="oItems">SÍ</b><span class="sbtn arr" data-act="opt:items:1">▶</span></div>
         </div>
+        <div class="optRow" id="optArena" style="--oc:#5ee08a; display:none">
+          <span class="oi">🗺</span>
+          <div class="ot"><b>ARENA</b><small>En línea: la elige el anfitrión (los demás lo ven en vivo) o se vota entre todos.</small></div>
+          <div class="ov"><span class="sbtn arr" data-act="opt:arena:-1">◀</span><b data-act="opt:arena:1" id="oArena">ANFITRIÓN</b><span class="sbtn arr" data-act="opt:arena:1">▶</span></div>
+        </div>
       </div>
-      <div class="optGo"><span class="sbtn go" data-act="next">ELEGIR ARENA ▶</span></div>
+      <div class="optGo"><span class="sbtn go" data-act="next" id="oNext">ELEGIR ARENA ▶</span></div>
       <div class="hintbar">Mueve tu puntero y elige · <b>Ratón</b> clic · <b>Teclado</b> WASD + J (atrás K) · <b>Mando</b> palanca + A (atrás B)</div>
     </div>
   </div>
@@ -647,6 +672,7 @@
           <div class="sPlate"><div id="sName"></div><div id="sRule"></div><p id="sDesc"></p></div>
         </div>
       </div>
+      <div class="voteBar" id="sVote"></div>
       <div class="sgrid" id="sGrid"></div>
     </div>
   </div>

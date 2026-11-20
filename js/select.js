@@ -18,6 +18,9 @@ const Select = (() => {
     slots: [null, null, null, null],      // { type:'human'|'cpu', dev, char, locked, level, team }
     cur: {},                              // por dispositivo: { slot, carry }
     prevGame: null, prevStage: null, prevRandom: 0,
+    onlineSetup: false,                   // eligiendo modo y opciones para crear (o editar) la sala en línea
+    arenaVote: false,                     // en línea: false = elige el anfitrión · true = votación
+    vote: null,                           // anfitrión: votación en curso { votes: {clave: arena}, phase, t, tied, pick, winner }
   };
   const $ = id => document.getElementById(id);
   const cs = dev => S.cur[dev] || (S.cur[dev] = { slot: -1, carry: -1 });
@@ -28,6 +31,7 @@ const Select = (() => {
   // ---------------- info para los punteros ----------------
   function info(dev) {
     if (S.remote) { const i = S.slots.findIndex(x => x && x.mine); return { label: Net.nick, color: i >= 0 ? PCOL[i] : '#e8e2ff', badge: '' }; }
+    if (Net.isHost && S.screen === 'stage') return { label: Net.nick, color: PCOL[0], badge: '' };   // en línea: los demás ven tu nombre
     const c = cs(dev);
     const label = c.slot >= 0 ? 'J' + humanNum(c.slot) : (dev === 'kb1' ? 'T1' : dev === 'kb2' ? 'T2' : 'M' + (+dev.slice(2) + 1));
     return { label, color: devColor(dev), badge: c.carry >= 0 ? 'CPU' : '' };
@@ -58,6 +62,10 @@ const Select = (() => {
     $('oLives').textContent = S.stocks;
     $('oTime').textContent = timeLabel();
     $('oItems').textContent = S.items ? 'SÍ' : 'NO';
+    const room = S.onlineSetup || Net.isHost;
+    $('optArena').style.display = room ? '' : 'none';
+    $('oArena').textContent = S.arenaVote ? 'VOTACIÓN' : 'ANFITRIÓN';
+    $('oNext').textContent = !S.onlineSetup ? 'ELEGIR ARENA ▶' : Net.isHost ? 'GUARDAR ▶' : 'CREAR SALA ▶';
   }
   const timeTag = () => S.time ? ' · ' + S.time + ' MIN' : '';
   function tickModeArt(frame) {
@@ -333,22 +341,46 @@ const Select = (() => {
       if (!a) return;
       if (a === 'back') return backScreen();
       if (a === 'controls') return openControls();
-      if (a.startsWith('mode:')) { S.mode = a.slice(5); Sfx.join(); openOpts(); }
+      if (a.startsWith('mode:')) {
+        const m = MODES[a.slice(5)];
+        if (S.onlineSetup && Net.isHost && m.cap < Net.playerCount()) { Sfx.blip(); toast(`En la sala hay ${Net.playerCount()} jugadores: ese modo es para ${m.cap}`); return; }
+        S.mode = a.slice(5); Sfx.join(); openOpts();
+      }
       return;
     }
     if (S.screen === 'opts') {
       if (!a) return;
       if (a === 'back') return backScreen();
       if (a === 'controls') return openControls();
-      if (a === 'next') { Sfx.join(); openStage(); return; }
+      if (a === 'next') {
+        Sfx.join();
+        if (S.onlineSetup) {                              // sala en línea: crearla (o guardar los cambios) y volver a la sala
+          S.onlineSetup = false; Pointer.detach(); S.screen = null;
+          if (Net.isHost) { Net.roomChanged(); Net.showLobby(); } else Net.create();
+          return;
+        }
+        openStage(); return;
+      }
       if (a.startsWith('opt:')) {
         const [, key, d] = a.split(':'), dir = +d;
         if (key === 'lives') S.stocks = (S.stocks - 1 + dir + 9) % 9 + 1;                       // 1..9, da la vuelta
         if (key === 'time') S.time = TIMES[(TIMES.indexOf(S.time) + dir + TIMES.length) % TIMES.length];
         if (key === 'items') S.items = !S.items;
+        if (key === 'arena') S.arenaVote = !S.arenaVote;
         showOpts(); Sfx.blip();
         const v = el && el.closest('.optRow') && el.closest('.optRow').querySelector('.ov b');      // pequeño "pop" del valor
         if (v) { v.classList.remove('pop'); void v.offsetWidth; v.classList.add('pop'); }
+      }
+      return;
+    }
+    if (S.screen === 'stage' && S.remote) {                     // invitado en la pantalla de arenas
+      if (!a) return;
+      if (a === 'back') { Net.leave(); return; }
+      if (a === 'controls') return openControls();
+      const rv = S.remoteVote;
+      if (a.startsWith('stage:') && rv && rv.vote && rv.v && (rv.v.phase === 'open' || rv.v.phase === 'count')) {
+        S.myVote = a.slice(6); Net.sendVote(S.myVote); Sfx.join();
+        renderVote(Object.assign({}, rv, { v: Object.assign({}, rv.v, { votes: Object.assign({}, rv.v.votes, { [S.remote]: S.myVote }) }) }));
       }
       return;
     }
@@ -356,6 +388,10 @@ const Select = (() => {
       if (!a) return;
       if (a === 'back') return backScreen();
       if (a === 'controls') return openControls();
+      if (a.startsWith('stage:') && S.vote) {                     // anfitrión en una votación: su voto
+        if (S.vote.phase === 'open' || S.vote.phase === 'count') castVote('host', a.slice(6));
+        return;
+      }
       if (a.startsWith('stage:')) {
         const id = a.slice(6);
         S.stage = id === 'random' ? 'random' : id;
@@ -404,9 +440,10 @@ const Select = (() => {
     Sfx.blip();
     if (S.screen === 'chars' && S.mode === 'practice') { Pointer.detach(); S.screen = null; go('title'); return; }
     if (S.screen === 'chars') openStage();
+    else if (S.screen === 'stage' && Net.isHost) { S.vote = null; Pointer.detach(); S.screen = null; Net.showLobby(); }
     else if (S.screen === 'stage') openOpts();
     else if (S.screen === 'opts') openMode();
-    else if (S.screen === 'mode') { Pointer.detach(); S.screen = null; if (Net.isHost) Net.showLobby(); else go('title'); }
+    else if (S.screen === 'mode') { Pointer.detach(); S.screen = null; if (S.onlineSetup) { S.onlineSetup = false; Net.open(); } else if (Net.isHost) Net.showLobby(); else go('title'); }
   }
   // botón "atrás": deshace paso a paso
   function back(dev) {
@@ -425,9 +462,9 @@ const Select = (() => {
       }
       Sfx.blip(); if (S.mode === 'practice') { Pointer.detach(); S.screen = null; go('title'); } else openStage(); return;
     }
-    if (S.screen === 'stage') { Sfx.blip(); openOpts(); return; }
+    if (S.screen === 'stage') { Sfx.blip(); if (Net.isHost) { S.vote = null; Pointer.detach(); S.screen = null; Net.showLobby(); } else openOpts(); return; }
     if (S.screen === 'opts') { Sfx.blip(); openMode(); return; }
-    if (S.screen === 'mode') { Sfx.blip(); Pointer.detach(); S.screen = null; if (Net.isHost) Net.showLobby(); else go('title'); }
+    if (S.screen === 'mode') { Sfx.blip(); Pointer.detach(); S.screen = null; if (S.onlineSetup) { S.onlineSetup = false; Net.open(); } else if (Net.isHost) Net.showLobby(); else go('title'); }
   }
 
   // ============================================================
@@ -443,7 +480,12 @@ const Select = (() => {
   }
   function openMode() { if (S.mode === 'practice') { S.mode = S.prevMode || '1v1'; S.stage = S.prevStage || 'cielo'; } go('modeScr'); buildMode(); attach('mode'); }
   function openOpts() { go('optScr'); $('oModeTag').textContent = mode().name; showOpts(); attach('opts'); }
-  function openStage() { go('stageScr'); $('sModeTag').textContent = mode().name + ' · ' + S.stocks + ' VIDAS' + timeTag() + (S.items ? ' · OBJETOS' : ''); buildStageGrid(); attach('stage'); }
+  function openStage() {
+    S.vote = Net.isHost && S.arenaVote ? { votes: {}, phase: 'open', t: 0, tied: [], pick: null, winner: null } : null;
+    openStageScreen();
+    renderVote(stageState());
+  }
+  function openStageScreen() { go('stageScr'); $('sModeTag').textContent = mode().name + ' · ' + S.stocks + ' VIDAS' + timeTag() + (S.items ? ' · OBJETOS' : ''); buildStageGrid(); attach('stage'); }
   // keep = true solo al volver de una partida (se conservan las elecciones para la revancha)
   function openChars(keep = false) {
     S.remote = null;
@@ -522,6 +564,7 @@ const Select = (() => {
     while (slots.length < 4) slots.push(null);
     const mi = slots.findIndex(x => x && x.mine);
     if (mi >= 0 && old && S.pend > 0) Object.assign(slots[mi], { char: old.char, locked: old.locked, team: old.team });
+    if (S.remoteVote) { S.remoteVote = null; Pointer.forceGhosts(false); }         // venía de la pantalla de arenas
     const structural = JSON.stringify([sel.mode, sel.stocks, sel.time, sel.stage, slots.map(x => x && [x.type, x.dev, x.char, x.locked, x.level, x.team, x.name])]);
     const fresh = S.screen !== 'chars' || !S.remote;
     S.remote = me; S.mode = sel.mode; S.stocks = sel.stocks; S.time = sel.time || 0; S.stage = sel.stage; S.slots = slots;
@@ -534,13 +577,108 @@ const Select = (() => {
       buildCharGrid(); renderPanels(); attach('chars');
     } else if (structural !== S.lastStruct) { S.lastStruct = structural; renderPanels(); }
   }
-  function leaveRemote() { if (S.remote) { S.remote = null; if (S.screen) { Pointer.detach(); S.screen = null; } } }
+  function leaveRemote() { Pointer.forceGhosts(false); if (S.remote) { S.remote = null; S.remoteVote = null; if (S.screen) { Pointer.detach(); S.screen = null; } } }
+
+  // ============================================================
+  //  ARENA EN LÍNEA: elige el anfitrión (en vivo) o votación
+  // ============================================================
+  const validStage = id => id === 'random' || STAGE_ORDER.includes(id);
+  function castVote(key, id) {
+    if (!S.vote || !validStage(id)) return;
+    S.vote.votes[key] = id; Sfx.join();
+    renderVote(stageState());
+  }
+  function netVote(dev, id) { if (S.screen === 'stage' && S.vote && (S.vote.phase === 'open' || S.vote.phase === 'count')) castVote(dev, id); }
+  // un paso de la votación (anfitrión): todos votan → 3 s para cambiar → recuento → sorteo entre empatadas
+  function stepVote() {
+    const V = S.vote, roster = Net.roster(), keys = roster.map(p => p.key);
+    for (const k in V.votes) if (!keys.includes(k)) delete V.votes[k];          // se fue: su voto no cuenta
+    const all = keys.every(k => V.votes[k]);
+    if (V.phase === 'open' && all) { V.phase = 'count'; V.t = 180; }
+    else if (V.phase === 'count') {
+      if (!all) V.phase = 'open';
+      else if (--V.t <= 0) {
+        const n = {}; for (const k of keys) n[V.votes[k]] = (n[V.votes[k]] || 0) + 1;
+        const best = Math.max(...Object.values(n));
+        V.tied = Object.keys(n).filter(id => n[id] === best);
+        V.winner = V.tied[Math.random() * V.tied.length | 0];             // al azar, pero solo entre las primeras
+        if (V.tied.length > 1) { V.phase = 'draw'; V.t = 0; Sfx.vsSwing(); } else { V.phase = 'win'; V.t = 0; Sfx.remate(); }
+      }
+    } else if (V.phase === 'draw') {
+      V.t++;
+      // la luz va saltando entre las empatadas, cada vez más despacio, y se para en la ganadora
+      const steps = [0, 5, 10, 15, 21, 27, 34, 42, 51, 61, 72, 84, 97, 111];
+      const k = steps.filter(s => s <= V.t).length - 1, i0 = V.tied.indexOf(V.winner);
+      V.pick = V.tied[((i0 - (steps.length - 1 - k)) % V.tied.length + V.tied.length * 99) % V.tied.length];
+      if (steps.includes(V.t) && V.t > 0) Sfx.blip();
+      if (V.t >= 120) { V.phase = 'win'; V.t = 0; V.pick = V.winner; Sfx.remate(); }
+    } else if (V.phase === 'win') {
+      if (++V.t >= 90) { S.stage = V.winner; S.vote = null; openChars(); return; }
+    }
+    renderVote(stageState());
+  }
+  // lo que ven todos de la pantalla de arenas
+  function stageState() {
+    const V = S.vote;
+    return { mode: S.mode, stocks: S.stocks, time: S.time, items: S.items, vote: !!S.arenaVote,
+      hover: S.hoverStage || S.stage, roster: Net.isHost ? Net.roster() : [],
+      v: V ? { votes: V.votes, phase: V.phase, sec: Math.ceil(V.t / 60), tied: V.tied, pick: V.pick, winner: V.winner } : null };
+  }
+  let lastVoteDraw = '';
+  function renderVote(st) {
+    const bar = $('sVote'); if (!bar) return;
+    const key = JSON.stringify([st.vote, st.v, st.roster, !!S.remote]);
+    if (key === lastVoteDraw) return; lastVoteDraw = key;
+    const online = Net.online;
+    bar.className = 'voteBar'; bar.innerHTML = '';
+    for (const t of document.querySelectorAll('#sGrid .stile')) { t.classList.remove('vpick', 'vwin', 'vlose'); const s = t.querySelector('.vstamps'); if (s) s.remove(); }
+    if (!online) return;
+    if (!st.vote) {                                                  // elige el anfitrión
+      if (S.remote) { bar.classList.add('on'); bar.innerHTML = 'El anfitrión está eligiendo la arena: <b>míralo en vivo</b>'; }
+      return;
+    }
+    const V = st.v; if (!V) return;
+    const nameOf = Object.fromEntries(st.roster.map(p => [p.key, p]));
+    // sellos de voto en cada arena
+    for (const k in V.votes) {
+      const p = nameOf[k], tile = document.querySelector(`#sGrid .stile[data-act="stage:${V.votes[k]}"]`); if (!p || !tile) continue;
+      let box = tile.querySelector('.vstamps'); if (!box) { box = document.createElement('div'); box.className = 'vstamps'; tile.appendChild(box); }
+      const s = document.createElement('span'); s.className = 'vstamp'; s.style.setProperty('--sc', PCOL[(p.n - 1) % 4]); s.textContent = 'J' + p.n; s.title = p.name;
+      box.appendChild(s);
+    }
+    const voted = st.roster.filter(p => V.votes[p.key]).length, total = st.roster.length;
+    const nm = id => id === 'random' ? 'ARENA ALEATORIA' : STAGES[id] ? STAGES[id].name.toUpperCase() : id;
+    bar.classList.add('on');
+    if (V.phase === 'open') bar.innerHTML = `VOTACIÓN · elige la arena que quieras (puedes cambiar tu voto) · Votos <b>${voted}/${total}</b>`;
+    else if (V.phase === 'count') { bar.classList.add('hot'); bar.innerHTML = `¡Todos han votado! La votación se cierra en <b>${V.sec}</b>…`; }
+    else if (V.phase === 'draw') {
+      bar.innerHTML = `¡EMPATE! Sorteo entre las más votadas…`;
+      for (const id of V.tied) { const t = document.querySelector(`#sGrid .stile[data-act="stage:${id}"]`); if (t && id === V.pick) t.classList.add('vpick'); }
+    } else if (V.phase === 'win') {
+      bar.innerHTML = `¡Se juega en <b>${nm(V.winner)}</b>!`;
+      for (const t of document.querySelectorAll('#sGrid .stile')) t.classList.add(t.dataset.act === 'stage:' + V.winner ? 'vwin' : 'vlose');
+    }
+  }
+  // invitado: copia la pantalla de arenas del anfitrión
+  function remoteStage(sel, me) {
+    const fresh = S.screen !== 'stage' || !S.remote;
+    S.remoteVote = sel;
+    if (fresh) {
+      S.remote = me; S.mode = sel.mode; S.stocks = sel.stocks; S.time = sel.time || 0; S.items = sel.items;
+      game = null; S.myVote = null; lastVoteDraw = '';
+      openStageScreen();
+      if (sel.vote) Pointer.forceGhosts(false); else { Pointer.detach(); S.screen = 'stage'; Pointer.forceGhosts(true); }   // sin votación: solo se ve el puntero del anfitrión
+    }
+    if (!sel.vote && sel.hover && sel.hover !== S.prevStage) setPreview(sel.hover);
+    renderVote(sel);
+  }
 
   // ---------------- por frame ----------------
   function tick(frame, locked) {
     if (!S.screen) return;
     Pointer.update(locked);
     if (S.screen === 'stage') tickPreview(frame);
+    if (S.screen === 'stage' && S.vote && Net.isHost) stepVote();
     if (S.screen === 'mode') tickModeArt(frame);
     if (S.screen === 'chars') {
       drawPanels(frame);
@@ -562,6 +700,8 @@ const Select = (() => {
   }
   return { openMode, openStage, openChars, tick, get screen() { return S.screen; }, state: S, ready, MODES,
     netState, netJoin, netLeave, netSlot, remoteSel, leaveRemote, openPractice,
+    stageState, remoteStage, netVote,
+    openOnlineSetup() { S.onlineSetup = true; openMode(); },
     refresh() { if (S.screen === 'chars') renderPanels(); },
     reattach() { if (S.screen) attach(S.screen); } };
 })();
