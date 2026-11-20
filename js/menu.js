@@ -334,6 +334,12 @@ function padUI() {
     if (screen === 'results' && back) { $('bLobby').click(); return; }
     if (screen === 'title' && start) { $('bPlay').click(); return; }
     if (screen === 'tutScr' && back) { $('bTutBack').click(); return; }
+    // EN LÍNEA: B volver · X borrar · Y borrar todo (por posición: izquierda / arriba)
+    if (screen === 'online') {
+      if (back && Net.padKey('back')) return;
+      if (Input.rawPressed(dev, 2) && Net.padKey('del')) return;
+      if (Input.rawPressed(dev, 3) && Net.padKey('clr')) return;
+    }
     // la primera pulsación solo marca el botón principal (no salta de él a otro, p. ej. a los de volumen)
     const had = Nav.padMode && Nav.el && Nav.el.classList.contains('focus') && Nav.items().includes(Nav.el);
     if (dir || ok) { Nav.padMode = true; Nav.ensure(); }

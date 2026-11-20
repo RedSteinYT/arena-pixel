@@ -18,7 +18,7 @@ const Net = (() => {
   let role = null, peer = null, code = null, ui = 'menu', uiMsg = '';
   // anfitrión
   const peers = {};                 // pid -> { n, ctl, st, inp, seq, ack }
-  let lastStatus = '', lastCfg = null, fighting = false, roomCap = 4, roomMode = null, lastCode = '', padShown = null;
+  let lastStatus = '', lastCfg = null, fighting = false, roomCap = 4, roomMode = null, lastCode = '', padShown = null, kindShown = null;
   const hostHist = new Map();       // frame -> { v, s }
   let sentFx = new WeakSet(), sndBuf = [], rec = false;
   // invitado
@@ -357,12 +357,13 @@ const Net = (() => {
     const link = location.origin + location.pathname + '?sala=' + code;
     let h = '';
     if (ui === 'menu') {
+      padShown = !!(typeof Nav !== 'undefined' && Nav.padMode); kindShown = lastPadKind;
       h = `<p class="onlInfo">Juega con tus amigos por internet: uno crea la sala y los demás entran con su código.</p>
         <button class="go big" id="oCreate">✚ CREAR SALA</button>
         <div class="onlJoin"><input id="oCode" maxlength="5" placeholder="CÓDIGO" autocomplete="off" spellcheck="false" value="${lastCode}"><button id="oJoin">ENTRAR ▶</button></div>
         ${padKeyboard()}
         ${uiMsg ? `<p class="onlErr">${uiMsg}</p>` : ''}
-        <button id="oBack">◀ VOLVER</button>`;
+        <button id="oBack">◀ VOLVER${padShown ? ` <i class="okbKey">${padLabels().back}</i>` : ''}</button>`;
     } else if (ui === 'connecting') {
       h = `<p class="onlInfo blink">${uiMsg}</p><button id="oCancel">CANCELAR</button>`;
     } else if (ui === 'host') {
@@ -397,6 +398,7 @@ const Net = (() => {
     for (const b of el.querySelectorAll('.okb button')) b.onclick = () => {
       const i = $('oCode'), k = b.dataset.k; Sfx.blip();
       if (k === 'del') i.value = i.value.slice(0, -1);
+      else if (k === 'clr') i.value = '';
       else if (i.value.length < 5) i.value += k;
       lastCode = i.value;
     };
@@ -412,9 +414,23 @@ const Net = (() => {
   function padKeyboard() {
     padShown = !!(typeof Nav !== 'undefined' && Nav.padMode);
     if (!padShown) return '';
-    const rows = ['23456789', 'QWERTYUP', 'ASDFGHJK', 'ZXCVBNM'];
+    const rows = ['23456789', 'QWERTYUP', 'ASDFGHJK', 'ZXCVBNM'], B = padLabels();
     return `<div class="okb">${rows.map(r => `<div>${[...r].map(ch => `<button data-k="${ch}">${ch}</button>`).join('')}</div>`).join('')}
-      <div><button data-k="del" class="okbDel">⌫ BORRAR</button></div></div>`;
+      <div><button data-k="del" class="okbDel">⌫ BORRAR <i>${B.del}</i></button><button data-k="clr" class="okbDel">✖ BORRAR TODO <i>${B.clr}</i></button></div></div>`;
+  }
+  // letras de los botones según el mando (posición física: izquierda = borrar, arriba = borrar todo)
+  function padLabels() {
+    const k = typeof lastPadKind !== 'undefined' && lastPadKind || 'xbox';
+    return { xbox: { back: 'B', del: 'X', clr: 'Y' }, ps: { back: '○', del: '□', clr: '△' }, nin: { back: 'B', del: 'Y', clr: 'X' } }[k] || { back: 'B', del: 'X', clr: 'Y' };
+  }
+  // atajos del mando en la pantalla EN LÍNEA (antes de entrar en una sala)
+  function padKey(what) {
+    if (role || ui !== 'menu') return false;
+    if (what === 'back') { Sfx.blip(); go('title'); return true; }
+    const i = $('oCode'); if (!i || !document.querySelector('.okb')) return false;
+    if (what === 'del') i.value = i.value.slice(0, -1);
+    else if (what === 'clr') i.value = '';
+    lastCode = i.value; Sfx.blip(); return true;
   }
   // resumen de la sala: modo, vidas, tiempo, objetos y cómo se elige la arena
   function roomTags(R) {
@@ -447,9 +463,10 @@ const Net = (() => {
     peerDevs: () => Object.keys(peers).filter(pid => peers[pid].ctl && peers[pid].ctl.open).map(pid => 'net:' + pid),
     connected: dev => role === 'host' ? !!peers[dev.slice(4)] : true,
     inputs() { const o = {}; for (const pid in peers) o['net:' + pid] = peers[pid].inp; return o; },
+    padKey,
     tick() {
       if (role === 'host') hostTick(); if (role) cursorsTick();
-      if (!role && ui === 'menu' && screen === 'online' && padShown !== !!Nav.padMode) renderUI();
+      if (!role && ui === 'menu' && screen === 'online' && (padShown !== !!Nav.padMode || (padShown && kindShown !== lastPadKind))) renderUI();   // mando ↔ ratón, o cambio de mando
     },
     record(v) { rec = v; },
     hostSend, clientFrame,
