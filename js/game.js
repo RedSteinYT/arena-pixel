@@ -211,7 +211,10 @@ class Game {
   }
   // cámara suave hacia el objetivo (sin salirse del escenario)
   stepCam() {
-    const E = this.endSeq, T = E && E.focus && E.step !== 'settle' ? E.focus : { x: W / 2, y: H / 2, z: 1 };
+    const E = this.endSeq;
+    let T = E && E.focus && E.step !== 'settle' ? E.focus : { x: W / 2, y: H / 2, z: 1 };
+    // con los resultados en pantalla, el ganador sube a la parte de arriba para que el cuadro no lo tape
+    if (E && E.done && T.z > 1) T = { x: T.x, y: T.y + H * 0.18 / T.z, z: T.z };
     const c = this.cam, k = 0.07;
     c.z += (T.z - c.z) * k; c.x += (T.x - c.x) * k; c.y += (T.y - c.y) * k;
     if (Math.abs(c.z - T.z) < 0.002) c.z = T.z;
