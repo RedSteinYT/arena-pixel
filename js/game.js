@@ -379,14 +379,16 @@ class Game {
     // contador de combo sobre el rival y ¡REMATE!
     for (const f of this.fighters) {
       if (!f.alive() || f.st === 'respawn' || !f.comboBy) continue;
-      const x = clamp(f.x, 30, W - 30), y = clamp(f.y - f.S.hh - 26, 26, H - 60);
+      const y = clamp(f.y - f.S.hh - 26, 26, H - 60);
+      const cx = (str, size) => { const half = str.length * size / 2 + 4; return clamp(f.x, half, W - half); };   // que el texto no se salga de la pantalla
       if (f.remateT > 0) {
         const pop = f.remateT > 62 ? 24 : 16;
-        t.text('¡REMATE!', x, y - (pop > 16 ? 30 : 22), pop, '#ffd34a', 'center');
+        t.text('¡REMATE!', cx('¡REMATE!', pop), y - (pop > 16 ? 30 : 22), pop, '#ffd34a', 'center');
       }
       if (f.comboN >= 2 && f.comboT > 0 && ((f.comboT > 20) || (f.comboT >> 2) % 2)) {
         const big = f.comboN >= 5, col = f.comboBy.pal ? f.comboBy.pal.light : '#ffffff';
-        t.text(f.comboN + (big ? ' GOLPES!' : ' GOLPES'), x, y, big ? 16 : 8, col, 'center');
+        const str = f.comboN + (big ? ' GOLPES!' : ' GOLPES');
+        t.text(str, cx(str, big ? 16 : 8), y, big ? 16 : 8, col, 'center');
       }
     }
     if (this.phase === 'count') {

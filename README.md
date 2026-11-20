@@ -27,7 +27,7 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
   <img src="docs/img/isla-celeste.png" alt="Pelea a cuatro en la Isla Celeste" width="49%">
 </p>
 
-- **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo largo con un golpe fuerte.
+- **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo con un ataque fuerte o un especial.
 - **14 objetos** que caen en plena pelea: armas que cambian tu ataque (espada láser, bláster, bumerán…), cosas para lanzar y poderes temporales.
 - **Pantalla VS** con pullas antes de cada combate y música rock propia para cada arena.
 - **Modo en línea** con código de sala: uno crea la sala, los demás escriben el código y a pelear.
