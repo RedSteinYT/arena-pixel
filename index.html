@@ -145,8 +145,24 @@
   .sbtn.dim { opacity: .75; }
   .lives { display: flex; align-items: center; gap: .6em; font-size: 1em; color: #cfc8f0; }
   .itemsBtn { margin-left: .4em; white-space: nowrap; }
-  #modeScr .lives { flex-wrap: wrap; justify-content: flex-end; row-gap: .45em; }
-  #modeScr .lives .brk { flex-basis: 100%; height: 0; }     /* TIEMPO y OBJETOS en una segunda fila: no empujan CONTROLES fuera */
+  /* opciones de combate: una fila grande por opción (caben más conforme crezca el juego) */
+  .optList { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.6em; width: min(100%, 92em); margin: 0 auto; }
+  .optRow { position: relative; display: grid; grid-template-columns: 5em 1fr auto; align-items: center; gap: 1.6em;
+    padding: 1.4em 2em 1.4em 1.4em; background: linear-gradient(90deg, rgba(36,31,74,.95), rgba(26,22,58,.92));
+    border: .3em solid var(--line); box-shadow: 0 .5em 0 var(--line), inset 0 .2em 0 var(--hi);
+    clip-path: polygon(1.2em 0, 100% 0, 100% calc(100% - 1.2em), calc(100% - 1.2em) 100%, 0 100%, 0 1.2em); }
+  .optRow::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: .5em; background: var(--oc); }
+  .optRow .oi { justify-self: center; font-size: 3em; color: var(--oc); text-shadow: .08em .08em 0 var(--line); }
+  .optRow .ot b { display: block; font-size: 1.7em; color: #fff; text-shadow: .12em .12em 0 var(--line); margin-bottom: .45em; }
+  .optRow .ot small { display: block; font-size: .95em; line-height: 1.7; color: #cfc8f0; }
+  .optRow .ov { display: flex; align-items: center; gap: 1em; }
+  .optRow .ov b { width: 11em; box-sizing: border-box; white-space: nowrap; text-align: center;   /* mismo ancho en todas: flechas alineadas */ font-size: 1.7em; color: var(--oc); text-shadow: .12em .12em 0 var(--line);
+    padding: .45em .4em; background: #120f2c; border: .2em solid var(--line); }
+  .optRow .arr { font-size: 1.3em; padding: .55em .8em; }
+  .optRow .ov b.pop { animation: optPop .22s steps(3); }
+  @keyframes optPop { 0% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  .optGo { display: flex; justify-content: center; }
+  .optGo .sbtn { font-size: 1.6em; padding: .8em 2.4em; }
   .lives b { font-size: 1.6em; color: var(--gold); min-width: 1.4em; text-align: center; }
   .hov { outline: .3em solid var(--hc, var(--gold)); outline-offset: .15em; filter: brightness(1.15); z-index: 2; position: relative; }
   .hintbar { margin-top: auto; font-size: .8em; line-height: 1.9; color: var(--muted); text-align: center; background: rgba(11,10,36,.6); padding: .6em; border: .2em solid var(--line); }
@@ -485,12 +501,40 @@
       <div class="seltop">
         <span class="sbtn back" data-act="back">◀ VOLVER</span>
         <h2>MODO DE BATALLA</h2>
-        <div class="lives">VIDAS <span class="sbtn" data-act="lives:-1">−</span><b id="mLives">3</b><span class="sbtn" data-act="lives:1">+</span>
-          <i class="brk"></i><span class="sbtn itemsBtn" data-act="time" id="mTime">TIEMPO: 5 MIN</span>
-          <span class="sbtn itemsBtn" data-act="items" id="mItems">OBJETOS: SÍ</span></div>
-        <span class="sbtn" data-act="controls">CONTROLES</span>
+        <span class="sbtn" data-act="controls" style="margin-left:auto">CONTROLES</span>
       </div>
       <div class="mcards" id="mCards"></div>
+      <div class="hintbar">Mueve tu puntero y elige · <b>Ratón</b> clic · <b>Teclado</b> WASD + J (atrás K) · <b>Mando</b> palanca + A (atrás B)</div>
+    </div>
+  </div>
+
+  <!-- 1b. opciones de combate -->
+  <div id="optScr" class="ui selscr">
+    <div class="selwrap">
+      <div class="seltop">
+        <span class="sbtn back" data-act="back">◀ VOLVER</span>
+        <h2>OPCIONES DE COMBATE</h2>
+        <div class="tag" id="oModeTag"></div>
+        <span class="sbtn" data-act="controls">CONTROLES</span>
+      </div>
+      <div class="optList">
+        <div class="optRow" style="--oc:#ff5a7a">
+          <span class="oi">❤</span>
+          <div class="ot"><b>VIDAS</b><small>Cuántas veces puedes salir volando antes de quedar fuera.</small></div>
+          <div class="ov"><span class="sbtn arr" data-act="opt:lives:-1">◀</span><b data-act="opt:lives:1" id="oLives">3</b><span class="sbtn arr" data-act="opt:lives:1">▶</span></div>
+        </div>
+        <div class="optRow" style="--oc:#43c6f0">
+          <span class="oi">⏱</span>
+          <div class="ot"><b>TIEMPO</b><small>Si se acaba, gana quien tenga más vidas. Con empate: ¡muerte súbita!</small></div>
+          <div class="ov"><span class="sbtn arr" data-act="opt:time:-1">◀</span><b data-act="opt:time:1" id="oTime">5 MIN</b><span class="sbtn arr" data-act="opt:time:1">▶</span></div>
+        </div>
+        <div class="optRow" style="--oc:#ffd34a">
+          <span class="oi">⚔</span>
+          <div class="ot"><b>OBJETOS</b><small>Armas, cosas para lanzar y poderes que caen en plena pelea.</small></div>
+          <div class="ov"><span class="sbtn arr" data-act="opt:items:-1">◀</span><b data-act="opt:items:1" id="oItems">SÍ</b><span class="sbtn arr" data-act="opt:items:1">▶</span></div>
+        </div>
+      </div>
+      <div class="optGo"><span class="sbtn go" data-act="next">ELEGIR ARENA ▶</span></div>
       <div class="hintbar">Mueve tu puntero y elige · <b>Ratón</b> clic · <b>Teclado</b> WASD + J (atrás K) · <b>Mando</b> palanca + A (atrás B)</div>
     </div>
   </div>

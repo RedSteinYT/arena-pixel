@@ -50,13 +50,15 @@ const Select = (() => {
       el.appendChild(d);
       modeCanvases[id] = d.querySelector('canvas');
     }
-    $('mLives').textContent = S.stocks;
-    $('mItems').textContent = 'OBJETOS: ' + (S.items ? 'SÍ' : 'NO');
-    $('mTime').textContent = timeLabel();
   }
   // duración de la pelea: opciones fijas (0 = sin límite)
   const TIMES = [2, 3, 5, 8, 0];
-  const timeLabel = () => 'TIEMPO: ' + (S.time ? S.time + ' MIN' : 'SIN LÍMITE');
+  const timeLabel = () => S.time ? S.time + ' MIN' : 'SIN LÍMITE';
+  function showOpts() {
+    $('oLives').textContent = S.stocks;
+    $('oTime').textContent = timeLabel();
+    $('oItems').textContent = S.items ? 'SÍ' : 'NO';
+  }
   const timeTag = () => S.time ? ' · ' + S.time + ' MIN' : '';
   function tickModeArt(frame) {
     for (const id of MODE_ORDER) if (modeCanvases[id]) ModeArt.draw(id, modeCanvases[id], frame);
@@ -332,10 +334,23 @@ const Select = (() => {
       if (!a) return;
       if (a === 'back') return backScreen();
       if (a === 'controls') return openControls();
-      if (a.startsWith('lives:')) { S.stocks = clamp(S.stocks + +a.slice(6), 1, 9); $('mLives').textContent = S.stocks; Sfx.blip(); return; }
-      if (a === 'time') { S.time = TIMES[(TIMES.indexOf(S.time) + 1) % TIMES.length]; $('mTime').textContent = timeLabel(); Sfx.blip(); return; }
-      if (a === 'items') { S.items = !S.items; $('mItems').textContent = 'OBJETOS: ' + (S.items ? 'SÍ' : 'NO'); Sfx.blip(); return; }
-      if (a.startsWith('mode:')) { S.mode = a.slice(5); Sfx.join(); openStage(); }
+      if (a.startsWith('mode:')) { S.mode = a.slice(5); Sfx.join(); openOpts(); }
+      return;
+    }
+    if (S.screen === 'opts') {
+      if (!a) return;
+      if (a === 'back') return backScreen();
+      if (a === 'controls') return openControls();
+      if (a === 'next') { Sfx.join(); openStage(); return; }
+      if (a.startsWith('opt:')) {
+        const [, key, d] = a.split(':'), dir = +d;
+        if (key === 'lives') S.stocks = (S.stocks - 1 + dir + 9) % 9 + 1;                       // 1..9, da la vuelta
+        if (key === 'time') S.time = TIMES[(TIMES.indexOf(S.time) + dir + TIMES.length) % TIMES.length];
+        if (key === 'items') S.items = !S.items;
+        showOpts(); Sfx.blip();
+        const v = el && el.closest('.optRow') && el.closest('.optRow').querySelector('.ov b');      // pequeño "pop" del valor
+        if (v) { v.classList.remove('pop'); void v.offsetWidth; v.classList.add('pop'); }
+      }
       return;
     }
     if (S.screen === 'stage') {
@@ -390,7 +405,8 @@ const Select = (() => {
     Sfx.blip();
     if (S.screen === 'chars' && S.mode === 'practice') { Pointer.detach(); S.screen = null; go('title'); return; }
     if (S.screen === 'chars') openStage();
-    else if (S.screen === 'stage') openMode();
+    else if (S.screen === 'stage') openOpts();
+    else if (S.screen === 'opts') openMode();
     else if (S.screen === 'mode') { Pointer.detach(); S.screen = null; if (Net.isHost) Net.showLobby(); else go('title'); }
   }
   // botón "atrás": deshace paso a paso
@@ -410,7 +426,8 @@ const Select = (() => {
       }
       Sfx.blip(); if (S.mode === 'practice') { Pointer.detach(); S.screen = null; go('title'); } else openStage(); return;
     }
-    if (S.screen === 'stage') { Sfx.blip(); openMode(); return; }
+    if (S.screen === 'stage') { Sfx.blip(); openOpts(); return; }
+    if (S.screen === 'opts') { Sfx.blip(); openMode(); return; }
     if (S.screen === 'mode') { Sfx.blip(); Pointer.detach(); S.screen = null; if (Net.isHost) Net.showLobby(); else go('title'); }
   }
 
@@ -420,12 +437,13 @@ const Select = (() => {
   function attach(scr) {
     S.screen = scr;
     Pointer.attach({
-      root: () => $(scr === 'mode' ? 'modeScr' : scr === 'stage' ? 'stageScr' : 'charScr'),
+      root: () => $(scr === 'mode' ? 'modeScr' : scr === 'opts' ? 'optScr' : scr === 'stage' ? 'stageScr' : 'charScr'),
       act, back, info,
       hover(dev, el) { const a = el.dataset.act; if (scr === 'stage' && a.startsWith('stage:')) { S.hoverStage = a.slice(6); setPreview(S.hoverStage); } },
     });
   }
   function openMode() { if (S.mode === 'practice') { S.mode = S.prevMode || '1v1'; S.stage = S.prevStage || 'cielo'; } go('modeScr'); buildMode(); attach('mode'); }
+  function openOpts() { go('optScr'); $('oModeTag').textContent = mode().name; showOpts(); attach('opts'); }
   function openStage() { go('stageScr'); $('sModeTag').textContent = mode().name + ' · ' + S.stocks + ' VIDAS' + timeTag() + (S.items ? ' · OBJETOS' : ''); buildStageGrid(); attach('stage'); }
   // keep = true solo al volver de una partida (se conservan las elecciones para la revancha)
   function openChars(keep = false) {

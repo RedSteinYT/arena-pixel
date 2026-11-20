@@ -45,8 +45,8 @@ let screen = 'title';
 let game = null, demo = null, paused = false, lastCfg = null;
 let uiLock = 0;              // frames en los que se ignoran botones tras cambiar de pantalla
 let lastPadKind = null;      // último tipo de mando usado (para la pestaña de controles)
-const SCREENS = ['title', 'online', 'tutScr', 'modeScr', 'stageScr', 'charScr', 'controls', 'pause', 'results'];
-const POINTER_SCREENS = ['modeScr', 'stageScr', 'charScr'];
+const SCREENS = ['title', 'online', 'tutScr', 'modeScr', 'optScr', 'stageScr', 'charScr', 'controls', 'pause', 'results'];
+const POINTER_SCREENS = ['modeScr', 'optScr', 'stageScr', 'charScr'];
 
 function show(id) {
   for (const s of SCREENS) $(s).classList.toggle('on', s === id);
