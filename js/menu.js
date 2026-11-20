@@ -334,8 +334,10 @@ function padUI() {
     if (screen === 'results' && back) { $('bLobby').click(); return; }
     if (screen === 'title' && start) { $('bPlay').click(); return; }
     if (screen === 'tutScr' && back) { $('bTutBack').click(); return; }
+    // la primera pulsación solo marca el botón principal (no salta de él a otro, p. ej. a los de volumen)
+    const had = Nav.padMode && Nav.el && Nav.el.classList.contains('focus') && Nav.items().includes(Nav.el);
     if (dir || ok) { Nav.padMode = true; Nav.ensure(); }
-    if (dir) Nav.move(dir[0], dir[1]);
+    if (dir && had) Nav.move(dir[0], dir[1]);
     if (ok) { Nav.press(); return; }
   }
 }
