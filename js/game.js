@@ -154,6 +154,7 @@ class Game {
     if (d.grounded && kb < 4 && Math.abs(h.ang) < 50) ly = 0;     // golpes flojos: se queda en el suelo
     // en mitad de un combo, los golpes normales empujan menos (el rival no se escapa por el propio golpe)
     if (d.comboN >= 2 && !long && !remate && a.move && !a.move.smash && !a.move.special && !a.move.finisher && d.grounded) lx *= 0.5;
+    if (long && Math.abs(lx) < 2.6) lx = (dirSign || 1) * 2.6;    // combo muy largo: el rival sale despedido y se escapa
     if (a.move && a.move.popup && !long) {           // el ataque hacia arriba siempre levanta (también a 0 %) y el rival flota un poco: da tiempo a saltar y seguir
       if (ly > -5.4) ly = -5.4;
       d.floatT = 44;

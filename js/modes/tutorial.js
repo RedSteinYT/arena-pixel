@@ -148,7 +148,7 @@ const Tutorial = (() => {
     for (const f of g.fighters) f.stocks = 99;
     if (!ctx || ctx.g !== g) setupTask(g);
     const p = ctx.p, d = ctx.d, T = L.tasks[idx];
-    p.noFlick = kind === 'kb1' || kind === 'kb2';         // con teclado no hay "toque rápido" para el fuerte
+    p.noFlick = true;          // en el tutorial dirección + ataque es siempre el ataque normal (el fuerte se enseña con su botón / la palanca derecha)
     if (phase === 'ok') { if (--timer <= 0) { idx++; if (idx >= L.tasks.length) { phase = 'done'; timer = 240; done[L.id] = true; save(); Sfx.remate(); } else setupTask(g); } return; }
     if (phase === 'fail') { if (--timer <= 0) setupTask(g); return; }
     if (phase === 'done') { if (--timer <= 0 || (timer < 180 && anyConfirm())) quit(); return; }

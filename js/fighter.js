@@ -84,11 +84,21 @@ class Fighter {
 
   // --------- ataques ---------
   startMove(name, g, mv) {
-    if (this.chainT > 0 && name === this.noRepeat) { this.setSt(this.grounded ? 'ground' : 'air'); return; }
-    if (this.comboTier) {                                   // combo: solo hacia arriba en el nivel
+    // combo: al cancelar un golpe solo se encadena hacia uno distinto y de nivel igual o mayor.
+    // Eso solo cuenta en el mismo instante de la cancelación; más tarde el golpe SIEMPRE sale
+    // (solo se pierde la cadena), para que ningún botón se "coma" sin avisar.
+    const now = g && g.frame, atCancel = this.cancelF === now;
+    if (this.chainT > 0 && name === this.noRepeat) {
+      if (atCancel) { this.setSt(this.grounded ? 'ground' : 'air'); return; }
+      this.chain = 0; this.chainT = 0; this.noRepeat = null;
+    }
+    if (this.comboTier) {
       const ok = moveTier(name) >= this.comboTier;
       this.comboTier = 0;
-      if (!ok) { this.chain = 0; this.setSt(this.grounded ? 'ground' : 'air'); return; }
+      if (!ok) {
+        this.chain = 0;
+        if (atCancel) { this.setSt(this.grounded ? 'ground' : 'air'); return; }
+      }
     }
     this.move = mv || this.ch.moves[name]; this.moveName = name;
     this.setSt('attack'); this.hitSet = new Set(); this.charge = 0; this.hidden = false; this.landedHit = false; this.grabFail = false;
@@ -325,7 +335,8 @@ class Fighter {
     if (canChain && this.landedHit && (this.chain || 0) < (free ? 3 : 4) && this.t > this.landedAt + 1 && wants) {
       if (!(this.buf.jump && !this.buf.atk && !this.buf.spc && !this.buf.str && !this.grounded && this.jumps <= 0)) {
         this.chain = (this.chain || 0) + 1; this.chainT = 40; this.noRepeat = this.moveName;
-        this.comboTier = free ? 0 : moveTier(this.moveName);
+        // saltar para seguir en el aire vale desde cualquier golpe (también desde un fuerte)
+        this.comboTier = free || this.buf.jump ? 0 : moveTier(this.moveName); this.cancelF = g.frame;
         this.move = null; this.setSt(this.grounded ? 'ground' : 'air');
         g.burst(this.x, this.y - this.S.hh * 0.6, 2, 'star', this.pal.light);
         if (this.grounded) this.stGround(g); else this.stAir(g);     // el siguiente golpe sale ya, con la dirección de ahora
