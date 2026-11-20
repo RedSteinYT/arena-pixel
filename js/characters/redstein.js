@@ -83,6 +83,7 @@
     selectH: 40,
     rest: { hip: [0, -9], neck: [1, -17], head: [2, -22], fh: [6, -11], bh: [-2, -12], ff: [4, 0], bf: [-4, 0], sword: 2.55 },
     chain: 4,
+    handProp: true,          // su espada: se guarda mientras lleva un objeto en la mano
     poses: {
       // Selección: guardia, giro de espada en llamas, la clava en el fuego y saluda
       // Pantalla VS: floritura de espada en llamas y apunta la hoja al rival
@@ -231,7 +232,8 @@
       const hip = A(p.hip), neck = A(p.neck), hd = A(p.head);
       const fh = A(p.fh), bh = A(p.bh), ff = A(p.ff), bf = A(p.bf);
       const sh = [neck[0], neck[1] + 1];
-      f._swA = p.sword ?? 2.55; f._hx = p.fh[0]; f._hy = p.fh[1]; f._fire = p.fire && !p.bow;
+      const sword = ownPropVisible(f);                       // con un objeto en la mano, la espada se guarda
+      f._swA = p.sword ?? 2.55; f._hx = p.fh[0]; f._hy = p.fh[1]; f._fire = sword && p.fire && !p.bow; f._sword = sword;
       // cordones de la capucha que ondean
       drawChain(c, f, [neck[0] + 2, neck[1] + 1], 1, ['#d8d8e4', '#9a9aaa']);
       if (p.bow) { pline(c, neck[0] - 4, neck[1] - 2, hip[0] + 4, hip[1] + 2, 2, BLADE.d); px(c, neck[0] - 4, neck[1] - 2, BLADE.l); }
@@ -278,6 +280,8 @@
           if (f.charge > 25) { const fl = (frame >> 1) % 2; px(c, Math.round(bx + ax * 9), Math.round(by + ay * 9 - 1), fl ? '#ffd040' : '#fff3b0'); px(c, Math.round(bx + ax * 8), Math.round(by + ay * 8 - 2), '#ff7a20'); }
         }
         rect(c, fh[0] - 1, fh[1], 3, 2, SKIN.m);
+      } else if (!sword) {
+        rect(c, fh[0] - 1, fh[1], 3, 2, SKIN.m);              // mano libre (el objeto lo dibuja el sistema de objetos)
       } else {
         // espada de cristal, más larga y afilada
         const a = p.sword ?? 2.55, ca = Math.cos(a), sa = Math.sin(a);
@@ -306,7 +310,7 @@
       if (f._fire) {
         const flick = 0.75 + 0.25 * Math.sin(frame * 0.6);
         for (const i of [5, 10, 15]) { const [x, y] = at(i); glow(c, x, y - 1, 7, '#ff7a20', 0.3 * flick, 3); }
-      } else if (f.st !== 'dead') {
+      } else if (f.st !== 'dead' && f._sword !== false) {
         const [x, y] = at(12); glow(c, x, y, 4, '#46e6d4', 0.15 + 0.05 * Math.sin(frame * 0.1), 2);      // brillo del cristal
       }
       if (f.burn > 0) glow(c, f.x, f.y - f.S.hh / 2, 14, '#ff6a20', 0.12, 3);

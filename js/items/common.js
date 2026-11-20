@@ -272,6 +272,7 @@ const ItemSys = (() => {
   // objeto en la mano (tras dibujar al luchador)
   function drawHeld(c, f, g) {
     if (!f.item || !f.alive() || f.st === 'respawn') return;
+    if (f.ch.handProp && f.st === 'attack' && f.move && !f.move.item) return;   // durante su propio golpe se ve lo suyo, no el objeto
     const def = ITEMS[f.item.id], [hx, hy] = handPos(f);
     const p = f._pose, ang = p && p.itemA != null ? p.itemA : (def.rest ?? -0.9);
     if (f.hidden) return;

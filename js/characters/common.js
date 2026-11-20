@@ -102,6 +102,10 @@ function crouchPose(p, k) {
   p.ff[0] += Math.max(1, k / 3); p.bf[0] -= Math.max(1, k / 3);
 }
 
+// Luchadores que llevan algo en la mano por defecto (ch.handProp, p. ej. la espada de RedStein):
+// con un objeto en la mano se ve solo el objeto; en sus propios ataques (especiales), solo lo suyo.
+function ownPropVisible(f) { return !f.item || (f.st === 'attack' && f.move && !f.move.item); }
+
 // Pose genérica según el estado; cada luchador la retoca con sus "poses".
 // z escala las medidas para luchadores grandes o pequeños.
 function poseFor(f) {
