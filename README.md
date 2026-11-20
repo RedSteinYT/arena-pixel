@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/img/portada.png" alt="Portada de Arena Píxel" width="820">
+<img src="docs/img/portada-menu.png" alt="Portada de Arena Píxel" width="820">
 
 # Arena Píxel
 
