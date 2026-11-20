@@ -14,7 +14,7 @@ const Select = (() => {
   const MODE_ORDER = ['1v1', '2v2', '3ffa', '4ffa'];
   const PCOL = ['#ff6b5e', '#5aa0ff', '#ffd34a', '#5ee08a'];           // color de cada jugador (J1..J4)
   const S = {
-    mode: '1v1', stocks: 3, stage: 'cielo', screen: null, items: true,
+    mode: '1v1', stocks: 3, time: 5, stage: 'cielo', screen: null, items: true,
     slots: [null, null, null, null],      // { type:'human'|'cpu', dev, char, locked, level, team }
     cur: {},                              // por dispositivo: { slot, carry }
     prevGame: null, prevStage: null, prevRandom: 0,
@@ -52,7 +52,12 @@ const Select = (() => {
     }
     $('mLives').textContent = S.stocks;
     $('mItems').textContent = 'OBJETOS: ' + (S.items ? 'SÍ' : 'NO');
+    $('mTime').textContent = timeLabel();
   }
+  // duración de la pelea: opciones fijas (0 = sin límite)
+  const TIMES = [2, 3, 5, 8, 0];
+  const timeLabel = () => 'TIEMPO: ' + (S.time ? S.time + ' MIN' : 'SIN LÍMITE');
+  const timeTag = () => S.time ? ' · ' + S.time + ' MIN' : '';
   function tickModeArt(frame) {
     for (const id of MODE_ORDER) if (modeCanvases[id]) ModeArt.draw(id, modeCanvases[id], frame);
   }
@@ -328,6 +333,7 @@ const Select = (() => {
       if (a === 'back') return backScreen();
       if (a === 'controls') return openControls();
       if (a.startsWith('lives:')) { S.stocks = clamp(S.stocks + +a.slice(6), 1, 9); $('mLives').textContent = S.stocks; Sfx.blip(); return; }
+      if (a === 'time') { S.time = TIMES[(TIMES.indexOf(S.time) + 1) % TIMES.length]; $('mTime').textContent = timeLabel(); Sfx.blip(); return; }
       if (a === 'items') { S.items = !S.items; $('mItems').textContent = 'OBJETOS: ' + (S.items ? 'SÍ' : 'NO'); Sfx.blip(); return; }
       if (a.startsWith('mode:')) { S.mode = a.slice(5); Sfx.join(); openStage(); }
       return;
@@ -420,7 +426,7 @@ const Select = (() => {
     });
   }
   function openMode() { if (S.mode === 'practice') { S.mode = S.prevMode || '1v1'; S.stage = S.prevStage || 'cielo'; } go('modeScr'); buildMode(); attach('mode'); }
-  function openStage() { go('stageScr'); $('sModeTag').textContent = mode().name + ' · ' + S.stocks + ' VIDAS' + (S.items ? ' · OBJETOS' : ''); buildStageGrid(); attach('stage'); }
+  function openStage() { go('stageScr'); $('sModeTag').textContent = mode().name + ' · ' + S.stocks + ' VIDAS' + timeTag() + (S.items ? ' · OBJETOS' : ''); buildStageGrid(); attach('stage'); }
   // keep = true solo al volver de una partida (se conservan las elecciones para la revancha)
   function openChars(keep = false) {
     S.remote = null;
@@ -429,7 +435,7 @@ const Select = (() => {
     for (let i = mode().cap; i < 4; i++) if (S.slots[i]) removeSlot(i);
     go('charScr');
     const st = S.stage === 'random' ? 'ARENA ALEATORIA' : STAGES[S.stage].name.toUpperCase();
-    $('cModeTag').textContent = S.mode === 'practice' ? 'PRÁCTICA · CONTRA EL DUMMY · ARENA DE ENTRENAMIENTO' : `${mode().name} · ${S.stocks} VIDAS · ${st}`;
+    $('cModeTag').textContent = S.mode === 'practice' ? 'PRÁCTICA · CONTRA EL DUMMY · ARENA DE ENTRENAMIENTO' : `${mode().name} · ${S.stocks} VIDAS${timeTag()} · ${st}`;
     buildCharGrid(); renderPanels(); attach('chars');
   }
   // PRÁCTICA: eliges tu luchador y peleas contra el Dummy en la arena de entrenamiento
@@ -453,7 +459,7 @@ const Select = (() => {
         level: s.level || 'normal', num: s.type === 'cpu' ? 0 : ++num, name: slotName(s) || undefined });
     }
     const stage = S.stage === 'random' ? STAGE_ORDER[Math.random() * STAGE_ORDER.length | 0] : S.stage;
-    return { teams: m.teams, stocks: S.stocks, players, mode: S.mode, stage, items: S.items };
+    return { teams: m.teams, stocks: S.stocks, time: S.time || 0, players, mode: S.mode, stage, items: S.items };
   }
   function start() { Pointer.detach(); S.screen = null; startFight(cfg()); }
 
@@ -476,7 +482,7 @@ const Select = (() => {
   // anfitrión: lo que ven los invitados
   function netState() {
     const cap = mode().cap;
-    return { mode: S.mode, stocks: S.stocks, stage: S.stage,
+    return { mode: S.mode, stocks: S.stocks, time: S.time, stage: S.stage,
       slots: S.slots.slice(0, cap).map((s, i) => s && { type: s.type, owner: s.type === 'cpu' ? null : (s.dev.startsWith('net:') ? s.dev : 'host'),
         char: s.char, locked: !!s.locked, level: s.level || null, team: s.team, hover: hoverOf(i), name: slotName(s) }) };
   }
@@ -499,15 +505,15 @@ const Select = (() => {
     while (slots.length < 4) slots.push(null);
     const mi = slots.findIndex(x => x && x.mine);
     if (mi >= 0 && old && S.pend > 0) Object.assign(slots[mi], { char: old.char, locked: old.locked, team: old.team });
-    const structural = JSON.stringify([sel.mode, sel.stocks, sel.stage, slots.map(x => x && [x.type, x.dev, x.char, x.locked, x.level, x.team, x.name])]);
+    const structural = JSON.stringify([sel.mode, sel.stocks, sel.time, sel.stage, slots.map(x => x && [x.type, x.dev, x.char, x.locked, x.level, x.team, x.name])]);
     const fresh = S.screen !== 'chars' || !S.remote;
-    S.remote = me; S.mode = sel.mode; S.stocks = sel.stocks; S.stage = sel.stage; S.slots = slots;
+    S.remote = me; S.mode = sel.mode; S.stocks = sel.stocks; S.time = sel.time || 0; S.stage = sel.stage; S.slots = slots;
     if (fresh) {
       S.cur = {}; S.lastStruct = structural; S.pend = 0;
       game = null;
       go('charScr');
       const st = S.stage === 'random' ? 'ARENA ALEATORIA' : STAGES[S.stage].name.toUpperCase();
-      $('cModeTag').textContent = `${mode().name} · ${S.stocks} VIDAS · ${st}`;
+      $('cModeTag').textContent = `${mode().name} · ${S.stocks} VIDAS${timeTag()} · ${st}`;
       buildCharGrid(); renderPanels(); attach('chars');
     } else if (structural !== S.lastStruct) { S.lastStruct = structural; renderPanels(); }
   }

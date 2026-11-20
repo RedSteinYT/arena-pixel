@@ -238,6 +238,8 @@ class Fighter {
         if (this.t % 20 === 0) g.burst(this.x, this.y - 30, 1, 'star', this.pal.light);
         if (this.t >= 150) this.setSt('ground');
         break;
+      case 'win': case 'lose': this.friction(); break;          // animación de victoria / derrota
+      case 'portal': case 'gone': this.t++; return;              // apareciendo por el portal / fuera de escena
       case 'ledge': this.stLedge(g); return;
       case 'hold': this.stHold(g); break;
       case 'grabbed': this.stGrabbed(g); return;

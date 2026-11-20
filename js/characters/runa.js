@@ -83,6 +83,22 @@
         else { p.fh = [7, -13 + b]; p.staff = -1.3; p.glow = 0; }
         return true;
       },
+      // Victoria: levita más alto, alza el bastón que brilla y lo hace girar
+      win(p, f, T) {
+        const b = Math.round(Math.sin(T * 0.07) * 2) + 4;
+        for (const k of ['hip', 'neck', 'head', 'fh', 'bh', 'ff', 'bf']) p[k][1] -= b;
+        p.ff = [2, 2 - b]; p.bf = [-2, 3 - b];
+        if (T % 100 < 30) { p.staff = T * 0.6; p.fh = [4, -18 - b]; }
+        else { p.staff = -1.57; p.fh = [3, -30 - b]; }
+        p.glow = 1; p.bh = [-6, -20 - b]; p.head[1] -= 1;
+        return true;
+      },
+      // Derrota: de rodillas, el bastón apagado y caído
+      lose(p, f, T) {
+        crouchPose(p, 6); p.staff = 0.95; p.glow = 0; p.fh = [7, -7]; p.bh = [2, -6];
+        p.head[0] += 2; p.head[1] += 3; p.bf = [-6, 0];
+        return true;
+      },
       idle(p, f, T) {
         const b = Math.round(Math.sin(T * 0.06));   // flota suavemente
         p.hip[1] += b; p.neck[1] += b; p.head[1] += b; p.fh[1] += b; p.bh[1] += b;

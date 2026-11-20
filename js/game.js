@@ -35,6 +35,11 @@ class Game {
     this.shake = 0;
     this.slow = 0;
     this.placing = [];           // orden de eliminación
+    // temporizador (frames; 0 = sin límite), muerte súbita, secuencia final y cámara
+    this.timeLeft = cfg.time ? cfg.time * 3600 : 0;
+    this.sd = false;
+    this.endSeq = null;
+    this.cam = { x: W / 2, y: H / 2, z: 1 };
     this.cloudX = 0;
     // objetos
     this.items = []; this.itemsOn = cfg.items !== false; this.itemT = 240 + (Math.random() * 180 | 0);
@@ -49,13 +54,14 @@ class Game {
     this.frame++; this.phaseT++;
     this.cloudX += 0.12;
     stepStage(this.stage, this);
+    this.stepCam();
+    if (this.finalSlow && this.slow <= 0 && this.phase === 'play') this.finalSlow = false;   // se salvó: falsa alarma
     if (this.slow > 0) { this.slow--; if (this.slow % 3 !== 0) { this.stepFx(); return; } }
 
-    const canAct = this.phase === 'play' || this.phase === 'end';
     for (const f of this.fighters) {
       if (f.out) continue;
       let inp = blankInput();
-      if (canAct && this.phase !== 'end') inp = f.cpu ? aiInput(f, this) : (inputs[f.device] || blankInput());
+      if (this.phase === 'play') inp = f.cpu ? aiInput(f, this) : (inputs[f.device] || blankInput());
       f.takeInput(inp);
       f.update(this);
     }
@@ -73,8 +79,144 @@ class Game {
     }
     if (this.phase === 'play') {
       const sides = new Set(this.fighters.filter(f => !f.out).map(f => this.sideOf(f)));
-      if (sides.size <= 1) { this.phase = 'end'; this.phaseT = 0; this.slow = 45; }
+      if (sides.size <= 1) this.beginEnd('ko');
+      else if (this.timeLeft > 0 && !this.sd) {
+        this.timeLeft--;
+        if (this.timeLeft > 0 && this.timeLeft <= 300 && this.timeLeft % 60 === 0) Sfx.count(false);   // últimos 5 segundos
+        if (this.timeLeft === 0) this.timeUp();
+      }
+    } else if (this.phase === 'sdintro') {
+      for (const f of this.fighters) if (!f.out) f.dmg = 300;
+      if (this.phaseT >= 150) { this.phase = 'play'; this.phaseT = 0; Sfx.count(true); }
+    } else if (this.phase === 'end') this.stepEnd();
+  }
+
+  // ============================================================
+  //  FIN DE LA PELEA
+  // ============================================================
+  // se acabó el tiempo: gana quien tenga más vidas; si hay empate, MUERTE SÚBITA
+  timeUp() {
+    const score = {};
+    for (const f of this.fighters) if (!f.out) score[this.sideOf(f)] = (score[this.sideOf(f)] || 0) + f.stocks;
+    const best = Math.max(...Object.values(score));
+    const top = Object.keys(score).filter(k => score[k] === best);
+    Sfx.ko();
+    if (top.length === 1) return this.beginEnd('time', this.fighters.filter(f => !f.out && this.sideOf(f) === top[0]));
+    this.startSuddenDeath(top);
+  }
+  startSuddenDeath(top) {
+    const M = STAGE.main, inSD = this.fighters.filter(f => !f.out && top.includes(this.sideOf(f)));
+    for (const f of this.fighters) if (!f.out && !inSD.includes(f)) { f.out = true; f.st = 'dead'; this.placing.push(f); }
+    this.projectiles = []; this.items = [];
+    inSD.forEach((f, i) => {                                // separados a lo largo del escenario, mirando al centro
+      const x = Math.round(M.x1 + (i + 1) * (M.x2 - M.x1) / (inSD.length + 1));
+      if (f.holding) f.releaseHeld();
+      if (f.heldBy) { f.heldBy.holding = null; f.heldBy = null; }
+      f.item = null; f.buffs = {}; ItemSys.refreshStats(f);
+      f.spawn(x, M.y, x < W / 2 ? 1 : -1);
+      f.stocks = 1; f.dmg = 300; f.burn = 0; f.comboN = 0; f.comboT = 0; f.remateT = 0;
+      this.burst(x, M.y - 14, 10, 'star', f.pal.light);
+    });
+    this.sd = true; this.phase = 'sdintro'; this.phaseT = 0; this.shake = 8;
+    Sfx.remate();
+  }
+  // ¿perder esta vida acabaría la pelea?
+  lastStock(d) {
+    if (d.stocks !== 1) return false;
+    if (this.fighters.some(f => f !== d && !f.out && this.sideOf(f) === this.sideOf(d))) return false;
+    return new Set(this.fighters.filter(f => f !== d && !f.out).map(f => this.sideOf(f))).size <= 1;
+  }
+  // ¿ese lanzamiento lo saca por un lateral o por arriba antes de recuperarse? (vuelo sin obstáculos)
+  predictKO(d, lvx, lvy, stun) {
+    const B = STAGE.blast, g = d.S.grav * 0.9 * (STAGE.grav || 1);
+    let x = d.x, y = d.y, vy = 0;
+    for (let i = 0; i < stun; i++) {
+      vy = Math.min(vy + g, d.S.maxFall); lvx *= PH.decay; lvy *= PH.decay;
+      x += lvx; y += vy + lvy;
+      if (x < B.l || x > B.r || y < B.t) return i + 1;              // fotogramas hasta salir
     }
+    return 0;                                                    // solo si el vuelo lo saca seguro (sin falsas alarmas)
+  }
+  // empieza la secuencia final. reason: 'ko' (sin vidas) o 'time' (tiempo agotado)
+  beginEnd(reason, winners) {
+    if (!winners) {
+      const left = this.fighters.filter(f => !f.out);
+      if (left.length) winners = left.filter(f => this.sideOf(f) === this.sideOf(left[0]));
+      else {                                                // cayeron los últimos a la vez: gana el que cayó el último
+        const lastOut = this.placing[this.placing.length - 1];
+        winners = this.fighters.filter(f => this.sideOf(f) === this.sideOf(lastOut));
+      }
+    }
+    const losers = reason === 'time' ? this.fighters.filter(f => !f.out && !winners.includes(f)) : [];
+    this.phase = 'end'; this.phaseT = 0;
+    this.endSeq = { reason, winners, losers, step: 'settle', t: 0, done: false, focus: null, portal: [] };
+    if (reason === 'ko' && !this.finalSlow) { this.slow = 66; this.shake = Math.max(this.shake, 6); }   // si no se vio venir, cámara lenta ahora
+    for (const f of [...winners, ...losers]) f.invuln = 9999;
+  }
+  // ¿se le ve de pie en el escenario?
+  standing(f) { return !f.out && f.grounded && ['ground', 'landing', 'attack', 'shield', 'win', 'lose'].includes(f.st) && f.x > 8 && f.x < W - 8; }
+  stepEnd() {
+    const E = this.endSeq; if (!E) return;
+    E.t++;
+    const M = STAGE.main, group = [...E.winners, ...E.losers];
+    if (E.step === 'settle') {
+      // esperar a que todos aterricen (o un máximo de tiempo)
+      const ready = group.every(f => this.standing(f) || f.st === 'gone' || f.out || f.st === 'dead' || f.st === 'respawn');
+      if (!(ready && E.t > 20) && E.t < 110) return;
+      for (const f of E.losers) if (this.standing(f)) { f.move = null; f.setSt('lose'); f.animT = 0; f.vx = 0; }
+      const lost = E.winners.filter(f => !this.standing(f));
+      if (lost.length) {                                    // el ganador ya no está: aparece por un portal en el centro
+        lost.forEach((f, i) => {
+          const x = Math.round((M.x1 + M.x2) / 2 + (i - (lost.length - 1) / 2) * 34);
+          f.out = false; f.spawn(x, M.y, x < W / 2 ? 1 : -1); f.setSt('portal'); f.invuln = 9999;
+        });
+        E.step = 'portal'; E.t = 0; E.portal = lost;
+        E.focus = { x: (M.x1 + M.x2) / 2, y: M.y - 34, z: 2 };
+        Sfx.powerup();
+        return;
+      }
+      this.startPoses();
+    } else if (E.step === 'portal') {
+      if (E.t >= 84) {
+        for (const f of E.portal) { f.setSt('ground'); this.burst(f.x, f.y - 14, 14, 'star', f.pal.light); }
+        Sfx.remate(); this.startPoses();
+      }
+    } else if (E.step === 'pose') {
+      // efectos de las poses (estrellitas, polvo del golpe al suelo, temblor del rugido, llamas)
+      for (const f of E.winners) if (f.st === 'win') {
+        const p = f._pose || {};
+        if (E.t % 26 === 0) this.burst(f.x, f.y - f.S.hh - 6, 3, 'star', f.pal.light);
+        if (p.slam && !f._slam) { this.burst(f.x + f.dir * 12, f.y, 8, 'dust'); this.shake = Math.max(this.shake, 4); Sfx.hit(5); }
+        f._slam = !!p.slam;
+        if (p.roar && E.t % 6 === 0) this.shake = Math.max(this.shake, 2);
+        if (p.fire && E.t % 3 === 0 && p.fh) this.burst(f.x + f.dir * p.fh[0], f.y + p.fh[1] - 14, 1, 'fire');
+      }
+      for (const f of E.losers) if (f.st === 'lose' && f.ch.id === 'maniqui' && f.animT % 50 < 5) this.burst(f.x - f.dir * 2, f.y - f.S.hh, 1, 'spark', '#ffe066');
+      if (E.t >= 210) E.done = true;
+    }
+  }
+  startPoses() {
+    const E = this.endSeq;
+    for (const f of E.winners) if (this.standing(f)) { f.move = null; f.setSt('win'); f.animT = 0; f.vx = 0; this.burst(f.x, f.y - f.S.hh, 10, 'star', '#ffd34a'); }
+    // cámara: zoom a los protagonistas si están cerca; si están muy separados, sin zoom
+    const who = (E.reason === 'time' ? [...E.winners, ...E.losers] : E.winners).filter(f => f.st === 'win' || f.st === 'lose');
+    if (!E.focus && who.length) {
+      let x1 = 1e9, x2 = -1e9, y1 = 1e9, y2 = -1e9;
+      for (const f of who) { x1 = Math.min(x1, f.x - f.S.hw); x2 = Math.max(x2, f.x + f.S.hw); y1 = Math.min(y1, f.y - f.S.hh); y2 = Math.max(y2, f.y); }
+      const z = Math.min(2.2, W / (x2 - x1 + 120), H / (y2 - y1 + 90));
+      if (z >= 1.35) E.focus = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 - 6, z };
+    }
+    E.step = 'pose'; E.t = 0;
+    Sfx.vsSwing();
+  }
+  // cámara suave hacia el objetivo (sin salirse del escenario)
+  stepCam() {
+    const E = this.endSeq, T = E && E.focus && E.step !== 'settle' ? E.focus : { x: W / 2, y: H / 2, z: 1 };
+    const c = this.cam, k = 0.07;
+    c.z += (T.z - c.z) * k; c.x += (T.x - c.x) * k; c.y += (T.y - c.y) * k;
+    if (Math.abs(c.z - T.z) < 0.002) c.z = T.z;
+    const hw = W / 2 / c.z, hh = H / 2 / c.z;
+    c.x = clamp(c.x, hw, W - hw); c.y = clamp(c.y, hh, H - hh);
   }
 
   // ---------- golpes ----------
@@ -160,6 +302,7 @@ class Game {
     const long = d.comboN > 5;                 // tras 5 golpes ya no hay ayudas: el rival se escapa (sin combos infinitos)
     const link = !long && (a.moveName === 'jab' || a.moveName === 'jab2');   // golpes de enlace: empujan poco para que entre el siguiente
     if (link) kb = Math.min(kb, 0.8);
+    if (this.sd) kb = Math.max(kb, 15);                 // MUERTE SÚBITA: hasta el roce más pequeño te manda a volar
     kb = Math.min(kb, 22);
     const ang = h.ang * Math.PI / 180;
     let lx = Math.cos(ang) * kb * dirSign, ly = -Math.sin(ang) * kb;
@@ -173,6 +316,8 @@ class Game {
       d.floatT = 44;
     }
     d.lvx = lx; d.lvy = ly; d.vx = 0; d.vy = 0; d.ff = false;
+    const flight = this.phase === 'play' && !this.finalSlow && this.lastStock(d) ? this.predictKO(d, lx, ly, Math.round(kb * 3.6)) : 0;
+    if (flight) { this.finalSlow = true; this.slow = Math.min(240, (flight + 8 + this.fighters.length) * 3 + 30); this.shake = Math.max(this.shake, 8); }   // ¡golpe final!: cámara lenta todo el vuelo
     if (ly < -0.5) { d.grounded = false; d.plat = null; }
     if (d.st === 'ledge') { d.grounded = false; }
     d.move = null; d.hidden = false;
@@ -248,6 +393,11 @@ class Game {
     }
   }
   ko(f) {
+    if (this.phase === 'end') {                           // en la secuencia final nadie pierde vidas
+      this.burst(clamp(f.x, 4, W - 4), clamp(f.y, 4, H - 4), 10, 'spark', f.pal.light);
+      f.st = 'gone'; f.vx = f.vy = f.lvx = f.lvy = 0; f.x = -999; f.y = -999;
+      return;
+    }
     const ex = clamp(f.x, 4, W - 4), ey = clamp(f.y - 12, 4, H - 4);
     const ang = Math.atan2(H / 2 - ey, W / 2 - ex);
     this.fx.push({ kind: 'ko', x: ex, y: ey, ang, t: 0, life: 50, col: f.pal.main });
@@ -290,7 +440,9 @@ class Game {
   // ---------- dibujo a resolución interna ----------
   render(c) {
     STAGE = this.stage;
-    const st = this.stage, def = st.def;
+    const st = this.stage, def = st.def, cam = this.cam, zoomed = cam.z > 1.01;
+    c.save();
+    if (zoomed) { c.translate(W / 2, H / 2); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); }
     def.renderBack(c, st, this);
     c.drawImage(def.art.stage, 0, 0);
     if (def.renderMid) def.renderMid(c, st, this);
@@ -300,11 +452,13 @@ class Game {
     // luchadores (el que está atacando, delante)
     const order = this.fighters.filter(f => f.alive()).sort((a, b) => (a.st === 'attack') - (b.st === 'attack'));
     for (const f of order) {
-      if (f.st === 'respawn' || f.st === 'grabbed') continue;
+      if (f.st === 'respawn' || f.st === 'grabbed' || f.st === 'gone' || f.st === 'portal') continue;
       const surf = surfaceBelow(f.x, f.y);
       if (surf) { const d = surf.y - f.y; if (d < 140) shadow(c, f.x, surf.y, (f.S.hw + 3) * (1 - d / 220), 0.38 * (1 - d / 140)); }
     }
     for (const f of order) {
+      if (f.st === 'gone') continue;
+      if (f.st === 'portal') { drawPortal(c, f, this.frame); continue; }
       renderFighter(c, f, this.frame);
       if (f.ch.overlay) f.ch.overlay(c, f, this.frame);
       ItemSys.drawHeld(c, f, this);
@@ -321,12 +475,13 @@ class Game {
     for (const e of this.fx) if (e.kind === 'ko') drawKO(c, e);
     // etiquetas e indicadores fuera de pantalla
     for (const f of this.fighters) {
-      if (!f.alive()) continue;
+      if (!f.alive() || f.st === 'gone' || f.st === 'portal' || f.st === 'win' || f.st === 'lose') continue;   // en las poses, sin etiqueta
       const off = f.x < 0 || f.x > W || f.y < 8 || f.y - 12 > 228;
       if (off && f.st !== 'respawn') drawOffscreen(c, f, f.label);
       else drawTag(c, f, f.label);
     }
-    this.renderHudArt(c);
+    c.restore();
+    if (cam.z < 1.02) this.renderHudArt(c);       // con zoom, el marcador se esconde (que se luzcan)
   }
 
   hudLayout() {
@@ -343,6 +498,15 @@ class Game {
         rect(c, x + l, y + yy, w - l - r, 1, col, a);
       }
     };
+    if (this.phase === 'sdintro') {                  // banda oscura para que se lea MUERTE SÚBITA
+      const k = Math.min(1, this.phaseT / 10);
+      rect(c, 0, 30, W, Math.round(112 * k), '#0c0a24', 0.55);
+      rect(c, 0, 30, W, 1, '#ff4a3a', 0.8 * k); rect(c, 0, 30 + Math.round(112 * k), W, 1, '#ff4a3a', 0.8 * k);
+    }
+    if (this.cfg.time && !this.sd) {                // temporizador arriba en el centro
+      rect(c, W / 2 - 38, 2, 76, 22, OUTLINE, 0.9); rect(c, W / 2 - 37, 3, 74, 20, '#0c0a24', 0.8);
+      rect(c, W / 2 - 37, 3, 74, 1, this.timeLeft <= 600 ? '#ff4a3a' : '#43c6f0', 0.9);
+    }
     for (const { f, x, y, w, h } of this.hudLayout()) {
       const pal = f.out ? { main: '#555070', light: '#6c6890', dark: '#3a3555', glow: '#888' } : f.pal;
       const hurt = f.flash > 0;
@@ -358,7 +522,7 @@ class Game {
       if (this.teams) rect(c, x + w - 9, y + 3, 4, 4, f.team === 0 ? '#e8443f' : '#3d7ef2');
       // vidas: corazones de rubí (los perdidos quedan apagados), con un destello de gema de vez en cuando
       if (!this.cfg.practice && !this.cfg.tutorial) {
-        const total = Math.min(5, Math.max(this.cfg.stocks || 0, f.stocks)), left = Math.min(f.stocks, 5);
+        const total = this.sd ? 1 : Math.min(5, Math.max(this.cfg.stocks || 0, f.stocks)), left = Math.min(f.stocks, 5);
         for (let i = 0; i < total; i++) drawRuby(c, x + 37 + i * 10, y + 29, i < left, (this.frame + i * 7) % 170);
       }
       if (!f.out) ItemSys.drawHud(c, f, x + 2, y - 18);    // objeto en la mano y poderes activos
@@ -367,6 +531,12 @@ class Game {
 
   // ---------- texto (pantalla a resolución real) ----------
   renderText(t) {
+    if (this.cam.z >= 1.02) return this.renderEndText(t);       // con zoom, solo los textos de la secuencia final
+    if (this.cfg.time && !this.sd) {
+      const s = Math.ceil(this.timeLeft / 60), last = s <= 10;
+      const str = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+      t.text(str, W / 2 + (last && this.timeLeft % 60 > 50 ? 1 : 0), 5, 16, last ? '#ff4a3a' : '#ffffff', 'center');
+    }
     for (const { f, x, y } of this.hudLayout()) {
       t.text(f.label, x + 37, y + 3, 8, f.out ? '#6c6890' : '#ffffff');
       if (f.out) { t.text('FUERA', x + 40, y + 16, 8, '#6c6890'); continue; }
@@ -376,6 +546,7 @@ class Game {
       t.text(d + '%', x + 104 + shakeX, y + 11, 16, col, 'right');          // debajo del nombre: 3 cifras no lo tapan
       if (f.stocks > 5 && !this.cfg.practice && !this.cfg.tutorial) t.text('x' + f.stocks, x + 88, y + 29, 8, '#ff8aa0');
     }
+    if (this.phase === 'end') return this.renderEndText(t);
     // contador de combo sobre el rival y ¡REMATE!
     for (const f of this.fighters) {
       if (!f.alive() || f.st === 'respawn' || !f.comboBy) continue;
@@ -396,20 +567,35 @@ class Game {
       if (n >= 1) t.text(String(n), W / 2, 88, 48, '#ffd34a', 'center');
     } else if (this.phase === 'play' && this.phaseT < 50) {
       t.text('¡YA!', W / 2, 88, 48, '#ffd34a', 'center');
-    } else if (this.phase === 'end') {
-      t.text('¡FIN!', W / 2, 88, 48, '#ffffff', 'center');
+    } else if (this.phase === 'sdintro') {
+      const p = this.phaseT, pop = p < 8 ? 1 + (8 - p) * 0.12 : 1, blink = (p >> 3) % 2;
+      t.text('¡MUERTE', W / 2, 34, Math.round(40 * pop), blink ? '#ff4a3a' : '#ffd34a', 'center');
+      t.text('SÚBITA!', W / 2, 34 + Math.round(44 * pop), Math.round(40 * pop), blink ? '#ffd34a' : '#ff4a3a', 'center');
+      if (p > 30) t.text('Todos al máximo de daño: el primer golpe decide', W / 2, 128, 8, '#ffffff', 'center');
+    }
+  }
+  // textos de la secuencia final
+  renderEndText(t) {
+    const E = this.endSeq; if (!E || E.done) return;            // con los resultados en pantalla, sin textos detrás
+    if (E.step === 'settle' || (E.step === 'portal' && E.t < 20)) {
+      const txt = E.reason === 'time' ? '¡TIEMPO!' : '¡FIN!';
+      t.text(txt, W / 2, 88, 48, E.reason === 'time' ? '#ffd34a' : '#ffffff', 'center');
+    } else if (E.step === 'pose') {
+      const name = this.result().winner, txt = '¡GANA ' + name + '!';
+      const size = txt.length * 16 > W - 20 ? 8 : 16, k = Math.min(1, E.t / 12);
+      t.text(txt, W / 2, Math.round(-20 + 34 * k), size, '#ffd34a', 'center');
     }
   }
 
   result() {
-    // posiciones: los que siguen vivos primero
-    const alive = this.fighters.filter(f => !f.out);
-    const order = [...alive, ...this.placing.slice().reverse()];
+    // posiciones: primero los ganadores, luego los que siguen en pie (por vidas) y después por orden de eliminación
+    const W0 = this.endSeq ? this.endSeq.winners : [];
+    const alive = this.fighters.filter(f => !f.out && !W0.includes(f)).sort((a, b) => b.stocks - a.stocks);
+    const order = [...new Set([...W0, ...alive, ...this.placing.slice().reverse()])];
+    const top = order[0];
     let winner;
-    if (this.teams) {
-      const t = alive.length ? alive[0].team : 0;
-      winner = TEAM_NAMES[t];
-    } else winner = alive.length ? fullName(alive[0]) : '—';
-    return { order, winner, teams: this.teams, winTeam: alive.length ? alive[0].team : null };
+    if (this.teams) winner = TEAM_NAMES[top ? top.team : 0];
+    else winner = top ? fullName(top) : '—';
+    return { order, winner, teams: this.teams, winTeam: top ? top.team : null };
   }
 }

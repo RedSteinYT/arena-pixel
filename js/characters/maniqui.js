@@ -55,6 +55,20 @@
         else { p.fh = [3, -31]; p.bh = [-3, -12]; p.head[1] -= 1; f.animT += (t === 75 ? 0 : 0); }
         return true;
       },
+      // Victoria: saca músculo y celebra con los puños
+      win(p, f, T) {
+        const t = T % 110;
+        if (t < 60) { const b = (t >> 4) % 2; p.fh = [3, -31 - b]; p.bh = [-3, -12]; p.head[1] -= 1; p.neck[0] -= 1; }   // músculo
+        else { const k = (t >> 3) % 2; p.fh = k ? [6, -29] : [8, -18]; p.bh = k ? [-6, -18] : [-5, -29]; }             // puños arriba
+        return true;
+      },
+      // Derrota: cortocircuito: la cabeza se ladea y se queda colgando
+      lose(p, f, T) {
+        const glitch = T % 50 < 5;
+        crouchPose(p, 4); p.fh = [4, -4]; p.bh = [-4, -4];
+        p.head[0] -= glitch ? 1 : 3; p.head[1] += glitch ? 0 : 3; p.neck[0] -= 1;
+        return true;
+      },
       idle(p, f, T) {
         const b = Math.sin(T * 0.08) > 0.3 ? 1 : 0;
         p.neck[1] += b; p.head[1] += b; p.fh[1] += b; p.bh[1] += b;

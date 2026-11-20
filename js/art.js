@@ -436,6 +436,38 @@ function drawProjectile(c, pr, frame) {
   }
 }
 
+// portal del que reaparece el ganador al final (si cayó justo después de ganar)
+//  0-26 se abre · 26-72 el luchador se materializa de abajo arriba · 72-84 se cierra
+function drawPortal(c, f, frame) {
+  const t = f.t, x = Math.round(f.x), base = Math.round(f.y), hh = f.S.hh + 10, cy = base - hh / 2;
+  const open = t < 26 ? t / 26 : t > 72 ? Math.max(0, 1 - (t - 72) / 12) : 1;
+  const rh = Math.round(hh / 2 * open), rw = Math.round((f.S.hw + 9) * (0.4 + 0.6 * open));
+  if (rh > 1) {
+    // anillo ovalado que gira: puntos de colores del jugador alrededor
+    withAlpha(c, 0.55 * open, () => { c.fillStyle = OUTLINE; c.beginPath(); c.ellipse(x, cy, rw + 2, rh + 2, 0, 0, Math.PI * 2); c.fill(); });   // fondo oscuro: se ve en cualquier escenario
+    withAlpha(c, 0.45 * open, () => { c.fillStyle = f.pal.main; c.beginPath(); c.ellipse(x, cy, Math.max(1, rw - 1), Math.max(1, rh - 1), 0, 0, Math.PI * 2); c.fill(); });
+    withAlpha(c, 0.5 * open, () => { c.fillStyle = f.pal.light; c.beginPath(); c.ellipse(x, cy, Math.max(1, rw - 5), Math.max(1, rh - 5), 0, 0, Math.PI * 2); c.fill(); });
+    for (let i = 0; i < 56; i++) {                             // anillo que gira
+      const a = i / 56 * Math.PI * 2 + frame * 0.12;
+      const col = i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? f.pal.light : f.pal.glow;
+      rect(c, x + Math.cos(a) * rw - 1, cy + Math.sin(a) * rh - 1, 2, 2, col);
+      px(c, x + Math.cos(-a * 1.3) * (rw - 4), cy + Math.sin(-a * 1.3) * (rh - 4), '#ffffff', 0.7);
+    }
+    for (let i = 0; i < 6; i++) {                              // chispas que suben
+      const yy = base - ((frame * 1.5 + i * 13) % hh);
+      px(c, x - rw + 3 + ((i * 7 + frame) % (rw * 2 - 4)), yy, '#ffffff', 0.8);
+    }
+  }
+  if (t >= 26) {                                               // materialización de abajo arriba, en blanco al principio
+    const k = Math.min(1, (t - 26) / 46), top = base - Math.round((hh + 4) * k);
+    c.save(); c.beginPath(); c.rect(x - 60, top, 120, base - top + 3); c.clip();
+    const fl = f.flash; f.flash = t < 66 && (t >> 1) % 2 ? 1 : 0;
+    renderFighter(c, f, frame);
+    f.flash = fl; c.restore();
+    if (k < 1) rect(c, x - rw + 2, top, rw * 2 - 4, 1, '#ffffff', 0.9);   // línea de "escaneo"
+  }
+}
+
 function drawRespawnPad(c, f, frame) {
   const x = Math.round(f.x), y = Math.round(f.y);
   rect(c, x - 13, y, 26, 2, f.pal.light);

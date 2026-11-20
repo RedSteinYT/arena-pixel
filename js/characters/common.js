@@ -115,6 +115,16 @@ function poseFor(f) {
     if (!call('select', T)) call('idle', T);
   } else if (st === 'taunt') {                   // pantalla VS: cada uno amenaza a su manera
     if (!call('taunt', T) && !call('select', T)) call('idle', T);
+  } else if (st === 'win') {                     // victoria: cada luchador la suya (si no, brazos en alto)
+    if (!call('win', T)) {
+      const k = (T >> 4) % 2;
+      p.fh = [5 * z, (-30 - 2 * k) * z]; p.bh = [-4 * z, (-28 + 2 * k) * z]; p.head[1] -= z;
+    }
+  } else if (st === 'lose') {                    // derrota: cabizbajo
+    if (!call('lose', T)) {
+      crouchPose(p, 3 * z); p.head[0] += 2 * z; p.head[1] += 2 * z;
+      p.fh = [3 * z, p.hip[1] + 2 * z]; p.bh = [-2 * z, p.hip[1] + 3 * z];
+    }
   } else if (st === 'ground' || st === 'respawn') {
     if (Math.abs(f.vx) > 0.4 && st === 'ground') {
       const ph = T * (ch.runRate || 0.32);

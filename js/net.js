@@ -114,8 +114,8 @@ const Net = (() => {
     if ('$S' in v) return new Set(v.$S.map(x => dec(x, g)));
     const o = {}; for (const k in v) o[k] = dec(v[k], g); return o;
   }
-  const FSKIP = new Set(['cfg', 'ch', 'S', 'baseS', 'pal', 'ai', 'prev', 'buf', 'flickX', 'flickY', 'cstick', 'cHeld', 'cBufT', 'cBufDir', 'cArmed', 'hitSet', '_pose']);
-  const GKEYS = ['frame', 'phase', 'phaseT', 'shake', 'slow', 'placing', 'cloudX', 'items'];
+  const FSKIP = new Set(['cfg', 'ch', 'S', 'baseS', 'pal', 'ai', 'prev', 'buf', 'flickX', 'flickY', 'cstick', 'cHeld', 'cBufT', 'cBufDir', 'cArmed', '_slam', 'hitSet', '_pose']);
+  const GKEYS = ['frame', 'phase', 'phaseT', 'shake', 'slow', 'placing', 'cloudX', 'items', 'timeLeft', 'sd', 'endSeq', 'cam', 'finalSlow'];
   const SSKIP = new Set(['def', 'id', 'spawns', 'respawn', 'blast', 'grav', 'main', 'plats', 'flakes', 'embers', 'motes']);
   function snapshot(g) {
     const v = {}, s = {};

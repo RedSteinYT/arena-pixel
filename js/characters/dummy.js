@@ -43,6 +43,8 @@
     selectH: 36,
     rest: { hip: [0, -9], neck: [0, -17], head: [1, -22], fh: [5, -11], bh: [-3, -12], ff: [3, 0], bf: [-3, 0] },
     poses: {
+      win(p, f, T) { p.fh = [8, -24 + ((T >> 3) % 2)]; return true; },                         // saluda
+      lose(p, f, T) { crouchPose(p, 5); p.head[0] += 3; p.head[1] += 3; p.fh = [5, -2]; p.bh = [-3, -2]; return true; },
       idle(p, f, T) {                      // se balancea un poco, como un muñeco sin fuerza
         const s = Math.round(Math.sin(T * 0.05));
         p.head[0] += s; p.fh[1] += 1; p.bh[1] += 1;

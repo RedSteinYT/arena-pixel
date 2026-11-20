@@ -96,6 +96,28 @@
         }
         return true;
       },
+      // Victoria: saltitos con un giro, patada alta y gesto de viento
+      win(p, f, T) {
+        const t = T % 120, lift = (d) => { for (const k of ['hip', 'neck', 'head', 'fh', 'bh', 'ff', 'bf']) p[k][1] -= d; };
+        if (t < 48) {                                              // tres saltitos
+          const h = Math.round(Math.abs(Math.sin(t * Math.PI / 16)) * 7);
+          lift(h); p.fh = [6, -24 - h]; p.bh = [-5, -20 - h]; p.ff = [3, -2 - h]; p.bf = [-3, -3 - h];
+        } else if (t < 78) {                                       // patada alta
+          p.ff = [14, -19]; p.bf = [-2, 0]; p.fh = [-4, -13]; p.bh = [-6, -11]; p.neck[0] -= 2; p.head[0] -= 2;
+        } else {                                                   // saluda al viento
+          const w = (t >> 3) % 2;
+          p.fh = [8 + w, -20]; p.bh = [-3, -10]; p.head[0] += 1;
+        }
+        return true;
+      },
+      // Derrota: sentada en el suelo, agotada, con las manos en las rodillas
+      lose(p, f, T) {
+        const pant = (T >> 4) % 2;
+        crouchPose(p, 5); p.ff = [7, -1]; p.bf = [-2, 0]; p.fh = [6, -6 + pant]; p.bh = [3, -6 + pant];
+        p.head[0] += 2; p.head[1] += 2 + pant; p.neck[1] += pant;
+        if (T % 90 > 70) p.head[0] -= (T >> 2) % 2 ? 1 : -1;         // niega con la cabeza
+        return true;
+      },
       idle(p, f, T) {
         const b = (T >> 3) % 2;
         p.hip[1] += 1 + b; p.neck[1] += 1 + b; p.head[1] += 1 + b; p.fh = [6, -11 + b]; p.bh = [2, -12 + b];

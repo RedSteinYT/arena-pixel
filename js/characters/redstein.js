@@ -108,6 +108,24 @@
         else { crouchPose(p, 1 + breathe); p.sword = 2.55; }
         return true;
       },
+      // Victoria: gira la espada en llamas, la clava y la alza al cielo ardiendo
+      win(p, f, T) {
+        if (T < 24) { crouchPose(p, 2); p.sword = 2.55 + T * 0.55; p.fire = 1; p.fh = [6, -16]; }
+        else if (T < 40) { crouchPose(p, 4); p.sword = 1.35; p.fire = 1; p.fh = [9, -6]; p.bh = [-4, -11]; }   // la clava
+        else {
+          const pump = ((T - 40) % 70) < 10 ? -2 : 0, b = Math.sin(T * 0.1) > 0 ? 1 : 0;
+          p.sword = -1.57 + Math.sin(T * 0.08) * 0.05; p.fire = 1;
+          p.fh = [3, -30 + pump]; p.bh = [-5, -13 + b]; p.head[1] -= 1; p.neck[0] -= 1;
+        }
+        return true;
+      },
+      // Derrota: de rodillas, apoyado en la espada clavada, cabeza gacha
+      lose(p, f, T) {
+        const b = Math.sin(T * 0.12) > 0.6 ? 1 : 0;
+        crouchPose(p, 6 + b); p.sword = 1.45; p.fh = [8, -6]; p.bh = [3, -5];
+        p.bf = [-6, 0]; p.ff = [5, -1]; p.head[0] += 2; p.head[1] += 3;
+        return true;
+      },
       idle(p, f, T) {                                     // guardia de espadachín, la hoja hacia atrás
         const b = Math.sin(T * 0.08) > 0.3 ? 1 : 0;
         crouchPose(p, 1 + b);

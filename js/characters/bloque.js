@@ -85,6 +85,20 @@
         else { p.fh = [9, -16]; p.bh = [4, -16]; crouchPose(p, 1); }
         return true;
       },
+      // Victoria: alterna los puños en alto y golpea el suelo
+      win(p, f, T) {
+        const t = T % 100;
+        if (t < 70) { const k = (t >> 4) % 2; p.fh = k ? [6, -42] : [12, -20]; p.bh = k ? [2, -18] : [-1, -42]; p.head[1] -= 1; }
+        else if (t < 80) { p.fh = [6, -40]; p.bh = [-1, -40]; }
+        else { crouchPose(p, 6); p.fh = [13, -2]; p.bh = [-3, -2]; p.slam = 1; }
+        return true;
+      },
+      // Derrota: se desmorona, los brazos colgando
+      lose(p, f, T) {
+        const s = T % 70 < 6 ? ((T >> 1) % 2 ? 1 : -1) : 0;        // se le caen piedrecitas
+        crouchPose(p, 7); p.fh = [8 + s, -2]; p.bh = [-4, -2]; p.head[0] += 3; p.head[1] += 3;
+        return true;
+      },
       idle(p, f, T) {
         const b = Math.sin(T * 0.05) > 0 ? 1 : 0;   // respiración lenta y pesada
         p.neck[1] += b; p.head[1] += b; p.fh[1] += b; p.bh[1] += b;

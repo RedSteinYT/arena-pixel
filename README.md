@@ -30,6 +30,8 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 - **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo con un ataque fuerte o un especial.
 - **14 objetos** que caen en plena pelea: armas que cambian tu ataque (espada láser, bláster, bumerán…), cosas para lanzar y poderes temporales.
 - **Pantalla VS** con pullas antes de cada combate y música rock propia para cada arena.
+- **Finales de película:** cámara lenta en el golpe final, zoom al ganador y animaciones de victoria y derrota propias de cada luchador.
+- **Temporizador** (2, 3, 5 u 8 minutos, o sin límite). Si se acaba el tiempo con empate en vidas: **¡MUERTE SÚBITA!**, todos al 300 % y el primer golpe decide.
 - **Modo en línea** con código de sala: uno crea la sala, los demás escriben el código y a pelear.
 - **PRÁCTICA y TUTORIAL** para aprender todo lo anterior paso a paso.
 

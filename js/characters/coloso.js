@@ -123,6 +123,21 @@
         else { const b = Math.sin(T * 0.035) > 0 ? 1 : 0; p.neck[1] += b; p.head[1] += b; }
         return true;
       },
+      // Victoria: ruge con los brazos abiertos y se golpea el pecho
+      win(p, f, T) {
+        const t = T % 150;
+        if (t < 60) { p.fh = [31, -58]; p.bh = [-25, -56]; p.head[1] -= 3; p.neck[1] -= 1; p.roar = 1; }
+        else if (t < 120) { const k = (t / 9 | 0) % 2; if (k) { p.fh = [13, -40]; p.bh = [-18, -30]; } else { p.bh = [9, -41]; p.fh = [24, -28]; } }
+        else { p.fh = [26, -62]; p.bh = [-22, -62]; crouchPose(p, 2); }
+        return true;
+      },
+      // Derrota: se sienta pesadamente, cabizbajo
+      lose(p, f, T) {
+        const b = Math.sin(T * 0.04) > 0 ? 1 : 0;
+        crouchPose(p, 12); p.ff = [14, -2]; p.bf = [-12, 0]; p.fh = [20, -12 + b]; p.bh = [-10, -12 + b];
+        p.head[0] += 3; p.head[1] += 5 + b;
+        return true;
+      },
       idle(p, f, T) {
         const b = Math.sin(T * 0.035) > 0 ? 1 : 0;   // respiración muy lenta
         p.neck[1] += b; p.head[1] += b; p.fh[1] += b * 2; p.bh[1] += b * 2;

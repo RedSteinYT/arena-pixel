@@ -144,7 +144,9 @@
   .sbtn.go { background: #c7362f; box-shadow: inset 0 -.25em 0 #7a1730, inset 0 .15em 0 #ff8a6b; }
   .sbtn.dim { opacity: .75; }
   .lives { display: flex; align-items: center; gap: .6em; font-size: 1em; color: #cfc8f0; }
-  .itemsBtn { margin-left: 1em; white-space: nowrap; }
+  .itemsBtn { margin-left: .4em; white-space: nowrap; }
+  #modeScr .lives { flex-wrap: wrap; justify-content: flex-end; row-gap: .45em; }
+  #modeScr .lives .brk { flex-basis: 100%; height: 0; }     /* TIEMPO y OBJETOS en una segunda fila: no empujan CONTROLES fuera */
   .lives b { font-size: 1.6em; color: var(--gold); min-width: 1.4em; text-align: center; }
   .hov { outline: .3em solid var(--hc, var(--gold)); outline-offset: .15em; filter: brightness(1.15); z-index: 2; position: relative; }
   .hintbar { margin-top: auto; font-size: .8em; line-height: 1.9; color: var(--muted); text-align: center; background: rgba(11,10,36,.6); padding: .6em; border: .2em solid var(--line); }
@@ -484,6 +486,7 @@
         <span class="sbtn back" data-act="back">◀ VOLVER</span>
         <h2>MODO DE BATALLA</h2>
         <div class="lives">VIDAS <span class="sbtn" data-act="lives:-1">−</span><b id="mLives">3</b><span class="sbtn" data-act="lives:1">+</span>
+          <i class="brk"></i><span class="sbtn itemsBtn" data-act="time" id="mTime">TIEMPO: 5 MIN</span>
           <span class="sbtn itemsBtn" data-act="items" id="mItems">OBJETOS: SÍ</span></div>
         <span class="sbtn" data-act="controls">CONTROLES</span>
       </div>

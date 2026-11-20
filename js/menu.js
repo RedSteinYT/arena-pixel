@@ -364,7 +364,7 @@ function frameBody(now) {
     Sfx.muted = false;
     if (active === demo) for (const f of demo.fighters) if (f.out) { f.out = false; f.stocks = 99; f.respawn(); }
   } else acc = 0;
-  if (screen === 'game' && game && game.phase === 'end' && game.phaseT > 150 && !resultsShown) showResults();
+  if (screen === 'game' && game && game.phase === 'end' && ((game.endSeq && game.endSeq.done) || game.phaseT > 900) && !resultsShown) showResults();
 
   // dibujo
   const act = (screen === 'game' || screen === 'results' || (screen === 'controls' && ctrlReturn === 'pause')) && game ? game : active;
