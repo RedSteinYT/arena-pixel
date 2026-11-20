@@ -43,7 +43,7 @@ class Fighter {
   }
 
   spawn(x, y, dir) {
-    this.x = x; this.y = y; this.vx = this.vy = this.lvx = this.lvy = 0;
+    this.x = x; this.y = y; this.vx = this.vy = this.lvx = this.lvy = 0; this.sdLaunch = false;
     this.dir = dir; this.grounded = true; this.plat = surfaceBelow(x, y) || STAGE.main;
     this.setSt('ground');
     this.jumps = this.S.jumps; this.upUsed = this.sideUsed = this.dodgeUsed = false; this.ff = false;
@@ -487,7 +487,7 @@ class Fighter {
       if (this.ff && this.vy >= 0) this.vy = this.S.fastFall;
     }
     // empuje de los golpes (se va frenando)
-    this.lvx *= PH.decay; this.lvy *= PH.decay;
+    if (!this.sdLaunch) { this.lvx *= PH.decay; this.lvy *= PH.decay; }   // lanzado en muerte súbita: no frena
     if (Math.abs(this.lvx) < 0.05) this.lvx = 0;
     if (Math.abs(this.lvy) < 0.05) this.lvy = 0;
     if (this.st === 'hitstun' && (Math.hypot(this.lvx, this.lvy) > 5) && this.t % 2 === 0) g.burst(this.x, this.y - 12, 1, 'smoke');

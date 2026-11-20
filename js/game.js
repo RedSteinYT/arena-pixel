@@ -305,7 +305,6 @@ class Game {
     const long = d.comboN > 5;                 // tras 5 golpes ya no hay ayudas: el rival se escapa (sin combos infinitos)
     const link = !long && (a.moveName === 'jab' || a.moveName === 'jab2');   // golpes de enlace: empujan poco para que entre el siguiente
     if (link) kb = Math.min(kb, 0.8);
-    if (this.sd) kb = Math.max(kb, 15);                 // MUERTE SÚBITA: hasta el roce más pequeño te manda a volar
     kb = Math.min(kb, 22);
     const ang = h.ang * Math.PI / 180;
     let lx = Math.cos(ang) * kb * dirSign, ly = -Math.sin(ang) * kb;
@@ -318,8 +317,14 @@ class Game {
       if (ly > -5.4) ly = -5.4;
       d.floatT = 44;
     }
+    // MUERTE SÚBITA: cualquier roce lanza fuera de la arena, sin importar el peso ni la dirección del golpe
+    if (this.sd) {
+      const sx = dirSign || (d.x < a.x ? -1 : 1), a2 = Math.max(32, Math.min(60, Math.abs(h.ang) || 40)) * Math.PI / 180;
+      lx = sx * Math.cos(a2) * 11; ly = -Math.sin(a2) * 11; kb = 22;
+      d.sdLaunch = true;                                   // el impulso no se frena en el aire (ver física)
+    }
     d.lvx = lx; d.lvy = ly; d.vx = 0; d.vy = 0; d.ff = false;
-    const flight = this.phase === 'play' && !this.finalSlow && this.lastStock(d) ? this.predictKO(d, lx, ly, Math.round(kb * 3.6)) : 0;
+    const flight = this.phase === 'play' && !this.finalSlow && this.lastStock(d) ? (this.sd ? Math.ceil(Math.max(30, lx > 0 ? STAGE.blast.r - d.x : d.x - STAGE.blast.l) / Math.max(1, Math.abs(lx))) : this.predictKO(d, lx, ly, Math.round(kb * 3.6))) : 0;
     if (flight) { this.finalSlow = true; this.slow = Math.min(240, (flight + 8 + this.fighters.length) * 3 + 30); this.shake = Math.max(this.shake, 8); }   // ¡golpe final!: cámara lenta todo el vuelo
     if (ly < -0.5) { d.grounded = false; d.plat = null; }
     if (d.st === 'ledge') { d.grounded = false; }
@@ -329,6 +334,7 @@ class Game {
     // aturdimiento mínimo para que los combos encadenen (los golpes normales, no los fuertes ni los especiales)
     if (!long && a.move && a.st === 'attack' && !a.move.smash && !a.move.special) d.stun = Math.max(d.stun, link ? 22 : 20);
     if (d.floatT > 0 && a.move && a.move.popup) d.stun = Math.max(d.stun, 40);   // mientras flota sigue aturdido
+    if (this.sd) d.stun = 999;                         // muerte súbita: no se recupera hasta salir de la pantalla
     d.flash = 4;
     d.upUsed = false; d.sideUsed = false; d.dodgeUsed = false;
     d.lastHitBy = a; d.lastHitT = this.frame;
