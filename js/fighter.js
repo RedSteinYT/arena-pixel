@@ -71,8 +71,12 @@ class Fighter {
     if (Math.abs(I.my) > 0.8 && Math.abs(P.my) < 0.4) this.flickY = 0; else this.flickY++;
     // palanca derecha = ataque fuerte directo
     this.cstick = null;
-    const cmag = Math.max(Math.abs(I.cx), Math.abs(I.cy)), pmag = Math.max(Math.abs(P.cx), Math.abs(P.cy));
-    if (cmag > 0.7 && pmag < 0.4) this.cstick = Math.abs(I.cx) >= Math.abs(I.cy) ? { x: sgn(I.cx), y: 0 } : { x: 0, y: sgn(I.cy) };
+    const cmag = Math.max(Math.abs(I.cx), Math.abs(I.cy));
+    // se "arma" al volver al centro y se dispara al pasar del 70 %, aunque la palanca se mueva despacio
+    if (cmag < 0.4) this.cArmed = true;
+    if (cmag > 0.7 && this.cArmed !== false) { this.cArmed = false; this.cBufT = 10; this.cBufDir = Math.abs(I.cx) >= Math.abs(I.cy) ? { x: sgn(I.cx), y: 0 } : { x: 0, y: sgn(I.cy) }; }
+    else if (this.cBufT > 0 && this.hitlag <= 0) this.cBufT--;          // se recuerda unos fotogramas, como los botones
+    this.cstick = this.cBufT > 0 ? this.cBufDir : null;
     this.cHeld = cmag > 0.5;
   }
   use(k) { if (this.buf[k] > 0) { this.buf[k] = 0; return true; } return false; }
@@ -256,7 +260,7 @@ class Fighter {
 
   stGround(g) {
     const I = this.inp;
-    if (this.cstick) { this.groundAttack(g, this.cstick); return; }
+    if (this.cstick) { const c = this.cstick; this.cBufT = 0; this.cstick = null; this.groundAttack(g, c); return; }
     if (this.use('str')) { this.groundAttack(g, this.strongDir()); return; }
     if (this.use('jump')) { this.setSt('jumpsquat'); return; }
     if (this.use('grab')) { if (!ItemSys.grabButton(this, g)) this.startMove('grab', g); return; }   // agarre · recoger · lanzar objeto
@@ -288,7 +292,7 @@ class Fighter {
     else this.vx *= (1 - this.S.airFric);
     if (this.vy > 0 && I.my > 0.7 && this.flickY <= 3) this.ff = true;
     if (helpless) return;
-    if (this.cstick) { this.airAttack(g, this.cstick); return; }
+    if (this.cstick) { const c = this.cstick; this.cBufT = 0; this.cstick = null; this.airAttack(g, c); return; }
     if (this.use('str')) { const d = this.strongDir(); this.airAttack(g, d.y ? d : (Math.abs(this.inp.mx) > 0.5 ? d : null)); return; }
     if (this.use('jump') && this.jumps > 0) {
       this.jumps--; this.vy = -this.S.djumpV; this.ff = false;
@@ -343,7 +347,7 @@ class Fighter {
         return;
       }
     }
-    const chargeHeld = m.smash ? (this.inp.atk || this.inp.str) : m.chargeSpc ? this.inp.spc : false;
+    const chargeHeld = m.smash ? (this.inp.atk || this.inp.str || this.cHeld) : m.chargeSpc ? this.inp.spc : false;   // con mando: mantener la palanca derecha
     if (chargeHeld && this.t === m.s - 2 && this.charge < (m.maxCharge || 60)) {
       this.charge++; this.t--;
       if (this.charge % 6 === 0) g.burst(this.x + (Math.random() * 20 - 10), this.y - 10 - Math.random() * 16, 1, 'star', '#fff08c');
