@@ -71,7 +71,10 @@ const Nav = {
   container() { const id = screen === 'game' ? (paused ? 'pause' : null) : screen; return id ? $(id) : null; },
   items() {
     const c = this.container(); if (!c) return [];
-    return [...c.querySelectorAll('button, input[type=range]')].filter(b => !b.disabled && b.offsetParent !== null);
+    const dock = document.querySelector('#volDock.on');
+    const els = [...c.querySelectorAll('button, input[type=range]'), ...(dock && !paused ? dock.querySelectorAll('button, input[type=range]') : [])];
+    // en la pausa, el silencio se hace con A sobre el deslizador (así no hay que vaciarlo para llegar al botón)
+    return els.filter(b => !b.disabled && b.offsetParent !== null && !b.closest('#pauseAudio .paRow > button'));
   },
   set(b) {
     if (this.el) this.el.classList.remove('focus');
@@ -89,6 +92,8 @@ const Nav = {
     if (dx && this.el.type === 'range') {                 // deslizador: ← → cambia el valor
       this.el.value = +this.el.value + dx; this.el.dispatchEvent(new Event('input')); return;
     }
+    const own = this.el.type === 'range' && this.el.closest('.volItem');
+    if (own && dy > 0) { this.set(own.querySelector('button')); Sfx.blip(); return; }   // bajar desde el deslizador: a su propio botón
     const r0 = this.el.getBoundingClientRect(), c0 = [r0.left + r0.width / 2, r0.top + r0.height / 2];
     // primero los botones "alineados" (que se solapan en el otro eje: misma fila al ir a los lados,
     // misma columna al subir/bajar); entre ellos, el más cercano. Así no se salta botones.

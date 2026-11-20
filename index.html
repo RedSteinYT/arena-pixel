@@ -453,12 +453,15 @@
     background: linear-gradient(135deg, rgba(40,28,90,.95), rgba(18,13,36,.95)); border: .2em solid #6c5aff; white-space: nowrap; }
   #volDock .volPop::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: .6em; }   /* puente: el ratón no pierde el desplegable */
   #volDock .volPop small { display: block; margin-bottom: .45em; font-size: .7em; color: #9fd8ff; letter-spacing: .1em; }
-  #volDock .volItem:hover .volPop, #volDock .volItem:focus-within .volPop { display: block; }
+  #volDock .volItem:hover .volPop, #volDock .volItem:has(.hov) .volPop, #volDock .volItem:has(.focus) .volPop { display: block; }
+  #volDock .volItem.hov .volPop { display: block; }
+  #volDock .sndBtn.hov, #volDock .sndRange.hov { outline: .2em solid var(--hc, var(--gold)); outline-offset: .2em; }
   #pauseAudio { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 2px; font-size: 10px; }
   #pauseAudio .paRow { display: flex; align-items: center; gap: 10px; }
   #pauseAudio .paRow span { width: 6.5em; text-align: left; font-size: 9px; color: #cfc8f0; }
   #pauseAudio .sndRange { flex: 1; width: auto; min-width: 9em; }
   #pauseAudio .sndNum { width: 2em; text-align: right; color: var(--gold); }
+  #pauseAudio .paHint { font-size: 8px; color: #8a84b8; text-align: center; margin-top: 2px; }
   /* tarjeta del creador (abajo a la izquierda de la portada) */
   #creator { position: absolute; left: 2.5%; bottom: 4%; z-index: 5; display: flex; align-items: center; gap: 1em;
     font-size: clamp(7px, .95cqw, 15px); padding: .8em 1.2em .8em .8em;

@@ -26,7 +26,7 @@ const Pointer = (() => {
     const root = host && host.root(); if (!root) return null;
     const hit = document.elementFromPoint(c.x, c.y);
     const el = hit && hit.closest('[data-act]');
-    return el && root.contains(el) && !el.classList.contains('disabled') ? el : null;
+    return el && (root.contains(el) || el.closest('#volDock.on')) && !el.classList.contains('disabled') ? el : null;
   }
   function setHover(c, el) {
     if (c.hov === el) return;
@@ -34,7 +34,12 @@ const Pointer = (() => {
     c.hov = el;
     if (el) { el.classList.add('hov'); el.style.setProperty('--hc', c.color || '#ffd34a'); if (host && host.hover) host.hover(c.dev, el); }
   }
-  function confirm(c) { const el = hoverAt(c); setHover(c, el); host && host.act(c.dev, el, el ? el.dataset.act : null); }
+  function confirm(c) {
+    const el = hoverAt(c); setHover(c, el);
+    const a = el ? el.dataset.act : null;
+    if (a && a.startsWith('vol')) { if (!c.mouse) Sonido.pointerAct(el, a, c.x); return; }   // volumen (con ratón lo hace el propio control)
+    host && host.act(c.dev, el, a);
+  }
 
   // ratón = puntero del Teclado 1
   addEventListener('mousemove', e => {
@@ -43,6 +48,7 @@ const Pointer = (() => {
   });
   addEventListener('mousedown', e => {
     if (!host) return;
+    if (e.target.closest && e.target.closest('#volDock')) return;     // el volumen funciona con el ratón normal (arrastrar, clic)
     const c = ensure('kb1'); c.x = e.clientX; c.y = e.clientY;
     if (e.button === 0) confirm(c);
     if (e.button === 2) host.back('kb1');

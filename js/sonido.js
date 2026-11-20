@@ -39,10 +39,12 @@ const Sonido = (() => {
   function set(k, v) { st[k] = clamp(Math.round(v), 0, 10); st[k + 'Mute'] = st[k] === 0; apply(); save(); refresh(); }
   function control(k, withNum) {
     const btn = document.createElement('button'); btn.className = 'sndBtn'; btn.setAttribute('aria-label', NAMES[k]);
+    btn.dataset.act = 'vol:' + k;
     btn.onclick = e => { e.stopPropagation(); toggle(k); };
     const range = document.createElement('input');
     Object.assign(range, { type: 'range', min: 0, max: 10, step: 1, className: 'sndRange' });
     range.setAttribute('aria-label', 'Volumen de ' + NAMES[k].toLowerCase());
+    range.dataset.act = 'volr:' + k;
     range.oninput = () => { set(k, +range.value); if (k === 'sfx' && uiTick % 2 === 0) Sfx.blip(); };
     range.addEventListener('padpress', () => toggle(k));          // con el mando: A sobre el deslizador silencia / reactiva
     const v = { k, btn, range, num: null };
@@ -57,7 +59,7 @@ const Sonido = (() => {
     const dock = document.createElement('div'); dock.id = 'volDock';
     for (const k of ['sfx', 'music']) {
       const v = control(k, false), item = document.createElement('div'), pop = document.createElement('div');
-      item.className = 'volItem'; pop.className = 'volPop';
+      item.className = 'volItem'; pop.className = 'volPop'; pop.dataset.act = 'volp:' + k;   // el puntero no lo cierra al pasar por el recuadro
       pop.innerHTML = `<small>${NAMES[k]}</small>`; pop.appendChild(v.range);
       v.range.addEventListener('input', () => uiTick++);
       item.append(pop, v.btn); dock.appendChild(item);
@@ -74,11 +76,20 @@ const Sonido = (() => {
       row.append(v.btn, lab, v.range, v.num);
       box.appendChild(row);
     }
+    const hint = document.createElement('div'); hint.className = 'paHint';
+    hint.textContent = 'Mando: ◀ ▶ volumen · A silencia';
+    box.appendChild(hint);
   }
   // el dock solo se ve en los menús (no en la pelea, la pantalla VS ni la pausa)
   function showDock(on) { const d = document.getElementById('volDock'); if (d) d.classList.toggle('on', on); }
 
   buildDock(); buildPause(); refresh(); apply();
   showDock(screen !== 'game' && screen !== 'vs');              // la portada ya está en pantalla al cargar
-  return { apply, showDock, toggle, set, get state() { return st; } };
+  // el puntero de las pantallas de selección eligió algo del volumen
+  function pointerAct(el, act, x) {
+    const [kind, k] = act.split(':');
+    if (kind === 'vol') toggle(k);
+    else if (kind === 'volr') { const r = el.getBoundingClientRect(); set(k, (x - r.left) / r.width * 10); if (k === 'sfx') Sfx.blip(); }
+  }
+  return { apply, showDock, toggle, set, pointerAct, get state() { return st; } };
 })();
