@@ -54,6 +54,7 @@ class Fighter {
   }
 
   setSt(s) { this.st = s; this.t = 0; }
+  stunned(g) { return this.st === 'hitstun' || (this.st === 'landing' && this.stunEndF >= g.frame); }   // aún encajando un combo
   alive() { return !this.out && this.st !== 'dead'; }
   hurtbox() { return { x: this.x - this.S.hw, y: this.y - this.S.hh, w: this.S.hw * 2, h: this.S.hh }; }
 
@@ -62,7 +63,7 @@ class Fighter {
     this.prev = this.inp; this.inp = inp;
     const I = inp, P = this.prev;
     for (const k of ['jump', 'atk', 'spc', 'shd', 'grab', 'str']) {
-      if (I[k] && !P[k]) this.buf[k] = 6;
+      if (I[k] && !P[k]) this.buf[k] = (k === 'shd' || k === 'grab') ? 6 : 10;   // los ataques se recuerdan un poco más (combos más fáciles)
       else if (this.buf[k] > 0 && this.hitlag <= 0) this.buf[k]--;   // durante el impacto se guarda
     }
     // "flick" = mover la palanca rápido (para ataques fuertes y caída rápida)
@@ -94,6 +95,16 @@ class Fighter {
     if (mv && mv.item && this.item) this.item.uses -= mv.cost ?? 1;          // las armas se gastan
     // al encadenar en el suelo, un pasito hacia delante para que el siguiente golpe llegue
     if (this.grounded && (this.chain > 0 || name === 'jab2' || name === 'jab3') && !this.move.special) this.vx = this.dir * Math.max(Math.abs(this.vx), 1.5);
+    // COMBO ASISTIDO: si el rival sigue aturdido por tus golpes, el siguiente ataque te acerca a él
+    // y los fuertes salen más rápido, para que el combo no dependa de reflejos sobrehumanos
+    this.lunge = 0; this.lungeTo = null;
+    const vic = g && g.fighters && g.fighters.find(o => o !== this && o.comboBy === this && o.comboN <= 5 && o.stunned(g) && Math.abs(o.x - this.x) < 64 && Math.abs(o.y - this.y) < 40);
+    if (vic && !this.move.special && !this.move.throw && name !== 'grab') {
+      const dx = vic.x - this.x;
+      if (Math.abs(dx) > 2 && !this.move.air) this.dir = sgn(dx);
+      this.lunge = 34; this.lungeTo = vic;                 // cuántos píxeles puede avanzar como mucho
+      if (this.move.smash) this.t = Math.min(8, Math.floor(this.move.s * 0.5));   // como mucho 8 fotogramas más rápido
+    }
     if (this.move.onStart) this.move.onStart(this, g);
     if (this.moveName === name && !this.move.special && this.move.sfx !== false) { if (this.move.sfx) Sfx[this.move.sfx](); else Sfx.swing(); }
   }
@@ -205,7 +216,7 @@ class Fighter {
       case 'shield': this.stShield(g); break;
       case 'dodge': this.stDodge(g); break;
       case 'hitstun':
-        if (this.t >= this.stun) this.setSt(this.grounded ? 'ground' : 'air');
+        if (this.t >= this.stun) { this.setSt(this.grounded ? 'ground' : 'air'); this.stunEndF = g.frame; }
         break;
       case 'shieldbreak':
         this.friction();
@@ -281,6 +292,15 @@ class Fighter {
 
   stAttack(g) {
     const m = this.move;
+    // combo asistido: avanzar hacia el rival durante el arranque del golpe
+    const v = this.lungeTo;
+    if (this.lunge > 0 && v && this.t < m.s + m.a && v.stunned(g) && !this.landedHit) {
+      const need = Math.abs(v.x - this.x) - (this.S.hw + v.S.hw + 3);
+      const st = Math.min(this.lunge, 4, Math.max(0, need)); this.lunge -= st;
+      let nx = this.x + sgn(v.x - this.x) * st;
+      if (this.grounded && this.plat) nx = clamp(nx, this.plat.x1 + 2, this.plat.x2 - 2);
+      this.x = nx;
+    }
     // lanzamiento: el agarrado sigue la mano hasta que sale disparado
     if (m.throw && this.holding) {
       this.placeHeld(m.path ? m.path(this.t, this) : null);
@@ -514,7 +534,7 @@ class Fighter {
     switch (this.st) {
       case 'air': this.lag = 3; this.setSt('landing'); break;
       case 'helpless': this.lag = 10; this.setSt('landing'); break;
-      case 'hitstun': this.lag = 14; this.setSt('landing'); this.lvx *= 0.5; break;
+      case 'hitstun': this.lag = 14; this.setSt('landing'); this.lvx *= 0.5; this.stunEndF = g.frame + 14; break;   // el aterrizaje aún cuenta para el combo
       case 'dodge': if (this.dodgeKind === 'air') { this.lag = 8; this.setSt('landing'); } break;
       case 'attack': {
         const m = this.move;

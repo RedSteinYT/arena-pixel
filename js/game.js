@@ -117,11 +117,14 @@ class Game {
     if (ItemSys.absorbs(d, this, hx, hy)) { a.landedHit = true; a.landedAt = a.t; a.hitlag = 3; return; }   // burbuja / invencible
     if (a.buffs && a.buffs.power > 0) { mult *= 1.35; h = Object.assign({}, h, { burn: Math.max(h.burn || 0, 70) }); }   // aura de fuego
     // combo: golpes seguidos mientras el rival no se ha recuperado
-    const inCombo = a !== d && d.comboBy === a && (d.st === 'hitstun' || d.st === 'grabbed') && d.st !== 'shield';
+    // (con un pequeño margen: si acaba de recuperarse, el golpe aún cuenta para el combo)
+    const inCombo = a !== d && d.comboBy === a && d.st !== 'shield' &&
+      (d.st === 'hitstun' || d.st === 'grabbed' || (d.stunEndF != null && this.frame - d.stunEndF <= 10));
     d.comboN = inCombo ? d.comboN + 1 : 1; d.comboBy = a; d.comboT = 110;
     if (a !== d && d.comboN > a.bestCombo) a.bestCombo = d.comboN;
     if (d.comboN > 1) mult *= Math.max(0.65, 1 - 0.06 * (d.comboN - 1));          // cada golpe del combo pega algo menos
-    const remate = d.comboN >= 4 && a.move && (a.move.smash || a.move.special || a.move.finisher || moveTier(a.moveName) >= 3);
+    // ¡REMATE!: cerrar un combo de 3+ golpes con un fuerte o un especial (o de 4+ con el golpe final de la cadena)
+    const remate = a.move && ((d.comboN >= 3 && (a.move.smash || a.move.special || moveTier(a.moveName) >= 3)) || (d.comboN >= 4 && a.move.finisher));
     const dmg = Math.round(h.d * mult);
     a.landedHit = true; a.landedAt = a.t;
     if (d.holding) d.releaseHeld(1.5);
@@ -141,13 +144,16 @@ class Game {
     let kb = (h.b + h.g * (d.dmg / 100)) * (1 + (mult - 1) * 0.6);
     kb *= 200 / (100 + d.S.weight);           // peso: los pesados vuelan menos
     if (remate) kb *= 1.25;                    // ¡REMATE!: el final de un buen combo lanza más
-    const link = a.moveName === 'jab' || a.moveName === 'jab2';   // golpes de enlace: empujan poco para que entre el siguiente
+    const long = d.comboN > 5;                 // tras 5 golpes ya no hay ayudas: el rival se escapa (sin combos infinitos)
+    const link = !long && (a.moveName === 'jab' || a.moveName === 'jab2');   // golpes de enlace: empujan poco para que entre el siguiente
     if (link) kb = Math.min(kb, 0.8);
     kb = Math.min(kb, 22);
     const ang = h.ang * Math.PI / 180;
     let lx = Math.cos(ang) * kb * dirSign, ly = -Math.sin(ang) * kb;
     if (d.grounded && ly > 0) { ly = -ly * 0.6; }                 // golpe hacia abajo en el suelo: rebota
     if (d.grounded && kb < 4 && Math.abs(h.ang) < 50) ly = 0;     // golpes flojos: se queda en el suelo
+    // en mitad de un combo, los golpes normales empujan menos (el rival no se escapa por el propio golpe)
+    if (d.comboN >= 2 && !long && !remate && a.move && !a.move.smash && !a.move.special && !a.move.finisher && d.grounded) lx *= 0.5;
     d.lvx = lx; d.lvy = ly; d.vx = 0; d.vy = 0; d.ff = false;
     if (ly < -0.5) { d.grounded = false; d.plat = null; }
     if (d.st === 'ledge') { d.grounded = false; }
@@ -155,7 +161,7 @@ class Game {
     d.setSt('hitstun');
     d.stun = Math.round(kb * 3.6);
     // aturdimiento mínimo para que los combos encadenen (los golpes normales, no los fuertes ni los especiales)
-    if (a.move && a.st === 'attack' && !a.move.smash && !a.move.special) d.stun = Math.max(d.stun, link ? 15 : 13);
+    if (!long && a.move && a.st === 'attack' && !a.move.smash && !a.move.special) d.stun = Math.max(d.stun, link ? 22 : 20);
     d.flash = 4;
     d.upUsed = false; d.sideUsed = false; d.dodgeUsed = false;
     d.lastHitBy = a; d.lastHitT = this.frame;

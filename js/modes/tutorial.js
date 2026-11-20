@@ -77,7 +77,7 @@ const Tutorial = (() => {
         setup(c) { near(c, 18); c.d.dmg = 30; }, seq: ['jab', 'jab2', 'ftilt'], hit: true },
       { title: 'Al aire', text: '↑ + ataque y, al acertar, salta y ataca en el aire.', keys: [['up', 'atk'], ['jump'], ['atk']],
         setup(c) { near(c, 16); c.d.dmg = 20; }, seq: ['utilt', 'nair'], hit: true },
-      { title: '¡Remate!', text: 'Haz un combo de 4 golpes o más y termínalo con un fuerte o un especial.', keys: [['atk'], ['atk'], ['up', 'atk'], ['up', 'str']],
+      { title: '¡Remate!', text: 'Encadena 2 golpes y remata el combo con un ataque fuerte o un especial.', keys: [['atk'], ['atk'], ['str']],
         setup(c) { near(c, 18); c.d.dmg = 40; }, check(c) { return c.ev.remate; } },
     ] },
     { id: 'avanzados', name: 'AVANZADOS', icon: '✸', desc: 'Esquivas, caída rápida, carga y bordes.', tasks: [
