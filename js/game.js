@@ -163,7 +163,7 @@ class Game {
       // esperar a que todos aterricen (o un máximo de tiempo)
       const ready = group.every(f => this.standing(f) || f.st === 'gone' || f.out || f.st === 'dead' || f.st === 'respawn');
       if (!(ready && E.t > 20) && E.t < 110) return;
-      for (const f of E.losers) if (this.standing(f)) { this.dropForPose(f); f.move = null; f.setSt('lose'); f.animT = 0; f.vx = 0; }
+      for (const f of E.losers) if (this.standing(f)) { this.dropForPose(f); this.calmForPose(f); f.move = null; f.setSt('lose'); f.animT = 0; f.vx = 0; }
       const lost = E.winners.filter(f => !this.standing(f));
       if (lost.length) {                                    // un ganador ya no está: vuelve por un portal
         const anchor = E.winners.find(f => this.standing(f));
@@ -207,7 +207,7 @@ class Game {
   }
   startPoses() {
     const E = this.endSeq;
-    for (const f of E.winners) if (this.standing(f)) { this.dropForPose(f); f.move = null; f.setSt('win'); f.animT = 0; f.vx = 0; this.burst(f.x, f.y - f.S.hh, 10, 'star', '#ffd34a'); }
+    for (const f of E.winners) if (this.standing(f)) { this.dropForPose(f); this.calmForPose(f); f.move = null; f.setSt('win'); f.animT = 0; f.vx = 0; this.burst(f.x, f.y - f.S.hh, 10, 'star', '#ffd34a'); }
     // cámara: zoom a los protagonistas si están cerca; si están muy separados, sin zoom
     const who = (E.reason === 'time' ? [...E.winners, ...E.losers] : E.winners).filter(f => f.st === 'win' || f.st === 'lose');
     if (!E.focus && who.length) E.focus = this.focusOn(who);
@@ -215,6 +215,8 @@ class Game {
     Sfx.vsSwing();
   }
   // antes de su pose final, quien lleva algo propio en la mano (la espada de RedStein) suelta el objeto
+  // antes de la pose: nada de parpadeos (invencibilidad), transparencias, hielo ni fuego
+  calmForPose(f) { f.invuln = 0; f.hidden = false; f.flash = 0; f.frozen = 0; f.burn = 0; f.buffs = {}; }   // (los poderes también: la estrella cambia de color sin parar)
   dropForPose(f) { if (f.item && f.ch.handProp) { f.inp = blankInput(); ItemSys.throwItem(f, this); } }
   // encuadre para un grupo: zoom si están cerca; si están muy separados, sin zoom (null)
   focusOn(list) {

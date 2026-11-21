@@ -229,7 +229,7 @@ function renderFighter(c, f, frame) {
   olCtx.globalCompositeOperation = 'source-in'; olCtx.fillStyle = OUTLINE; olCtx.fillRect(0, 0, SPR, SPR);
   olCtx.globalCompositeOperation = 'source-over'; olCtx.drawImage(sprBuf, 0, 0);
 
-  if (f.invuln > 0 && f.st !== 'respawn' && (frame >> 2) % 2) c.globalAlpha = 0.45;
+  if (f.invuln > 0 && f.st !== 'respawn' && f.st !== 'win' && f.st !== 'lose' && (frame >> 2) % 2) c.globalAlpha = 0.45;
   if (f.st === 'dodge') c.globalAlpha = 0.55;
   if (f.hidden) c.globalAlpha = 0.15;
   const dx = Math.round(f.x), dy = Math.round(f.y);
