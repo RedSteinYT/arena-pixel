@@ -336,9 +336,9 @@ const Select = (() => {
     return { ok: true };
   }
   function freeSlot() { for (let i = 0; i < mode().cap; i++) if (!S.slots[i]) return i; return -1; }
-  function join(dev, charId) {
+  function join(dev, charId, at) {
     const c = cs(dev); if (c.slot >= 0) return c.slot;
-    const i = freeSlot(); if (i < 0) { Sfx.blip(); return -1; }
+    const i = at >= 0 && at < mode().cap && !S.slots[at] ? at : freeSlot(); if (i < 0) { Sfx.blip(); return -1; }   // el panel que eligió (su color)
     S.slots[i] = { type: 'human', dev, char: charId || CHAR_ORDER[i % CHAR_ORDER.length], locked: !!charId, team: mode().teams ? (i < 2 ? 0 : 1) : null };
     c.slot = i; Sfx.join();
     return i;
@@ -449,7 +449,14 @@ const Select = (() => {
         if (!S.slots[i]) { S.slots[i] = { type: 'cpu', char: randomChar(), level: 'normal', locked: false, picked: false, team: mode().teams ? (i < 2 ? 0 : 1) : null }; c.carry = i; Sfx.join(); }
       } else if (kind === 'panel') {
         const s = S.slots[i];
-        if (!s) { if (c.slot < 0) { join(dev); } }
+        if (!s) {
+          if (c.slot < 0) join(dev, null, i);                                   // unirse en ESE panel (ese color)
+          else if (S.slots[c.slot]) {                                           // ya estaba en otro: se cambia a este
+            const me = S.slots[c.slot]; S.slots[c.slot] = null; S.slots[i] = me; c.slot = i;
+            if (mode().teams) me.team = i < 2 ? 0 : 1;
+            Sfx.join();
+          }
+        }
         else if (s.type === 'cpu' && !(s.picked && !s.locked)) { s.locked = false; s.picked = false; c.carry = i; Sfx.blip(); }   // cambiar su luchador
       } else if (kind === 'level') {
         const s = S.slots[i];

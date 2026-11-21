@@ -558,7 +558,8 @@ class Fighter {
     switch (this.st) {
       case 'air': this.lag = 3; this.setSt('landing'); break;
       case 'helpless': this.lag = 10; this.setSt('landing'); break;
-      case 'hitstun': this.lag = 14; this.setSt('landing'); this.lvx *= 0.5; this.stunEndF = g.frame + 14; break;   // el aterrizaje aún cuenta para el combo
+      case 'hitstun': this.lag = Math.max(14, this.frozen + 4); this.setSt('landing');   // congelado: no se mueve hasta que se derrita el hielo
+        this.lvx *= 0.5; this.stunEndF = g.frame + 14; break;   // el aterrizaje aún cuenta para el combo
       case 'dodge': if (this.dodgeKind === 'air') { this.lag = 8; this.setSt('landing'); } break;
       case 'attack': {
         const m = this.move;
