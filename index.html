@@ -492,7 +492,40 @@
       linear-gradient(180deg, rgba(255,255,255,.035), transparent 30%);
     border-radius: 2.2% / 3.8%; box-shadow: inset 0 0 2.5cqw rgba(0,0,0,.55); }
   @keyframes crtFlicker { 0%, 100% { opacity: .92; } 50% { opacity: 1; } 51% { opacity: .9; } 52% { opacity: 1; } }
-  body.crt #wrap { border-radius: 1.2% / 2.1%; overflow: hidden; }
+  body.crt #wrap { border-radius: 1.2% / 2.1%; overflow: hidden; box-shadow: none; }
+  body.crt #wrap::before, body.crt #wrap::after { display: none; }                /* sin neón: ahora es un televisor */
+  body.crt #ambient { filter: blur(26px) saturate(1.1) brightness(.4); }
+  /* ---------- el televisor (posiciones en px: las pone resize() en menu.js) ---------- */
+  #tv { display: none; position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+  body.tvOn #tv { display: block; }
+  #tv .tvCab { position: absolute; border-radius: 3.2% / 5.2%;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.14), transparent 18%, transparent 75%, rgba(0,0,0,.35)),
+      repeating-linear-gradient(91deg, #8a4420 0 5px, #9b5126 5px 8px, #7a3a1a 8px 13px, #a85b2c 13px 15px, #8f4822 15px 21px);
+    box-shadow: 0 2.2vh 3vh rgba(0,0,0,.65), inset 0 0 0 .35vh #4a1f0a, inset 0 .6vh 0 rgba(255,220,180,.18); }
+  #tv .tvFront { position: absolute; border-radius: 2.2% / 3.6%; background: linear-gradient(180deg, #2c2a30, #18171c 60%, #121116);
+    box-shadow: inset 0 0 0 .25vh #0a0a0c, inset 0 .35vh 0 rgba(255,255,255,.08); }
+  #tv .tvRim { position: absolute; border-radius: 2.6% / 4.2%; background: linear-gradient(180deg, #efe3c6, #cdbd98);
+    box-shadow: inset 0 0 0 .3vh #a8987a, 0 0 0 .25vh #0a0a0c; }
+  #tv .tvPanel { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4.2vh; padding-top: 5%; }
+  #tv .tvKnobs { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1vh 1.8vh; margin-bottom: -1vh; }
+  #tv .tvKnobs i { display: block; width: 3vh; height: 3vh; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #f4f4f6, #9a9aa2 55%, #44444a);
+    box-shadow: 0 .25vh 0 #050506; }
+  #tv .tvDial { position: relative; width: 7.4vh; height: 7.4vh; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3a3a40, #121214);
+    box-shadow: 0 0 0 .3vh #c8c8d0, 0 0 0 .55vh #2a2a30, 0 .5vh 0 .55vh #050506; }
+  #tv .tvDial i { position: absolute; left: 50%; top: 12%; width: .45vh; height: 40%; margin-left: -.22vh; background: #e8e8ee; transform-origin: 50% 95%; transform: rotate(-35deg); }
+  #tv .tvDial + .tvDial i { transform: rotate(50deg); }
+  #tv .tvDial span { position: absolute; top: -2.6vh; left: 0; right: 0; text-align: center; font-size: 1.05vh; color: #c8c8d0; letter-spacing: .1em; }
+  #tv .tvGrill { width: 70%; flex: 1; max-height: 26%; margin-top: 0; border-radius: .6vh; background: repeating-linear-gradient(180deg, #050506 0 .45vh, #2c2a30 .45vh .9vh);
+    box-shadow: inset 0 0 0 .25vh #0a0a0c; }
+  #tv .tvBrand { position: absolute; font-size: 1.1vh; letter-spacing: .25em; color: #d9c9a6; text-shadow: 0 .15vh 0 #000; white-space: nowrap; }
+  #tv .tvAnt { position: absolute; }
+  #tv .tvAnt b { position: absolute; left: 50%; bottom: 0; width: 7vh; height: 3vh; margin-left: -3.5vh; border-radius: 3.5vh 3.5vh 0 0; background: radial-gradient(circle at 40% 30%, #6a6a72, #26262c); }
+  #tv .tvAnt i { position: absolute; left: 50%; bottom: 2vh; width: .5vh; background: linear-gradient(90deg, #f2f2f6, #8a8a92); transform-origin: 50% 100%; }
+  #tv .tvAnt i::after { content: ''; position: absolute; left: 50%; top: -.6vh; width: 1.2vh; height: 1.2vh; margin-left: -.6vh; border-radius: 50%; background: #c8c8d0; }
+  #tv .tvAnt .a1 { transform: rotate(-28deg); } #tv .tvAnt .a2 { transform: rotate(24deg); }
+  #tv .tvFeet { position: absolute; display: flex; justify-content: space-between; }
+  #tv .tvFeet i { display: block; width: 9%; height: 100%; background: #1a1210; border-radius: 0 0 .6vh .6vh; }
   body.crt #screen { filter: saturate(1.12) contrast(1.06) brightness(1.04); }
   /* interruptor */
   .crtSwitch { position: absolute; top: 3.5%; left: 2.5%; z-index: 5; display: flex; align-items: center; gap: .7em;
@@ -614,6 +647,24 @@
 </head>
 <body>
 <canvas id="ambient" width="32" height="18"></canvas>
+<!-- televisor antiguo alrededor del juego (solo con el filtro CRT) -->
+<div id="tv" aria-hidden="true">
+  <div class="tvAnt"><i class="a1"></i><i class="a2"></i><b></b></div>
+  <div class="tvCab">
+    <div class="tvFront">
+      <div class="tvRim"></div>
+      <div class="tvPanel">
+        <div class="tvKnobs"><i></i><i></i><i></i><i></i></div>
+        <div class="tvDial"><span>VHF</span><i></i></div>
+        <div class="tvDial"><span>UHF</span><i></i></div>
+        <div class="tvGrill"></div>
+      </div>
+      <div class="tvBrand">ARENA·PIXEL</div>
+    </div>
+  </div>
+  <div class="tvFeet"><i></i><i></i></div>
+</div>
+
 <div id="ambFx"></div>
 <div id="wrap">
   <canvas id="screen"></canvas>

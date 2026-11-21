@@ -13,9 +13,16 @@ let S = 1;
 // El juego ocupa todo lo que permite la proporción 16:9 (no solo saltos enteros ×2, ×3…).
 // El lienzo se pinta a escala entera (S, píxeles nítidos) igual o mayor que la pantalla y el
 // navegador solo lo reduce un poco; si encaja exacto, se ve con píxeles perfectos.
+// medidas del televisor (con el filtro CRT), en proporción a la pantalla del juego
+const TVM = { side: 0.055, panel: 0.17, top: 0.075, bottom: 0.075, ant: 0.2, feet: 0.035 };
 function resize() {
   const dpr = window.devicePixelRatio || 1;
-  const view = Math.min(innerWidth / W, innerHeight / H);       // tamaño en pantalla (px CSS)
+  // el televisor solo si hay sitio (en pantallas pequeñas queda solo el efecto CRT)
+  const tv = document.body.classList.contains('crt') && innerWidth >= 720 && innerHeight >= 460;
+  document.body.classList.toggle('tvOn', tv);
+  // con el televisor el juego se encoge un poco para que quepan la carcasa, el panel y la antena
+  const kx = tv ? 1 + TVM.side * 2 + TVM.panel : 1, ky = tv ? 1 + TVM.top + TVM.bottom + TVM.ant + TVM.feet : 1;
+  const view = Math.min(innerWidth / (W * kx), innerHeight / (H * ky));       // tamaño en pantalla (px CSS)
   S = Math.max(1, Math.ceil(view * dpr - 0.02));
   disp.width = W * S; disp.height = H * S;
   const cw = Math.floor(W * view), ch = Math.floor(H * view);
@@ -23,6 +30,38 @@ function resize() {
   disp.style.imageRendering = Math.abs(view * dpr - S) < 0.02 ? 'pixelated' : 'auto';
   const wr = document.getElementById('wrap'); wr.style.width = cw + 'px'; wr.style.height = ch + 'px';
   dctx.imageSmoothingEnabled = false;
+  layoutTV(tv, cw, ch);
+  fitTitle();
+}
+// la portada se reduce un poco si no cabe (ventanas pequeñas o con el televisor)
+function fitTitle() {
+  const c = document.querySelector('#title .center'), w = document.getElementById('wrap'); if (!c || !w) return;
+  c.style.transform = '';
+  const k = Math.min(1, (w.clientHeight - 10) / c.offsetHeight);
+  if (k < 1) c.style.transform = `scale(${k.toFixed(3)})`;
+}
+// coloca el juego y las piezas del televisor (todo en px)
+function layoutTV(tv, cw, ch) {
+  const wr = document.getElementById('wrap'), T = document.getElementById('tv');
+  if (!tv) { wr.style.position = ''; wr.style.left = wr.style.top = ''; return; }
+  const sideW = cw * TVM.side, panW = cw * TVM.panel, topH = ch * TVM.top, botH = ch * TVM.bottom, antH = ch * TVM.ant, feetH = ch * TVM.feet;
+  const totW = cw + sideW * 2 + panW, totH = ch + topH + botH + antH + feetH;
+  const bx = Math.round((innerWidth - totW) / 2), by = Math.round((innerHeight - totH) / 2);
+  const sx = bx + sideW, sy = by + antH + topH;                                      // dónde va la pantalla
+  wr.style.position = 'fixed'; wr.style.left = Math.round(sx) + 'px'; wr.style.top = Math.round(sy) + 'px';
+  const put = (sel, x, y, w, h) => { const e = T.querySelector(sel); Object.assign(e.style, { left: Math.round(x) + 'px', top: Math.round(y) + 'px', width: Math.round(w) + 'px', height: Math.round(h) + 'px' }); };
+  const cabY = by + antH, cabH = ch + topH + botH;
+  put('.tvCab', bx, cabY, totW, cabH);
+  const inset = Math.min(sideW, topH) * 0.38;                                         // borde de madera visible
+  const fx = inset, fy = inset, fw = totW - inset * 2, fh = cabH - inset * 2;
+  put('.tvFront', fx, fy, fw, fh);
+  const rim = Math.min(sideW, topH) * 0.42;                                           // marco crema alrededor del cristal
+  put('.tvRim', sideW - fx - rim, topH - fy - rim, cw + rim * 2, ch + rim * 2);
+  put('.tvPanel', sideW - fx + cw + rim * 1.6, topH - fy - rim, panW - rim * 2.2 - inset, ch + rim * 2);
+  const br = T.querySelector('.tvBrand'); br.style.left = Math.round(sideW - fx + cw / 2 - 60) + 'px'; br.style.top = Math.round(topH - fy + ch + rim + (botH - inset - rim) * 0.25) + 'px'; br.style.width = '120px'; br.style.textAlign = 'center';
+  put('.tvAnt', bx + totW / 2 - 60 - panW / 2, by, 120, antH + 2);
+  T.querySelectorAll('.tvAnt i').forEach(i => { i.style.height = Math.round(antH * 0.95) + 'px'; });
+  put('.tvFeet', bx + totW * 0.08, cabY + cabH - 2, totW * 0.84, feetH);
 }
 addEventListener('resize', resize);
 resize();
@@ -191,7 +230,7 @@ $('bPlay').onclick = () => { Sfx.unlock(); Sfx.blip(); if (Net.isHost) Net.showL
 {
   const KEY = 'arenaPixel.crt';
   let on = false; try { on = localStorage.getItem(KEY) === '1'; } catch (e) {}
-  const apply = () => { document.body.classList.toggle('crt', on); $('bCrt').querySelector('b').textContent = on ? 'ON' : 'OFF'; };
+  const apply = () => { document.body.classList.toggle('crt', on); $('bCrt').querySelector('b').textContent = on ? 'ON' : 'OFF'; resize(); };
   $('bCrt').onclick = () => { on = !on; try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {} apply(); Sfx.blip(); };
   apply();
 }
@@ -372,6 +411,7 @@ function frameBody(now) {
   Input.update();
   const dt = Math.max(0, Math.min(100, now - last)); last = now;   // nunca negativo (relojes que retroceden)
   uiFrame++;
+  if (screen === 'title' && uiFrame % 20 === 0) fitTitle();           // (los avisos aparecen y desaparecen)
   // aviso de sonido: un botón del mando también intenta activarlo (y el aviso se quita en cuanto el audio suena, venga de donde venga)
   if (!document.body.classList.contains('sound-on')) {
     if (Input.devices().some(d => d.startsWith('gp') && (Input.read(d).raw || []).some(Boolean))) soundOn();
