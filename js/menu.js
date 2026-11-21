@@ -187,6 +187,14 @@ document.querySelectorAll('#ctrlTabs button').forEach(b => b.onclick = () => { S
 
 // ---------- botones ----------
 $('bPlay').onclick = () => { Sfx.unlock(); Sfx.blip(); if (Net.isHost) Net.showLobby(); else Select.openMode(); };
+// filtro CRT: solo una capa visual por encima (se recuerda en este navegador)
+{
+  const KEY = 'arenaPixel.crt';
+  let on = false; try { on = localStorage.getItem(KEY) === '1'; } catch (e) {}
+  const apply = () => { document.body.classList.toggle('crt', on); $('bCrt').querySelector('b').textContent = on ? 'ON' : 'OFF'; };
+  $('bCrt').onclick = () => { on = !on; try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {} apply(); Sfx.blip(); };
+  apply();
+}
 // enlaces del creador: se abren en otra pestaña (el juego sigue aquí)
 for (const b of document.querySelectorAll('#creator .crBtn')) b.onclick = () => { Sfx.blip(); window.open(b.dataset.url, '_blank', 'noopener'); };
 $('bOnline').onclick = () => { Sfx.unlock(); Sfx.blip(); Net.open(); };

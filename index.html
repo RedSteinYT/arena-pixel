@@ -478,6 +478,35 @@
     text-shadow: .12em .12em 0 #9c1f3c; }
   #nickBox i { position: absolute; right: .8em; bottom: .75em; font-style: normal; color: #fff; opacity: .6; }
   #nickBox:focus-within { border-color: var(--gold); }
+  /* ---------- filtro CRT: una capa por encima de todo, solo visual ---------- */
+  #crtLayer { position: absolute; inset: 0; z-index: 60; pointer-events: none; display: none; overflow: hidden; }
+  body.crt #crtLayer { display: block; }
+  #crtLayer::before { content: ''; position: absolute; inset: 0;              /* líneas de barrido + rejilla de fósforo RGB */
+    background:
+      repeating-linear-gradient(180deg, rgba(0,0,0,.24) 0, rgba(0,0,0,.24) 1px, transparent 1px, transparent 3px),
+      repeating-linear-gradient(90deg, rgba(255,40,60,.05) 0 1px, rgba(40,255,120,.035) 1px 2px, rgba(60,90,255,.05) 2px 3px);
+    animation: crtFlicker 4s steps(40) infinite; }
+  #crtLayer::after { content: ''; position: absolute; inset: 0;               /* bordes oscuros y brillo del cristal */
+    background:
+      radial-gradient(ellipse at 50% 50%, transparent 58%, rgba(0,0,0,.28) 82%, rgba(0,0,0,.62) 100%),
+      linear-gradient(180deg, rgba(255,255,255,.035), transparent 30%);
+    border-radius: 2.2% / 3.8%; box-shadow: inset 0 0 2.5cqw rgba(0,0,0,.55); }
+  @keyframes crtFlicker { 0%, 100% { opacity: .92; } 50% { opacity: 1; } 51% { opacity: .9; } 52% { opacity: 1; } }
+  body.crt #wrap { border-radius: 1.2% / 2.1%; overflow: hidden; }
+  body.crt #screen { filter: saturate(1.12) contrast(1.06) brightness(1.04); }
+  /* interruptor */
+  .crtSwitch { position: absolute; top: 3.5%; left: 2.5%; z-index: 5; display: flex; align-items: center; gap: .7em;
+    font-size: clamp(7px, .95cqw, 15px) !important; padding: .7em 1em !important; margin: 0 !important; width: auto !important;
+    background: linear-gradient(135deg, rgba(40,28,90,.85), rgba(18,13,36,.85)) !important; border: .2em solid #6c5aff !important;
+    clip-path: polygon(.8em 0, 100% 0, 100% calc(100% - .8em), calc(100% - .8em) 100%, 0 100%, 0 .8em); box-shadow: inset 0 0 0 .12em rgba(255,255,255,.08) !important; }
+  .crtSwitch small { color: #9fd8ff; font-size: .7em; letter-spacing: .1em; }
+  .crtSwitch .sw { position: relative; width: 3.2em; height: 1.5em; background: #120d24; border: .18em solid var(--line); }
+  .crtSwitch .sw i { position: absolute; top: .12em; left: .15em; width: 1.2em; height: 1.05em; background: #6c6890; transition: left .12s steps(3); }
+  .crtSwitch b { color: #6c6890; font-size: .9em; min-width: 2em; text-align: left; }
+  body.crt .crtSwitch .sw { background: #1c3a26; }
+  body.crt .crtSwitch .sw i { left: 1.7em; background: #5ee08a; }
+  body.crt .crtSwitch b { color: #5ee08a; }
+  .crtSwitch:hover, .crtSwitch.focus { border-color: var(--gold) !important; }
   /* ---------- volumen ---------- */
   .sndBtn { display: flex; align-items: center; justify-content: center; width: 2.9em; height: 2.6em; padding: 0; margin: 0; min-width: 0;
     background: #120f2c; border: .2em solid var(--line); box-shadow: inset 0 -.2em 0 #0a0818, inset 0 .12em 0 var(--hi); color: #9fd8ff; }
@@ -602,6 +631,7 @@
         </div>
       </div>
     </div>
+    <button id="bCrt" class="crtSwitch" title="Efecto de televisor antiguo"><small>FILTRO CRT</small><span class="sw"><i></i></span><b>OFF</b></button>
     <label id="nickBox" title="Tu nombre en el modo en línea"><small>TU NOMBRE</small><input id="nick" maxlength="12" spellcheck="false" autocomplete="off"><i>✎</i></label>
     <div class="center">
       <h1>ARENA<br>PÍXEL</h1>
@@ -765,6 +795,7 @@
     </div>
   </div>
   <div id="cursors"></div>
+  <div id="crtLayer" aria-hidden="true"></div>
   <div id="toast"></div>
 </div>
 
