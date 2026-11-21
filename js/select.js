@@ -199,7 +199,7 @@ const Select = (() => {
         head = `<span class="ptag">${who}</span><span class="pdev">${dev}</span>`
           + (carrier && !s.locked ? `<span class="pcarry" title="La está editando ${info_(carrier).label}">✎ ${info_(carrier).label}</span>` : '');
         // botones arriba, dentro del espacio del luchador (no apretados en la cabecera)
-        const tools = (s.type === 'cpu' ? `<span class="plvl" data-act="relevel:${i}">⚙ DIFICULTAD</span>` : '')
+        const tools = (s.type === 'cpu' && s.locked ? `<span class="plvl" data-act="relevel:${i}">⚙ DIFICULTAD</span>` : '')   // solo si ya está elegida (si no, no hay nada que cambiar)
           + `<span class="pquit" data-act="remove:${i}">✕ QUITAR</span>`;
         stage = `<canvas class="pfig"></canvas><div class="ptools">${S.remote ? '' : tools}</div>`;
         info = `<div class="pname">${ch.name.toUpperCase()}<small>${ch.role}</small></div>`;
