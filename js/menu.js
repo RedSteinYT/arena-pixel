@@ -14,14 +14,15 @@ let S = 1;
 // El lienzo se pinta a escala entera (S, píxeles nítidos) igual o mayor que la pantalla y el
 // navegador solo lo reduce un poco; si encaja exacto, se ve con píxeles perfectos.
 // medidas del televisor (con el filtro CRT), en proporción a la pantalla del juego
-const TVM = { side: 0.055, panel: 0.17, top: 0.075, bottom: 0.075, ant: 0.2, feet: 0.035 };
+const TVM = { side: 0.055, panel: 0.13, top: 0.075, bottom: 0.075, ant: 0.2, feet: 0.035 };
 function resize() {
   const dpr = window.devicePixelRatio || 1;
   // el televisor solo si hay sitio (en pantallas pequeñas queda solo el efecto CRT)
   const tv = document.body.classList.contains('crt') && innerWidth >= 720 && innerHeight >= 460;
   document.body.classList.toggle('tvOn', tv);
   // con el televisor el juego se encoge un poco para que quepan la carcasa, el panel y la antena
-  const kx = tv ? 1 + TVM.side * 2 + TVM.panel : 1, ky = tv ? 1 + TVM.top + TVM.bottom + TVM.ant + TVM.feet : 1;
+  // el juego manda: apenas se encoge lo justo para dejar ver el marco; el resto del televisor puede salirse de la ventana
+  const kx = tv ? 1.05 : 1, ky = tv ? 1.07 : 1;
   const view = Math.min(innerWidth / (W * kx), innerHeight / (H * ky));       // tamaño en pantalla (px CSS)
   S = Math.max(1, Math.ceil(view * dpr - 0.02));
   disp.width = W * S; disp.height = H * S;
@@ -46,8 +47,8 @@ function layoutTV(tv, cw, ch) {
   if (!tv) { wr.style.position = ''; wr.style.left = wr.style.top = ''; return; }
   const sideW = cw * TVM.side, panW = cw * TVM.panel, topH = ch * TVM.top, botH = ch * TVM.bottom, antH = ch * TVM.ant, feetH = ch * TVM.feet;
   const totW = cw + sideW * 2 + panW, totH = ch + topH + botH + antH + feetH;
-  const bx = Math.round((innerWidth - totW) / 2), by = Math.round((innerHeight - totH) / 2);
-  const sx = bx + sideW, sy = by + antH + topH;                                      // dónde va la pantalla
+  const sx = (innerWidth - cw) / 2, sy = (innerHeight - ch) / 2;                     // la pantalla (el juego) siempre centrada
+  const bx = Math.round(sx - sideW), by = Math.round(sy - topH - antH);
   wr.style.position = 'fixed'; wr.style.left = Math.round(sx) + 'px'; wr.style.top = Math.round(sy) + 'px';
   const put = (sel, x, y, w, h) => { const e = T.querySelector(sel); Object.assign(e.style, { left: Math.round(x) + 'px', top: Math.round(y) + 'px', width: Math.round(w) + 'px', height: Math.round(h) + 'px' }); };
   const cabY = by + antH, cabH = ch + topH + botH;

@@ -496,7 +496,7 @@
   body.crt #wrap::before, body.crt #wrap::after { display: none; }                /* sin neón: ahora es un televisor */
   body.crt #ambient { filter: blur(26px) saturate(1.1) brightness(.4); }
   /* ---------- el televisor (posiciones en px: las pone resize() en menu.js) ---------- */
-  #tv { display: none; position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+  #tv { display: none; position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
   body.tvOn #tv { display: block; }
   #tv .tvCab { position: absolute; border-radius: 3.2% / 5.2%;
     background:
