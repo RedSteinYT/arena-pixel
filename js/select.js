@@ -179,7 +179,7 @@ const Select = (() => {
   function renderPanels() {
     const el = $('cPanels'), m = mode();
     el.innerHTML = '';
-    el.style.setProperty('--n', m.cap);
+    el.style.setProperty('--n', m.cap); el.dataset.n = m.cap;
     for (let i = 0; i < m.cap; i++) {
       const s = S.slots[i], d = document.createElement('div');
       const col = PCOL[i];
@@ -196,10 +196,10 @@ const Select = (() => {
         const who = s.type === 'cpu' ? 'CPU' : 'J' + humanNum(i);
         const dev = s.type === 'cpu' ? LEVEL_NAMES[s.level] : (s.name || Net.nameOf(s.dev) || Input.name(s.dev));
         const carrier = carriedBy(i);
-        head = `<span class="ptag">${who}</span><span class="pdev">${dev}</span>`
-          + (carrier && !s.locked ? `<span class="pcarry">EDITA ${info_(carrier).label}</span>` : '')
-          + (s.type === 'cpu' ? `<span class="plvl" data-act="relevel:${i}">⚙ DIFICULTAD</span>` : '')
-          + `<span class="pquit" data-act="remove:${i}">✕ QUITAR</span>`;
+        head = `<span class="ptag">${who}</span>` + (s.type === 'cpu' ? '' : `<span class="pdev">${dev}</span>`)
+          + (carrier && !s.locked ? `<span class="pcarry" title="La está editando ${info_(carrier).label}">✎ ${info_(carrier).label}</span>` : '')
+          + (s.type === 'cpu' ? `<span class="plvl" data-act="relevel:${i}" title="Cambiar la dificultad">⚙ ${LEVEL_NAMES[s.level]}</span>` : '')
+          + `<span class="pquit" data-act="remove:${i}" title="Quitar">✕<i> QUITAR</i></span>`;
         stage = `<canvas class="pfig"></canvas>`;
         info = `<div class="pname">${ch.name.toUpperCase()}<small>${ch.role}</small></div>`;
         if (s.type === 'cpu') {

@@ -201,7 +201,13 @@
   .ctile .qmark { aspect-ratio: 4 / 3; }
 
   /* --- luchadores --- */
-  .panels { display: grid; grid-template-columns: repeat(var(--n, 2), 1fr); gap: 1.2cqw; flex: 1; min-height: 0; }
+  .panels { display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: 1.2cqw; flex: 1; min-height: 0; }   /* columnas siempre iguales */
+  .cpanel { min-width: 0; }
+  .cpanel .phead { flex-wrap: wrap; row-gap: .35em; justify-content: flex-end; }      /* si no caben las etiquetas, pasan a otra línea */
+  .cpanel .phead .ptag { margin-right: auto; }
+  #cPanels .cpanel .phead { min-height: 2.75em; box-sizing: border-box; }          /* misma altura en todos (también los vacíos) */
+  .pquit i { font-style: normal; }
+  #cPanels[data-n="4"] .pquit i { display: none; }       /* 4 paneles estrechos: solo la ✕ para que la cabecera quepa en una línea */
   .cpanel { --pc: #888; display: flex; flex-direction: column; border: .35em solid var(--line); min-height: 0;
     background: linear-gradient(180deg, color-mix(in srgb, var(--pc) 45%, #120f2c) 0%, #120f2c 70%);
     box-shadow: inset 0 0 0 .25em color-mix(in srgb, var(--pc) 60%, transparent), 0 .5em 0 var(--line); }
