@@ -25,7 +25,8 @@ const Pointer = (() => {
   function hoverAt(c) {
     const root = host && host.root(); if (!root) return null;
     const hit = document.elementFromPoint(c.x, c.y);
-    const el = hit && hit.closest('[data-act]');
+    const el = hit && hit.closest('[data-act],[data-block]');
+    if (el && el.hasAttribute('data-block')) return null;             // un cuadro emergente tapa lo de atrás (sus huecos no cuentan)
     return el && (root.contains(el) || el.closest('#volDock.on')) && !el.classList.contains('disabled') ? el : null;
   }
   function setHover(c, el) {
@@ -36,6 +37,7 @@ const Pointer = (() => {
   }
   function confirm(c) {
     const el = hoverAt(c); setHover(c, el);
+    if (!el) { const hit = document.elementFromPoint(c.x, c.y); if (hit && hit.closest('[data-block]')) return; }
     const a = el ? el.dataset.act : null;
     if (a && a.startsWith('vol')) { if (!c.mouse) Sonido.pointerAct(el, a, c.x); return; }   // volumen (con ratón lo hace el propio control)
     host && host.act(c.dev, el, a);

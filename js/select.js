@@ -205,7 +205,7 @@ const Select = (() => {
         info = `<div class="pname">${ch.name.toUpperCase()}<small>${ch.role}</small></div>`;
         if (s.type === 'cpu') {
           // elegido el luchador: la dificultad en columna, y al pulsar una queda bloqueada
-          if (s.picked && !s.locked && !S.remote) stage += `<div class="plevels"><b>DIFICULTAD</b>${['easy', 'normal', 'hard'].map(l =>
+          if (s.picked && !s.locked && !S.remote) stage += `<div class="plevels" data-block><b>DIFICULTAD</b>${['easy', 'normal', 'hard'].map(l =>
             `<span class="pbtn lv${s.level === l ? ' on' : ''}" data-act="level:${i}:${l}">${LEVEL_NAMES[l]}</span>`).join('')}</div>`;
           info += s.locked ? `<div class="pstate">✓ LISTO <small>clic en el panel para cambiar de luchador</small></div>`
             : s.picked ? `<div class="pstate wait">ELIGE LA DIFICULTAD…</div>` : `<div class="pstate wait">ELIGE SU LUCHADOR…</div>`;
