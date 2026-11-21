@@ -424,6 +424,17 @@
   .onlPlayers li b { color: var(--gold); margin-right: 6px; }
   .onlPlayers li.me { border-color: var(--gold); }
   .onlPlayers li.free { opacity: .45; }
+  /* selección de luchador: sellos en los retratos y dificultad de la CPU */
+  .ctile .cstamps { position: absolute; top: .3em; right: .3em; display: flex; flex-direction: column; align-items: flex-end; gap: .2em; pointer-events: none; z-index: 2; }
+  .ctile .cstamp { padding: .3em .5em; font-size: .85em; color: #fff; background: var(--sc); border: .18em solid var(--line);
+    box-shadow: inset 0 -.18em 0 rgba(0,0,0,.35); transform: rotate(-8deg); animation: stampIn .25s steps(4); text-shadow: .1em .1em 0 var(--line); }
+  .plevels { position: absolute; right: 4%; top: 44%; transform: translateY(-50%);   /* a un lado: el luchador sigue a la vista */ z-index: 3; display: flex; flex-direction: column; gap: .5em;
+    padding: .9em 1.1em; background: rgba(12,10,36,.88); border: .25em solid var(--pc, var(--gold)); box-shadow: 0 .35em 0 var(--line); }
+  .plevels b { text-align: center; font-size: .8em; color: #cfc8f0; letter-spacing: .1em; margin-bottom: .2em; }
+  .plevels .pbtn { font-size: 1.15em; padding: .6em 1.6em; text-align: center; }
+  .plvl { margin-left: .4em; font-size: .75em; padding: .55em 1em; color: #fff; white-space: nowrap;
+    clip-path: polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%); background: linear-gradient(180deg, #6a7cff, #2a3aa8); }
+  .selscr .plvl.hov { filter: brightness(1.3); transform: translateY(-.1em); }
   .onlRoom { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; font-size: 8px; }
   .onlRoom span { padding: 5px 8px; background: #120d24; border: 2px solid var(--line); color: #cfc8f0; }
   .onlRoom span b { color: var(--gold); }
@@ -697,7 +708,7 @@
       <div class="readyBar" id="readyBar" data-act="fight">¡LISTOS PARA PELEAR! · PULSA START / ENTER O HAZ CLIC AQUÍ</div>
       <div class="cMsg" id="cMsg"></div>
       <div class="cgrid" id="cGrid"></div>
-      <div class="hintbar">Elige un retrato para bloquear tu luchador · <b>Atrás</b> desbloquea · Para la CPU: <b>+ AÑADIR CPU</b> o clic en su panel, elige su luchador, su dificultad y <b>BLOQUEAR</b></div>
+      <div class="hintbar">Elige un retrato para fijar tu luchador · pulsa el mismo otra vez (o <b>Atrás</b>) para cambiarlo · Para la CPU: <b>+ AÑADIR CPU</b>, elige su luchador y su <b>dificultad</b></div>
     </div>
   </div>
 

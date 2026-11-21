@@ -171,7 +171,7 @@ const Select = (() => {
   }
   // qué luchador está señalando quien elige el panel i (local, o el que nos cuenta la red)
   function hoverOf(i) {
-    const s = S.slots[i]; if (!s || s.locked) return null;
+    const s = S.slots[i]; if (!s || s.locked || s.picked) return null;       // ya eligió: el panel no sigue al puntero
     if (S.remote && s.mine) { for (const d in Pointer.cursors) { const h = hoverChar(d); if (h) return h; } return null; }
     const who = s.type === 'human' ? s.dev : carriedBy(i);
     return (who && !who.startsWith('net:') && hoverChar(who)) || s.hover || null;
@@ -198,14 +198,16 @@ const Select = (() => {
         const carrier = carriedBy(i);
         head = `<span class="ptag">${who}</span><span class="pdev">${dev}</span>`
           + (carrier && !s.locked ? `<span class="pcarry">EDITA ${info_(carrier).label}</span>` : '')
+          + (s.type === 'cpu' ? `<span class="plvl" data-act="relevel:${i}">⚙ DIFICULTAD</span>` : '')
           + `<span class="pquit" data-act="remove:${i}">✕ QUITAR</span>`;
         stage = `<canvas class="pfig"></canvas>`;
         info = `<div class="pname">${ch.name.toUpperCase()}<small>${ch.role}</small></div>`;
         if (s.type === 'cpu') {
-          const lv = ['easy', 'normal', 'hard'].map(l => `<span class="pbtn lv${s.level === l ? ' on' : ''}" data-act="level:${i}:${l}">${LEVEL_NAMES[l]}</span>`).join('');
-          info += s.locked
-            ? `<div class="pstate">✓ LISTO <small>clic para cambiar</small></div>`
-            : `<div class="prow">${lv}<span class="pbtn go" data-act="lock:${i}">✓ BLOQUEAR</span></div>`;
+          // elegido el luchador: la dificultad en columna, y al pulsar una queda bloqueada
+          if (s.picked && !s.locked && !S.remote) stage += `<div class="plevels"><b>DIFICULTAD</b>${['easy', 'normal', 'hard'].map(l =>
+            `<span class="pbtn lv${s.level === l ? ' on' : ''}" data-act="level:${i}:${l}">${LEVEL_NAMES[l]}</span>`).join('')}</div>`;
+          info += s.locked ? `<div class="pstate">✓ LISTO <small>clic en el panel para cambiar de luchador</small></div>`
+            : s.picked ? `<div class="pstate wait">ELIGE LA DIFICULTAD…</div>` : `<div class="pstate wait">ELIGE SU LUCHADOR…</div>`;
         } else {
           info += s.locked ? `<div class="pstate">✓ LISTO <small>atrás para cambiar</small></div>` : `<div class="pstate wait">ELIGIENDO…</div>`;
         }
@@ -215,6 +217,7 @@ const Select = (() => {
       el.appendChild(d);
       panelCanvases[i] = d.querySelector('.pfig');
     }
+    renderStamps();
     const r = ready();
     $('readyBar').classList.toggle('on', r.ok);
     $('readyBar').textContent = S.remote ? '¡TODOS LISTOS! · ESPERANDO A QUE EL ANFITRIÓN EMPIECE' : '¡LISTOS PARA PELEAR! · PULSA START / ENTER O HAZ CLIC AQUÍ';
@@ -222,6 +225,20 @@ const Select = (() => {
     $('charScr').classList.toggle('remote', !!S.remote);
   }
   const info_ = dev => info(dev);
+  // sello en cada retrato elegido: J1, J2… o CPU, del color de su panel
+  function renderStamps() {
+    for (const t of document.querySelectorAll('#cGrid .cstamps')) t.remove();
+    const m = mode();
+    for (let i = 0; i < m.cap; i++) {
+      const s = S.slots[i]; if (!s || !(s.locked || s.picked)) continue;
+      const tile = document.querySelector(`#cGrid .ctile[data-act="char:${s.char}"]`); if (!tile) continue;
+      let box = tile.querySelector('.cstamps'); if (!box) { box = document.createElement('div'); box.className = 'cstamps'; tile.appendChild(box); }
+      const st = document.createElement('span'); st.className = 'cstamp';
+      st.style.setProperty('--sc', m.teams ? (slotTeam(i) ? '#3d7ef2' : '#e8443f') : PCOL[i]);
+      st.textContent = s.type === 'cpu' ? 'CPU' : 'J' + humanNum(i);
+      box.appendChild(st);
+    }
+  }
 
   // ---------------- escena del panel ----------------
   // El panel entero es la escena. El tamaño de píxel (s) se elige para que un luchador
@@ -287,7 +304,7 @@ const Select = (() => {
       if (!cv || !s) continue;
       // lo que se muestra: lo que señala el puntero de quien elige (humano o quien edita la CPU)
       let charId = s.char;
-      if (!s.locked) charId = hoverOf(i) || s.char;
+      if (!s.locked && !s.picked) charId = hoverOf(i) || s.char;
       const ch = charId === 'random' ? MYSTERY : CHARACTERS[charId], pal = palOf(i), key = i + ':' + charId + ':' + pal;
       const nm = cv.parentNode.querySelector('.pname');
       if (nm && nm.dataset.char !== charId) { nm.dataset.char = charId; nm.innerHTML = `${ch.name.toUpperCase()}<small>${ch.role}</small>`; }
@@ -401,7 +418,10 @@ const Select = (() => {
       if (a === 'back') { Net.leave(); return; }               // VOLVER = salir de la sala
       if (a === 'controls') return openControls();
       const i = mySlot(), s = S.slots[i]; if (!s || !a) return;
-      if (a.startsWith('char:')) { s.char = a.slice(5); s.locked = true; Sfx.join(); }
+      if (a.startsWith('char:')) {
+        const id = a.slice(5);
+        if (s.locked && s.char === id) { s.locked = false; Sfx.blip(); } else { s.char = id; s.locked = true; Sfx.join(); }   // el mismo otra vez: quitar el sello
+      }
       else if (a === 'team:' + i && mode().teams) { s.team = 1 - slotTeam(i); Sfx.blip(); }
       else return;
       pushMine(); renderPanels(); return;
@@ -415,17 +435,31 @@ const Select = (() => {
       if (kind === 'char') {
         const id = p1;                                   // 'random' se resuelve al empezar la pelea
         if (c.carry >= 0 && S.slots[c.carry] && S.slots[c.carry].type === 'cpu') {
-          S.slots[c.carry].char = id; S.slots[c.carry].locked = false; Sfx.blip();
-        } else if (c.slot >= 0) { const s = S.slots[c.slot]; s.char = id; s.locked = true; Sfx.join(); }
+          const s = S.slots[c.carry];
+          if (s.picked && s.char === id) { s.picked = false; Sfx.blip(); }                  // el mismo otra vez: quitar el sello
+          else { s.char = id; s.picked = true; s.locked = false; Sfx.join(); }              // ahora, la dificultad
+        } else if (c.slot >= 0) {
+          const s = S.slots[c.slot];
+          if (s.locked && s.char === id) { s.locked = false; Sfx.blip(); }                  // el mismo otra vez: quitar el sello
+          else { s.char = id; s.locked = true; Sfx.join(); }
+        }
         else join(dev, id);
       } else if (kind === 'addcpu') {
-        if (!S.slots[i]) { S.slots[i] = { type: 'cpu', char: randomChar(), level: 'normal', locked: false, team: mode().teams ? (i < 2 ? 0 : 1) : null }; c.carry = i; Sfx.join(); }
+        if (!S.slots[i]) { S.slots[i] = { type: 'cpu', char: randomChar(), level: 'normal', locked: false, picked: false, team: mode().teams ? (i < 2 ? 0 : 1) : null }; c.carry = i; Sfx.join(); }
       } else if (kind === 'panel') {
         const s = S.slots[i];
         if (!s) { if (c.slot < 0) { join(dev); } }
-        else if (s.type === 'cpu') { s.locked = false; c.carry = i; Sfx.blip(); }
+        else if (s.type === 'cpu' && !(s.picked && !s.locked)) { s.locked = false; s.picked = false; c.carry = i; Sfx.blip(); }   // cambiar su luchador
       } else if (kind === 'level') {
-        const s = S.slots[i]; if (s && s.type === 'cpu') { s.level = p2; s.locked = false; c.carry = i; Sfx.blip(); }
+        const s = S.slots[i];
+        if (s && s.type === 'cpu') {                                   // elegir dificultad = bloquear al instante
+          s.level = p2; s.locked = true; s.picked = false;
+          for (const d in S.cur) if (S.cur[d].carry === i) S.cur[d].carry = -1;
+          Sfx.join();
+        }
+      } else if (kind === 'relevel') {
+        const s = S.slots[i];
+        if (s && s.type === 'cpu') { s.locked = false; s.picked = true; c.carry = i; Sfx.blip(); }   // cambiar solo la dificultad
       } else if (kind === 'lock') {
         const s = S.slots[i]; if (s) { s.locked = true; if (c.carry === i) c.carry = -1; for (const d in S.cur) if (S.cur[d].carry === i) S.cur[d].carry = -1; Sfx.join(); }
       } else if (kind === 'remove') removeSlot(i);
@@ -541,7 +575,7 @@ const Select = (() => {
     const cap = mode().cap;
     return { mode: S.mode, stocks: S.stocks, time: S.time, stage: S.stage,
       slots: S.slots.slice(0, cap).map((s, i) => s && { type: s.type, owner: s.type === 'cpu' ? null : (s.dev.startsWith('net:') ? s.dev : 'host'),
-        char: s.char, locked: !!s.locked, level: s.level || null, team: s.team, hover: hoverOf(i), name: slotName(s) }) };
+        char: s.char, locked: !!s.locked, picked: !!s.picked, level: s.level || null, team: s.team, hover: hoverOf(i), name: slotName(s) }) };
   }
   function netJoin(dev) { if (S.screen !== 'chars' || S.slots.some(x => x && x.dev === dev)) return; join(dev); renderPanels(); }
   function netLeave(dev) { const i = S.slots.findIndex(x => x && x.dev === dev); if (i >= 0) { removeSlot(i); if (S.screen === 'chars') renderPanels(); } }
@@ -558,12 +592,12 @@ const Select = (() => {
   function remoteSel(sel, me) {
     const old = S.remote ? S.slots[mySlot()] : null;
     const slots = sel.slots.map(x => x && { type: x.type, dev: x.owner === me ? 'me' : (x.owner ? 'net:' + x.owner : 'cpu'), mine: x.owner === me,
-      char: x.char, locked: x.locked, level: x.level, team: x.team, hover: x.hover, name: x.owner === me ? Net.nick : Net.cleanName(x.name) || null });
+      char: x.char, locked: x.locked, picked: !!x.picked, level: x.level, team: x.team, hover: x.hover, name: x.owner === me ? Net.nick : Net.cleanName(x.name) || null });
     while (slots.length < 4) slots.push(null);
     const mi = slots.findIndex(x => x && x.mine);
     if (mi >= 0 && old && S.pend > 0) Object.assign(slots[mi], { char: old.char, locked: old.locked, team: old.team });
     if (S.remoteVote) { S.remoteVote = null; Pointer.forceGhosts(false); }         // venía de la pantalla de arenas
-    const structural = JSON.stringify([sel.mode, sel.stocks, sel.time, sel.stage, slots.map(x => x && [x.type, x.dev, x.char, x.locked, x.level, x.team, x.name])]);
+    const structural = JSON.stringify([sel.mode, sel.stocks, sel.time, sel.stage, slots.map(x => x && [x.type, x.dev, x.char, x.locked, x.picked, x.level, x.team, x.name])]);
     const fresh = S.screen !== 'chars' || !S.remote;
     S.remote = me; S.mode = sel.mode; S.stocks = sel.stocks; S.time = sel.time || 0; S.stage = sel.stage; S.slots = slots;
     if (fresh) {
