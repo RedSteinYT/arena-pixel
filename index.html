@@ -498,6 +498,14 @@
   /* ---------- el televisor (posiciones en px: las pone resize() en menu.js) ---------- */
   #tv { display: none; position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
   body.tvOn #tv { display: block; }
+  /* papel tapiz de casa antigua detrás del televisor */
+  body.tvOn #tv::before { content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 55% at 50% 45%, rgba(255,190,110,.10), transparent 70%),
+      radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(8,4,2,.75) 100%),
+      linear-gradient(180deg, rgba(0,0,0,.25), transparent 25%, transparent 70%, rgba(0,0,0,.45)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='64' shape-rendering='crispEdges'%3E%3Crect width='48' height='64' fill='%233b2c23'/%3E%3Crect x='0' width='3' height='64' fill='%2347352a'/%3E%3Crect x='5' width='1' height='64' fill='%2347352a'/%3E%3Crect x='42' width='1' height='64' fill='%2347352a'/%3E%3Crect x='45' width='3' height='64' fill='%2347352a'/%3E%3Crect x='22' y='10' width='4' height='4' fill='%236b4f36'/%3E%3Crect x='22' y='22' width='4' height='4' fill='%236b4f36'/%3E%3Crect x='16' y='16' width='4' height='4' fill='%236b4f36'/%3E%3Crect x='28' y='16' width='4' height='4' fill='%236b4f36'/%3E%3Crect x='22' y='16' width='4' height='4' fill='%238a6a3e'/%3E%3Crect x='23' y='26' width='2' height='8' fill='%234f3b2b'/%3E%3Crect x='19' y='30' width='4' height='2' fill='%234f3b2b'/%3E%3Crect x='25' y='28' width='4' height='2' fill='%234f3b2b'/%3E%3Crect x='23' y='46' width='2' height='2' fill='%235a4430'/%3E%3Crect x='21' y='48' width='2' height='2' fill='%235a4430'/%3E%3Crect x='25' y='48' width='2' height='2' fill='%235a4430'/%3E%3Crect x='23' y='50' width='2' height='2' fill='%235a4430'/%3E%3C/svg%3E") center top / 48px 64px repeat;
+    image-rendering: pixelated; }
   #tv .tvCab { position: absolute; border-radius: 3.2% / 5.2%;
     background:
       linear-gradient(180deg, rgba(255,255,255,.14), transparent 18%, transparent 75%, rgba(0,0,0,.35)),
