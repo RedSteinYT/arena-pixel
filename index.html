@@ -442,8 +442,8 @@
   .plevels b { text-align: center; font-size: 1em; color: #cfc8f0; letter-spacing: .1em; margin-bottom: .3em; }
   .plevels .pbtn { font-size: 1.6em; padding: .7em 2.4em; text-align: center; }
   /* el dorado sigue al puntero: la que señalas es la que se elegirá */
-  .selscr .plevels:has(.pbtn.hov) .pbtn.on:not(.hov) { background: linear-gradient(180deg, #3a2f78, #211a4e); color: var(--text); }
-  .selscr .plevels .pbtn.hov { background: linear-gradient(180deg, #ffe27a, #f0a12e); color: #120d24; }
+  .selscr .plevels .pbtn.on:not(.hov):not(.focus) { background: linear-gradient(180deg, #3a2f78, #211a4e); color: var(--text); }   /* sin puntero encima, ninguna dorada */
+  .selscr .plevels .pbtn.hov, .selscr .plevels .pbtn.focus { background: linear-gradient(180deg, #ffe27a, #f0a12e); color: #120d24; }
   .plvl { margin-left: .4em; font-size: .75em; padding: .55em 1em; color: #fff; white-space: nowrap;
     clip-path: polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%); background: linear-gradient(180deg, #6a7cff, #2a3aa8); }
   .selscr .plvl.hov { filter: brightness(1.3); transform: translateY(-.1em); }
