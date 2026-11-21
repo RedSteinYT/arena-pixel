@@ -501,6 +501,7 @@
   /* ---------- el televisor (posiciones en px: las pone resize() en menu.js) ---------- */
   #tv { display: none; position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
   body.tvOn #tv { display: block; }
+  body.tvOn #ambFx { display: none; }              /* las rayitas del fondo no van sobre el mueble ni la pared: solo en la pantalla */
   /* papel tapiz de casa antigua detrás del televisor */
   body.tvOn #tv::before { content: ''; position: absolute; inset: 0;
     background:
