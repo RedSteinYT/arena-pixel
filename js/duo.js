@@ -303,6 +303,182 @@ const DUO_ANIMS = {
     },
     launch(D) { return { lead: D.bri, ang: 66, dir: -D.side }; },
   },
+
+  // ======================= Brisa + RedStein =======================
+  'brisa+redstein': {
+    name: 'TORBELLINO DE FUEGO', len: 136,
+    setup(g, D) {
+      D.bri = D.a.ch.id === 'brisa' ? D.a : D.b; D.red = D.bri === D.a ? D.b : D.a;
+      D.side = D.bri.x >= D.v.x ? 1 : -1;                    // Brisa a este lado, RedStein al otro
+      D.focus = { x: D.cx, y: D.gy - 44, z: 1.9 };
+    },
+    fireLv(t) { return t < 72 ? 0 : Math.min(1, (t - 72) / 24); },   // cuánto del tornado arde (de abajo arriba)
+    step(g, D, t) {
+      const { bri, red, v, cx, gy, side } = D;
+      // el rival sube girando dentro del tornado
+      const rise = t < 108 ? Math.min(40, Math.max(0, t - 12) * 0.5) : 40 + (t - 108) * 3.2;
+      duoPlace(v, cx + Math.sin(t * 0.35) * (t < 108 ? 6 : 3), gy - 4 - rise, (t >> 2) % 2 ? 1 : -1);
+      duoStand(v, 'hitstun');
+      if (t >= 104) D.focus = { x: cx, y: Math.min(gy - 44, v.y - 4), z: 1.9 };   // la cámara sube con él en la erupción
+      // Brisa gira sin parar y levanta el viento
+      duoPlace(bri, cx + side * 34, gy, -side);
+      const fs = bri.ch.moves.fsmash;
+      if (t < 16) duoPose(bri, 'fsmash', 'wind', t / 16);
+      else if (t < 100) { duoPose(bri, 'fsmash', 'act'); bri.t = fs.s + ((t - 16) % Math.max(1, fs.a)); }
+      else duoPose(bri, 'fsmash', 'rec', (t - 100) / 20);
+      // RedStein carga y clava la espada en llamas en la base del tornado
+      const rx0 = cx - side * 54, rx1 = cx - side * 18;
+      if (t < 50) { duoPlace(red, rx0, gy, side); duoStand(red); }
+      else if (t < 66) { duoPlace(red, rx0, gy, side); duoPose(red, 'fsmash', 'wind', (t - 50) / 16); }
+      else if (t < 72) { duoPlace(red, dLerp(rx0, rx1, (t - 66) / 5), gy, side); duoPose(red, 'dsmash', 'wind', 1); }
+      else if (t < 104) { duoPlace(red, rx1, gy, side); duoPose(red, 'dsmash', 'act'); }
+      else { duoPlace(red, rx1, gy, side); duoPose(red, 'dsmash', 'rec', (t - 104) / 24); }
+      // efectos
+      if (t === 1) Sfx.remate();
+      if (t >= 16 && t < 100 && t % 9 === 0) Sfx.swing();
+      if (t >= 16 && t < 108 && t % 2 === 0) {                               // viento (y luego brasas) girando
+        const k = Math.random(), fire = this.fireLv(t) > k;
+        g.fx.push({ kind: 'part', ptype: 'spark', x: cx + (Math.random() * 2 - 1) * (6 + k * 20), y: gy - k * 74, vx: (Math.random() - 0.5) * 1.6, vy: -0.9, t: 0, life: 14, size: 1, col: fire ? (k > 0.5 ? '#ffd34a' : '#ff5a2a') : '#dff6ff' });
+      }
+      if (t === 72) {                                                          // ¡la espada enciende el tornado!
+        Sfx.hit(14); g.shake = 8; D.flash = 4; g.burst(cx, gy - 2, 14, 'fire');
+        duoRadial(g, rx1 + side * 10, gy - 6, 14, ['#ff5a2a', '#ffd34a', '#ffffff'], 2);
+      }
+      if (t > 72 && t < 108 && t % 2 === 0) g.burst(cx + (Math.random() * 2 - 1) * 16, gy - Math.random() * 74 * this.fireLv(t), 2, 'fire');
+      if (t === 108) {                                                         // ¡erupción!
+        D.flash = 9; g.shake = 13; Sfx.hit(20); Sfx.brk(); v.flash = 6;
+        duoRadial(g, cx, v.y - 10, 32, ['#ff5a2a', '#ffd34a', '#ffffff', '#c8281e'], 2.8);
+      }
+      if (t > 108 && t % 2 === 0) g.burst(v.x, v.y - 6, 3, 'fire');
+    },
+    draw(c, g, D, layer) {
+      const t = D.t, { cx, gy } = D;
+      if (t < 14 || t > 126) return;
+      const grow = dEase((t - 14) / 16), fade = t > 108 ? Math.max(0, 1 - (t - 108) / 18) : 1, Ht = 80 * grow, lift = t > 108 ? (t - 108) * 4 : 0, fl = this.fireLv(t);
+      // anillos del tornado: la mitad de atrás detrás de los luchadores, la de delante encima
+      for (let i = 0; i < 18; i++) {
+        const k = i / 17, y = gy - k * Ht - lift, r = 5 + k * 24, onFire = fl > k, ph = t * 0.45 + i * 0.7, n = Math.ceil(r * 3);
+        if (layer === 'back') rect(c, Math.round(cx - r), Math.round(y), Math.round(r * 2), 2, onFire ? '#ff7a2a' : '#dff6ff', 0.1 * fade);   // cuerpo del embudo
+        for (let j = 0; j < n; j++) {
+          if (j % 4 === 3) continue;                                       // trazos, no anillos llenos
+          const a = j / n * Math.PI * 2 + ph, s = Math.sin(a);
+          if ((layer === 'front') !== (s > 0)) continue;
+          const col = onFire ? (j % 3 === 0 ? '#ffd34a' : j % 3 === 1 ? '#ff5a2a' : '#ffb03a') : (j % 2 ? '#ffffff' : '#bfe8ff');
+          rect(c, Math.round(cx + Math.cos(a) * r), Math.round(y + s * r * 0.22), 2, 1, col, (layer === 'front' ? 0.95 : 0.6) * fade);
+        }
+      }
+      if (layer === 'front' && fl > 0) glow(c, cx, gy - 34 - lift, 26, '#ff7a2a', 0.2 * fade * fl, 3);
+    },
+    launch(D) { return { lead: D.red, ang: 84, dir: D.side }; },
+  },
+
+  // ======================= Bloque + Maniquí =======================
+  'bloque+maniqui': {
+    name: 'PRENSA INDUSTRIAL', len: 140,
+    setup(g, D) {
+      D.man = D.a.ch.id === 'maniqui' ? D.a : D.b; D.blo = D.man === D.a ? D.b : D.a;
+      D.side = D.man.x <= D.v.x ? 1 : -1;                    // Maniquí golpea hacia 'side'; Bloque empieza al otro lado
+      D.mx0 = D.cx - D.side * 46; D.bx0 = D.cx + D.side * 44; D.bx1 = D.cx - D.side * 76;   // Bloque acaba detrás de Maniquí
+      D.focus = { x: D.cx, y: D.gy - 54, z: 1.8 };
+    },
+    // dónde está Bloque y qué hace
+    bloPos(D, t) {
+      const { cx, gy } = D, top = gy - 80, press = gy - D.v.S.hh * 0.55;
+      if (t < 36) return { x: D.bx0, y: gy, st: 'idle' };
+      if (t < 44) return { x: D.bx0, y: gy, st: 'squat' };
+      if (t < 66) { const k = (t - 44) / 22; return { x: dLerp(D.bx0, cx, k), y: dLerp(gy, top, dEase(k)) - Math.sin(k * Math.PI) * 10, st: 'up' }; }
+      if (t < 74) return { x: cx, y: top - 2 * Math.sin((t - 66) / 8 * Math.PI), st: 'hang' };
+      if (t < 80) { const k = (t - 74) / 6; return { x: cx, y: dLerp(top, press, k * k), st: 'down' }; }
+      if (t < 92) return { x: cx, y: press, st: 'press' };
+      if (t < 112) { const k = (t - 92) / 20; return { x: dLerp(cx, D.bx1, k), y: dLerp(press, gy, k) - Math.sin(k * Math.PI) * 34, st: 'back' }; }
+      return { x: D.bx1, y: gy, st: 'idle' };
+    },
+    step(g, D, t) {
+      const { man, blo, v, cx, gy, side } = D;
+      // el rival: quieto mientras lo escanean, aplastado por la prensa y luego al aire de un puñetazo
+      if (t < 116) duoPlace(v, cx, gy, -side); else duoPlace(v, cx + side * (t - 116) * 2.6, gy - (t - 116) * 0.7, -side);
+      duoStand(v, t >= 80 && t < 96 ? 'landing' : 'hitstun');
+      // Bloque: salta y cae encima como una prensa
+      const b = this.bloPos(D, t);
+      duoPlace(blo, b.x, b.y, b.st === 'back' || (b.st === 'idle' && t > 100) ? side : -side);
+      if (b.st === 'idle') duoStand(blo);
+      else if (b.st === 'squat') duoStand(blo, 'jumpsquat');
+      else if (b.st === 'up' || b.st === 'back') { duoStand(blo, 'air'); blo.vy = b.st === 'up' ? -2 : 1; }
+      else if (b.st === 'hang') duoPose(blo, 'dair', 'wind', (t - 66) / 8);
+      else duoPose(blo, 'dair', 'act');
+      // Maniquí: escanea, carga el puño cohete y remata
+      const mx1 = cx - side * 16;
+      if (t < 112) duoPlace(man, D.mx0, gy, side);
+      if (t < 8) duoStand(man);
+      else if (t < 40) duoPose(man, 'nspc', 'act');
+      else if (t < 94) duoStand(man);
+      else if (t < 112) duoPose(man, 'fsmash', 'wind', (t - 94) / 18);
+      else if (t < 118) { duoPlace(man, dLerp(D.mx0, mx1, (t - 112) / 5), gy, side); duoPose(man, 'fsmash', 'act'); }
+      else { duoPlace(man, mx1, gy, side); duoPose(man, 'fsmash', 'rec', (t - 118) / 22); }
+      // efectos
+      if (t === 1) Sfx.remate();
+      if (t >= 8 && t < 40 && t % 5 === 0) Sfx.blip();
+      if (t === 40) Sfx.join();                                                 // objetivo fijado
+      if (t === 44) { Sfx.jump(); g.burst(D.bx0, gy, 6, 'dust'); }
+      if (t === 80) {                                                          // ¡PUM!
+        D.flash = 7; g.shake = 14; Sfx.hit(19); Sfx.brk(); v.flash = 5;
+        g.burst(cx - 16, gy, 10, 'dust'); g.burst(cx + 16, gy, 10, 'dust');
+        duoRadial(g, cx, gy - 4, 16, ['#d8c8a8', '#ffffff'], 2.2);
+      }
+      if (t >= 100 && t < 116 && t % 2 === 0) {                                // escape del cohete
+        const h = duoHand(man);
+        g.fx.push({ kind: 'part', ptype: 'fire', x: h.x - side * 6, y: h.y, vx: -side * 1.3, vy: -0.2, t: 0, life: 12, size: 2 });
+      }
+      if (t === 112) Sfx.swing();
+      if (t === 116) {                                                         // ¡puño cohete!
+        D.flash = 8; g.shake = 12; Sfx.hit(20); v.flash = 6;
+        g.spark(cx + side * 4, gy - v.S.hh * 0.5, 22, '#ffd34a');
+        duoRadial(g, cx, gy - v.S.hh * 0.5, 24, ['#ffd34a', '#ff7a2a', '#ffffff'], 2.6);
+      }
+    },
+    draw(c, g, D, layer) {
+      const t = D.t, { man, blo, v, cx, gy, side } = D;
+      if (layer === 'back') {
+        // pistones hidráulicos sobre Bloque mientras cae y aprieta
+        if (t >= 62 && t < 96) {
+          const b = this.bloPos(D, t), top = Math.round(b.y - blo.S.hh - 2), a = Math.min(1, (t - 62) / 6, (96 - t) / 6), y0 = gy - 160;
+          for (const dx of [-12, 12]) {
+            rect(c, b.x + dx - 2, y0, 4, top - y0, '#6c6890', a);
+            rect(c, b.x + dx - 2, y0, 1, top - y0, '#a8a4c8', a);
+            rect(c, b.x + dx + 1, y0, 1, top - y0, '#3a3555', a);
+          }
+          rect(c, b.x - 17, top - 4, 34, 5, OUTLINE, a); rect(c, b.x - 16, top - 3, 32, 3, '#8a86a8', a);
+          for (let i = 0; i < 8; i++) rect(c, b.x - 16 + i * 4, top - 2, 2, 2, i % 2 ? '#ffd34a' : '#120d24', a);   // franjas de peligro
+        }
+        return;
+      }
+      // escaneo láser de laboratorio
+      if (t >= 8 && t < 44) {
+        const a = Math.min(1, (44 - t) / 6, (t - 8) / 4), top = gy - v.S.hh - 2;
+        const eye = { x: man.x + side * 4, y: gy - man.S.hh + 4 }, near = cx - side * v.S.hw;
+        const sy = Math.round(dLerp(top, gy, ((t - 8) % 16) / 16));
+        glow(c, eye.x, eye.y, 4, '#ff3a4a', 0.6 * a, 2);                       // el ojo-láser encendido
+        withAlpha(c, 0.75 * a, () => { pline(c, eye.x, eye.y, near, top, 1, '#ff3a4a'); pline(c, eye.x, eye.y, near, gy, 1, '#ff3a4a'); pline(c, eye.x, eye.y, near, sy, 2, '#ff7a8a'); });
+        rect(c, cx - v.S.hw - 4, top, v.S.hw * 2 + 8, gy - top, '#ff3a4a', 0.12 * a);
+        for (let yy = top; yy < gy; yy += 3) rect(c, cx - v.S.hw - 4, yy, v.S.hw * 2 + 8, 1, '#ff3a4a', 0.3 * a);
+        rect(c, cx - v.S.hw - 6, sy - 1, v.S.hw * 2 + 12, 2, '#ffb0b8', a);         // línea de barrido
+        if ((t >> 2) % 2 || t > 34) {                                          // corchetes: rojos buscando, verdes al fijar
+          const x0 = cx - v.S.hw - 8, x1 = cx + v.S.hw + 8, y0 = top - 5, y1 = gy + 2, col = t > 34 ? '#5ee08a' : '#ff5a6a';
+          for (const [x, y, sx, sy2] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
+            rect(c, sx > 0 ? x : x - 5, y - (sy2 > 0 ? 0 : 1), 6, 2, col); rect(c, x - (sx > 0 ? 0 : 1), sy2 > 0 ? y : y - 5, 2, 6, col);
+          }
+        }
+      }
+      // onda del aplastamiento
+      if (t >= 80 && t < 96) {
+        const k = (t - 80) / 16;
+        for (const s2 of [-1, 1]) for (let i = 0; i < 3; i++) rect(c, cx + s2 * (18 + k * 54 + i * 6) - 2, gy - 2 - i, 4, 1, '#ffe9b0', 0.8 * (1 - k));
+      }
+      // brillo del puño cohete
+      if (t >= 98 && t < 118) { const h = duoHand(man); glow(c, h.x, h.y, 6 + (t % 4), '#ff9a3a', 0.45, 3); }
+    },
+    launch(D) { return { lead: D.man, ang: 32, dir: D.side }; },
+  },
 };
 
 // ------------------------------------------------------------

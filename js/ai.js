@@ -24,7 +24,7 @@ function aiInput(f, g) {
   if (f.st === 'hold') {
     // EQUIPOS: si un compañero está cerca, esperar un poco a que venga a por la DUPLA
     const mateNear = g.teams && g.fighters.some(o => o !== f && g.allies(f, o) && !o.out && o.alive() && o.st !== 'respawn' && Math.abs(o.x - f.x) < 150 && Math.abs(o.y - f.y) < 50);
-    if (f.t > (mateNear ? 55 : 8 + Math.random() * 10)) {
+    if (f.t > (mateNear ? 85 : 8 + Math.random() * 10)) {
       const r = Math.random();
       if (r < 0.3) I.my = -1; else if (r < 0.5) I.my = 1; else if (r < 0.75) I.mx = f.dir; else I.mx = -f.dir;
     }

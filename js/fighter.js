@@ -424,7 +424,7 @@ class Fighter {
     if (I.my < -0.6) th = 'uthrow';
     else if (I.my > 0.6) th = 'dthrow';
     else if (Math.abs(I.mx) > 0.6) th = sgn(I.mx) === this.dir ? 'fthrow' : 'bthrow';
-    else if (this.use('atk') || this.t >= 80) th = 'fthrow';
+    else if (this.use('atk') || this.t >= 112) th = 'fthrow';      // (agarre algo más largo: le da tiempo al compañero de llegar a por la DUPLA)
     if (th) { const keep = this.holding; this.startMove(th, g); this.holding = keep; }
   }
   stGrabbed(g) {
@@ -433,7 +433,7 @@ class Fighter {
     if (!h || h.holding !== this) { this.heldBy = null; this.setSt('air'); return; }
     // machacar botones ayuda a soltarse
     if (['atk', 'spc', 'jump', 'shd'].some(k => this.buf[k] === 6) || (Math.abs(this.inp.mx) > 0.6 && Math.abs(this.prev.mx) < 0.4)) this.mash = (this.mash || 0) + 1;
-    const limit = 70 + this.dmg * 0.4 - (this.mash || 0) * 5;
+    const limit = 96 + this.dmg * 0.4 - (this.mash || 0) * 5;      // machacar botones sigue sirviendo para soltarse antes
     if (h.st === 'hold' && this.t > limit) { h.releaseHeld(2.5); h.lag = 14; h.setSt('landing'); g.burst(this.x, this.y - 10, 4, 'dust'); }
   }
 
