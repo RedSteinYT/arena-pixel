@@ -497,12 +497,12 @@ class Game {
       ? this.fighters.filter(f => f.alive()).sort((a, b) => b.S.hh - a.S.hh)            // al final: los grandes detrás
       : this.fighters.filter(f => f.alive()).sort((a, b) => (a.st === 'attack') - (b.st === 'attack'));
     for (const f of order) {
-      if (f.st === 'respawn' || f.st === 'grabbed' || f.st === 'gone' || f.st === 'portal') continue;
+      if (f.st === 'respawn' || f.st === 'grabbed' || f.st === 'gone' || f.st === 'portal' || f._giant) continue;
       const surf = surfaceBelow(f.x, f.y);
       if (surf) { const d = surf.y - f.y; if (d < 140) shadow(c, f.x, surf.y, (f.S.hw + 3) * (1 - d / 220), 0.38 * (1 - d / 140)); }
     }
     for (const f of order) {
-      if (f.st === 'gone') continue;
+      if (f.st === 'gone' || f._giant) continue;                    // (gigante: lo dibuja su Ultimate)
       if (f.st === 'portal') { drawPortal(c, f, this.frame); continue; }
       RubySys.drawAura(c, f, this);
       renderFighter(c, f, this.frame);
@@ -531,7 +531,7 @@ class Game {
     }
     c.restore();
     this.renderDuoScreen(c);
-    if (cam.z < 1.02) this.renderHudArt(c);       // con zoom, el marcador se esconde (que se luzcan)
+    if (cam.z < 1.02 && !this.duo) this.renderHudArt(c);       // (durante una técnica tampoco: aunque la cámara se aleje)       // con zoom, el marcador se esconde (que se luzcan)
   }
 
   hudLayout() {

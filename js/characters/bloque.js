@@ -172,7 +172,51 @@
       dspcLand: { s: 12, a: 6, e: 24, special: true, hit: [{ box: [-46, -11, 92, 11], d: 14, b: 3.4, g: 6.5, ang: 70, away: true }],
                   pose: { fh: [12, -1], bh: [-12, -1], wind: [4, -40], crouch: true },
                   onFrame(f, t, g) { if (t === 12) { quake(f, g, 8); g.burst(f.x + 30, f.y, 6, 'dust'); g.burst(f.x - 30, f.y, 6, 'dust'); } } },
+
+      // ===== ATAQUES RUBÍ (ver ruby.js) =====
+      // Comeback de Rubí — AVALANCHA: golpe tremendo al suelo y las rocas se levantan en fila hacia los dos
+      // lados, una tras otra. Solo alcanza a quien esté en el suelo cerca (saltando a tiempo se esquiva).
+      rubyCb: { s: 14, a: 14, e: 24, special: true, rubyName: 'AVALANCHA', aiRange: [0, 72],
+                hit: [0, 1, 2].flatMap(i => [[10 + i * 24, 14 + i * 4], [-34 - i * 24, 14 + i * 4]].map(([x, on]) =>
+                  ({ box: [x, -24, 24, 24], d: 23, b: 4.6, g: 9.0, ang: 76, away: true, on: [on, on + 3], group: 'av' }))),
+                pose: { fh: [15, -1], bh: [-14, -1], wind: [6, -42], crouch: true },
+                onFrame(f, t, g) {
+                  f.vx = 0;
+                  if (t < 14 && t % 3 === 0) g.burst(f.x + (Math.random() * 16 - 8), f.y - 34 - Math.random() * 8, 1, 'star', '#ff8aa0');
+                  for (let i = 0; i < 3; i++) if (t === 14 + i * 4) {
+                    const d = 22 + i * 24;
+                    g.shake = Math.max(g.shake, 7 - i); Sfx.hit(12 - i * 2);
+                    for (const s of [-1, 1]) { g.burst(f.x + s * d, f.y, 6, 'dust'); g.fx.push({ kind: 'part', ptype: 'spark', x: f.x + s * d, y: f.y - 6, vx: s * 0.6, vy: -1.6, t: 0, life: 14, size: 2, col: '#b9b6e0' }); }
+                  }
+                },
+                draw(c, f, t, g) {                                         // los picos de roca que salen del suelo
+                  for (let i = 0; i < 3; i++) {
+                    const t0 = 14 + i * 4, k = t - t0; if (k < 0 || k > 22) continue;
+                    const hmax = 26 - i * 3, h = Math.round(k < 4 ? hmax * k / 4 : k < 14 ? hmax : hmax * (1 - (k - 14) / 8));
+                    if (h <= 0) continue;
+                    for (const s of [-1, 1]) {
+                      const x = Math.round(f.x + s * (22 + i * 24)), w = 10 - i;
+                      rect(c, x - (w >> 1) - 1, f.y - h - 1, w + 2, h + 1, OUTLINE);
+                      boulder(c, x - (w >> 1), f.y - h, w, h, i * 3 + (s > 0 ? 1 : 0));
+                      rect(c, x - 1, f.y - h - 3, 3, 3, STONE.l); px(c, x, f.y - h - 4, STONE.hi);   // punta
+                    }
+                  }
+                } },
+      // Ultimate Ruby — MONTAÑA VIVIENTE: embestida de hombro corta (frena en el borde); si acierta,
+      // empieza la técnica (ultimates.js)
+      rubyUlt: { s: 8, a: 10, e: 22, special: true, keepVel: true, rubyName: 'MONTAÑA VIVIENTE', aiRange: [0, 46],
+                 hit: [{ box: [2, -29, 21, 27], ult: true, d: 0, b: 0, g: 0, ang: 40 }], pose: { fh: [14, -20], bh: [10, -16], lean: 4 },
+                 onFrame(f, t, g) {
+                   if (t < 8) { f.vx = 0; return; }
+                   if (t < 18) {
+                     let v = f.dir * 5;
+                     if (f.grounded && f.plat) { const lim = f.dir > 0 ? f.plat.x2 - 4 : f.plat.x1 + 4; v = f.dir > 0 ? Math.min(v, Math.max(0, lim - f.x)) : Math.max(v, Math.min(0, lim - f.x)); }
+                     f.vx = v; if (t % 3 === 0) g.burst(f.x - f.dir * 8, f.y - 4, 1, 'dust');
+                   } else f.vx *= 0.7;
+                 } },
     },
+    // para la Montaña Viviente (ultimates.js): el gólem gigante se dibuja con su propio arte
+    STONE, boulder,
 
     draw(c, f, p, A, frame) {
       const pal = f.pal;

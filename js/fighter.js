@@ -187,7 +187,7 @@ class Fighter {
       if (t < on[0] || t > on[1]) return;
       let [bx, by, bw, bh] = h.box;
       if (m.item) { const z = this.ch.z || 1, zx = 1 + (z - 1) * 0.55; bx *= zx; by *= z; bw *= zx; bh *= z; }   // armas a la escala del luchador
-      const key = i + ':' + (h.rehit ? Math.floor((t - on[0]) / h.rehit) : 0);
+      const key = (h.group ?? i) + ':' + (h.rehit ? Math.floor((t - on[0]) / h.rehit) : 0);   // (group: varias cajas = un solo golpe)
       out.push({ x: this.dir > 0 ? this.x + bx : this.x - bx - bw, y: this.y + by, w: bw, h: bh, h0: h, mult, key });
     });
     return out;

@@ -335,3 +335,86 @@ DUO_ANIMS['ult:runa'] = {
   launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 84 } }; },
 };
 const ROBE_GOLD = '#ffd34a';
+
+// ======================= Bloque: MONTAÑA VIVIENTE =======================
+//  Absorbe rocas del escenario hasta convertirse en una montaña gigante (la cámara se aleja), el rival
+//  diminuto levanta la vista y el puño gigante cae sobre él. Luego la montaña se desmorona.
+DUO_ANIMS['ult:bloque'] = {
+  name: 'MONTAÑA VIVIENTE', len: 168, BIG: 4,
+  setup(g, D) {
+    const a = D.a, v = D.v, P = a.plat || STAGE.main, reach = 25 * this.BIG - 4;   // dónde cae el puño gigante
+    D.side = sgn(v.x - a.x) || a.dir;
+    D.bx = a.x; D.vx = D.bx + D.side * reach;
+    if (D.vx < P.x1 + 10 || D.vx > P.x2 - 10) { D.vx = clamp(D.vx, P.x1 + 10, P.x2 - 10); D.bx = D.vx - D.side * reach; }
+    D.vx0 = v.x; D.vy0 = v.y;
+    D.rocks = Array.from({ length: 16 }, (_, i) => ({ a: i / 16 * Math.PI * 2 + (i % 3) * 0.4, r: 90 + (i * 37) % 70, t0: (i * 5) % 30, s: 4 + (i % 3) * 2 }));
+    D.focus = { x: (D.bx + D.vx) / 2, y: D.gy - 40, z: 1.8 };
+  },
+  scale(t) { return t < 24 ? 1 : t < 58 ? dLerp(1, this.BIG, dEase((t - 24) / 34)) : t < 132 ? this.BIG : t < 156 ? dLerp(this.BIG, 1, dEase((t - 132) / 24)) : 1; },
+  // postura del gigante en cada momento
+  pose(t) {
+    if (t < 58) return ['stand'];
+    if (t < 70) return ['stand'];
+    if (t < 92) return ['fsmash', 'wind', (t - 70) / 22];
+    if (t < 124) return ['fsmash', 'act'];
+    return ['fsmash', 'rec', (t - 124) / 30];
+  },
+  step(g, D, t) {
+    const blo = D.a, v = D.v, gy = D.gy, side = D.side, k = this.scale(t);
+    // el rival, diminuto, mira hacia arriba… y el puño cae
+    duoPlace(v, t < 14 ? dLerp(D.vx0, D.vx, dEase(t / 14)) : D.vx, t < 14 ? dLerp(D.vy0, gy, dEase(t / 14)) : gy, -side);
+    if (t >= 92 && t < 128) duoStand(v, 'landing'); else if (t >= 128) duoStand(v, 'hitstun'); else duoStand(v, 'ground');
+    // Bloque (mientras es gigante, el luchador normal no se dibuja: lo dibuja la técnica)
+    duoPlace(blo, D.bx, gy, side);
+    const P = this.pose(t);
+    if (P[0] === 'stand') duoStand(blo); else duoPose(blo, P[0], P[1], P[2]);
+    blo._giant = k > 1.02 ? k : 0;
+    // cámara: se aleja para que quepa la montaña
+    const zk = Math.min(1, Math.max(0, (t - 24) / 34)) * (t < 140 ? 1 : Math.max(0, 1 - (t - 140) / 16));
+    D.focus = { x: dLerp((D.bx + D.vx) / 2, W / 2, zk), y: dLerp(gy - 40, H / 2, zk), z: dLerp(1.8, 1, zk) };
+    // efectos
+    if (t === 4) Sfx.freeze();
+    if (t >= 24 && t < 58 && t % 6 === 0) { g.shake = Math.max(g.shake, 3); Sfx.hit(5); g.burst(D.bx + (Math.random() * 2 - 1) * 9 * k, gy, 3, 'dust'); }
+    if (t === 58) { Sfx.remate(); g.shake = 8; }
+    if (t === 92) {                                                        // ¡PUM!
+      D.flash = 10; g.shake = 18; Sfx.hit(24); Sfx.brk(); v.flash = 6;
+      for (const s of [-1, 1]) for (let i = 0; i < 3; i++) g.burst(D.vx + s * (10 + i * 22), gy, 8, 'dust');
+      duoRadial(g, D.vx, gy - 10, 30, ['#b9b6e0', '#8f8dc0', '#ffffff', RUBY_COL.l], 3);
+    }
+    if (t >= 132 && t < 156 && t % 2 === 0) {                              // la montaña se desmorona
+      const h = 30 * k;
+      g.fx.push({ kind: 'part', ptype: 'dust', x: D.bx + (Math.random() * 2 - 1) * 9 * k, y: gy - Math.random() * h, vx: (Math.random() - 0.5) * 2, vy: 0.8, t: 0, life: 20, size: 2 + (Math.random() * 2 | 0) });
+    }
+  },
+  draw(c, g, D, layer) {
+    const t = D.t - D.pre, blo = D.a, gy = D.gy, k = this.scale(t);
+    if (layer === 'back') {
+      // rocas del escenario volando hacia él
+      if (t < 56) for (const R of D.rocks) {
+        const u = (t - R.t0) / 22; if (u < 0 || u > 1) continue;
+        const e = u * u, x = Math.round(D.bx + Math.cos(R.a) * R.r * (1 - e)), y = Math.round(gy - 20 + Math.sin(R.a) * R.r * 0.6 * (1 - e) - Math.sin(u * Math.PI) * 14);
+        rect(c, x - 1, y - 1, R.s + 2, R.s + 2, OUTLINE); blo.ch.boulder(c, x, y, R.s, R.s, R.t0);
+      }
+      // sombra del puño sobre el rival
+      if (t >= 70 && t < 92) { const s = (t - 70) / 22; shadow(c, D.vx, gy, 6 + s * 22, 0.25 + s * 0.4); }
+      // el gigante (por detrás del rival diminuto)
+      if (blo._giant) {
+        glow(c, D.bx, gy - 15 * k, 16 * k, RUBY_COL.glow, t < 60 ? 0.2 : 0.1, 3);
+        c.save(); c.translate(D.bx, gy); c.scale(k, k); c.translate(-D.bx, -gy);
+        renderFighter(c, blo, g.frame);
+        c.restore();
+      }
+      return;
+    }
+    // grietas de rubí brillando mientras crece
+    if (blo._giant && t < 70) {
+      const a = 0.5 + 0.5 * Math.sin(t * 0.5), h = 30 * k, w = 9 * k;
+      withAlpha(c, a, () => { pline(c, D.bx - w * 0.4, gy - h * 0.8, D.bx - w * 0.1, gy - h * 0.45, 2, RUBY_COL.l); pline(c, D.bx + w * 0.3, gy - h * 0.6, D.bx, gy - h * 0.2, 2, RUBY_COL.l); });
+    }
+    if (t >= 92 && t < 112) {                                              // onda del impacto
+      const q = (t - 92) / 20;
+      for (const s of [-1, 1]) for (let i = 0; i < 4; i++) rect(c, Math.round(D.vx + s * (16 + q * 90 + i * 8)) - 2, gy - 2 - i, 5, 1, '#ffe9b0', 0.8 * (1 - q));
+    }
+  },
+  launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 80 } }; },
+};
