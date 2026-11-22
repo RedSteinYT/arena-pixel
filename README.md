@@ -33,6 +33,8 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 
 - **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo con un ataque fuerte o un especial.
 - **Ataques en DUPLA (Equipos).** Si tu compañero sujeta a un rival y tú también lo agarras, sale una **¡DUPLA!**. Algunas parejas tienen su propia técnica cinematográfica, la **¡¡¡DUPLA!!!**: la arena se detiene, la cámara se acerca y los dos la ejecutan juntos. Por ahora: **Espada Rúnica** (RedStein + Runa), **Terremoto** (Bloque + Coloso), **Burbuja Arcana** (Brisa + Runa), **Torbellino de Fuego** (Brisa + RedStein) y **Prensa Industrial** (Maniquí + Bloque). Solo sale si el rival ya tiene bastante daño, y quien la recibe tiene un respiro antes de la siguiente. Ojo: si golpean a quien está agarrando, suelta al rival.
+- **Filtro CRT opcional:** un interruptor en la portada pone el juego dentro de un televisor antiguo de madera, con líneas de barrido, antena, perillas y el papel tapiz de la casa de los abuelos.
+- **Música y efectos con volumen separado,** desde el menú o en plena pausa.
 - **14 objetos** que caen en plena pelea: armas que cambian tu ataque (espada láser, bláster, bumerán…), cosas para lanzar y poderes temporales.
 - **Pantalla VS** con pullas antes de cada combate y música rock propia para cada arena.
 - **Finales de película:** cámara lenta en el golpe final, zoom al ganador y animaciones de victoria y derrota propias de cada luchador. Si el ganador (o su compañero de equipo) ya había caído, vuelve por un portal para celebrarlo.
@@ -41,6 +43,21 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 - **Resultados** con una tarjeta por luchador: su puesto, sus estadísticas y su animación de victoria o derrota.
 - **Modo en línea** con código de sala: uno crea la sala, los demás escriben el código y a pelear.
 - **PRÁCTICA y TUTORIAL** para aprender todo lo anterior paso a paso.
+
+### ¡¡¡DUPLA!!!
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/img/dupla-espada-runica.jpg" alt="Espada Rúnica"><br><b>Espada Rúnica</b> · RedStein + Runa<br>Runa carga la espada con runas; RedStein cruza al rival de un tajo y el círculo rúnico estalla.</td>
+    <td width="50%"><img src="docs/img/dupla-terremoto.jpg" alt="Terremoto"><br><b>Terremoto</b> · Bloque + Coloso<br>Bloque levanta un pilar de roca y Coloso estrella contra él al rival.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/img/dupla-torbellino.jpg" alt="Torbellino de Fuego"><br><b>Torbellino de Fuego</b> · Brisa + RedStein<br>Brisa levanta un tornado y RedStein lo incendia con su espada.</td>
+    <td><img src="docs/img/dupla-prensa.jpg" alt="Prensa Industrial"><br><b>Prensa Industrial</b> · Maniquí + Bloque<br>Maniquí escanea al rival, Bloque cae encima como una prensa y Maniquí remata con un puño cohete.</td>
+  </tr>
+</table>
+
+La quinta, **Burbuja Arcana** (Brisa + Runa), mejor descúbrela jugando.
 
 ## 🧙 Luchadores
 
