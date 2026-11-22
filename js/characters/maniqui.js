@@ -123,6 +123,47 @@
       dspcLand: { s: 2, a: 5, e: 18, special: true, hit: [{ box: [-30, -10, 60, 10], d: 9, b: 3.0, g: 4.8, ang: 60, away: true }],
                   pose: { crouch: true, fh: [9, -6], bh: [-9, -6] },
                   onStart(f, g) { g.shake = Math.max(g.shake, 3); g.burst(f.x, f.y, 10, 'dust'); } },
+
+      // ===== ATAQUES RUBÍ (ver ruby.js) =====
+      // Comeback de Rubí — SOBRECARGA: carga el puño de electricidad y suelta un directo corto y brutal.
+      // Si acierta, la descarga deja al rival aturdido un instante.
+      rubyCb: { s: 16, a: 4, e: 26, special: true, rubyName: 'SOBRECARGA', aiRange: [0, 30],
+                hit: [{ box: [4, -23, 22, 15], d: 26, b: 4.8, g: 9.6, ang: 36 }],
+                pose: { fh: [21, -15], wind: [-9, -15], lean: 4 },
+                onFrame(f, t, g) {
+                  f.vx *= 0.5;
+                  const hx = f.x + f.dir * (f._pose ? f._pose.fh[0] : 0), hy = f.y + (f._pose ? f._pose.fh[1] : -15);
+                  if (t < 16 && t % 2 === 0) g.fx.push({ kind: 'part', ptype: 'spark', x: hx + (Math.random() * 10 - 5), y: hy + (Math.random() * 10 - 5), vx: (Math.random() - 0.5) * 1.6, vy: (Math.random() - 0.5) * 1.6, t: 0, life: 6, size: 1, col: t % 4 ? '#9fe8ff' : '#ffffff' });
+                  if (t === 8) Sfx.blip();
+                  if (t === 16) { Sfx.swing(); g.spark(f.x + f.dir * 18, f.y - 16, 12, '#9fe8ff'); }
+                  // la descarga: el rival golpeado queda aturdido un momento, con chispas encima
+                  if (f.landedHit && !f._zapped) {
+                    f._zapped = true;
+                    for (const o of g.fighters) if (o !== f && o.comboBy === f && o.st === 'hitstun') {
+                      o.stun += 14; o.lvx *= 0.6; o.lvy *= 0.6;
+                      duoRadial(g, o.x, o.y - o.S.hh * 0.5, 14, ['#9fe8ff', '#ffffff', '#ff8aa0'], 2);
+                    }
+                  }
+                },
+                onStart(f) { f._zapped = false; },
+                draw(c, f, t, g) {                                       // rayos recorriendo el brazo mientras carga
+                  if (t >= 20) return;
+                  const p = f._pose; if (!p) return;
+                  const hx = f.x + f.dir * p.fh[0], hy = f.y + p.fh[1], sx = f.x + f.dir * p.neck[0], sy = f.y + p.neck[1] + 1;
+                  glow(c, hx, hy, 6 + (t % 3), '#9fe8ff', 0.4, 3);
+                  let x = sx, y = sy;
+                  for (let i = 1; i <= 4; i++) { const nx = dLerp(sx, hx, i / 4) + (((t + i) * 7) % 5) - 2, ny = dLerp(sy, hy, i / 4) + (((t + i) * 3) % 5) - 2; pline(c, x, y, nx, ny, 1, (t + i) % 2 ? '#ffffff' : '#9fe8ff'); x = nx; y = ny; }
+                } },
+      // Ultimate Ruby — PROTOCOLO FINAL: dispara un dardo marcador; si acierta, empieza la técnica (ultimates.js)
+      rubyUlt: { s: 8, a: 6, e: 22, special: true, rubyName: 'PROTOCOLO FINAL', aiRange: [8, 46],
+                 hit: [{ box: [8, -21, 34, 10], ult: true, d: 0, b: 0, g: 0, ang: 40 }], pose: { fh: [15, -15], lean: 2 },
+                 onFrame(f, t, g) { if (t === 8) Sfx.blip(); },
+                 draw(c, f, t, g) {                                      // el dardo marcador
+                   if (t < 8 || t >= 14) return;
+                   const x = Math.round(f.x + f.dir * (16 + (t - 8) * 6)), y = Math.round(f.y - 16);
+                   rect(c, x - 3, y, 6, 1, '#e8f0f4'); px(c, x + f.dir * 3, y, '#ff3a4a'); px(c, x - f.dir * 3, y - 1, '#ff3a4a'); px(c, x - f.dir * 3, y + 1, '#ff3a4a');
+                   glow(c, x + f.dir * 3, y, 3, '#ff3a4a', 0.5, 2);
+                 } },
     },
 
     draw(c, f, p, A) {

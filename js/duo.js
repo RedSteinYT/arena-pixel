@@ -555,6 +555,8 @@ Object.assign(Game.prototype, {
     rect(c, 0, 0, W, h, '#05030c'); rect(c, 0, H - h, W, h, '#05030c');
     if (D.flash > 0) rect(c, 0, 0, W, H, '#ffffff', Math.min(0.85, D.flash / 9));
   },
+  // de coordenadas de la arena a la pantalla (con el zoom de la cámara)
+  toScreen(x, y) { const c = this.cam; return { x: (x - c.x) * c.z + W / 2, y: (y - c.y) * c.z + H / 2 }; },
   renderDuoText(t) {
     const D = this.duo; if (!D || !D.big) return;
     const A = DUO_ANIMS[D.kind], k = D.t;
@@ -564,6 +566,7 @@ Object.assign(Game.prototype, {
         t.text('¡ULTIMATE RUBY!', W / 2, Math.round(4 + Math.min(1, kk / 6) * 6), Math.round(24 * pop), (k >> 2) % 2 ? RUBY_COL.l : '#ffffff', 'center');
         if (kk > 10) t.text(A.name, W / 2, H - 20, 16, '#ffd34a', 'center');
       }
+      if (A.text && k > D.pre) A.text(t, this, D, k - D.pre);          // textos propios de la técnica
       return;
     }
     if (k < 70) {

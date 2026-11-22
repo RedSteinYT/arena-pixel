@@ -418,3 +418,112 @@ DUO_ANIMS['ult:bloque'] = {
   },
   launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 80 } }; },
 };
+
+// ======================= Maniquí: PROTOCOLO FINAL =======================
+//  Interfaz de laboratorio: OBJETIVO FIJADO. Abre el panel del pecho y manda la señal; un satélite se
+//  alinea en el cielo y dispara un láser orbital que acaba en una explosión enorme.
+DUO_ANIMS['ult:maniqui'] = {
+  name: 'PROTOCOLO FINAL', len: 156,
+  setup(g, D) {
+    const a = D.a, v = D.v, P = a.plat || STAGE.main;
+    D.side = sgn(v.x - a.x) || a.dir;
+    D.vx = clamp(a.x + D.side * 70, P.x1 + 16, P.x2 - 16);
+    D.mx = Math.abs(D.vx - a.x) < 46 ? clamp(D.vx - D.side * 70, P.x1 + 10, P.x2 - 10) : a.x;
+    D.vx0 = v.x; D.vy0 = v.y; D.sky = D.gy - 122;
+    D.focus = { x: (D.mx + D.vx) / 2, y: D.gy - 64, z: 1.5 };
+  },
+  satX(D, t) { return t < 40 ? null : t < 70 ? dLerp(D.vx - D.side * 160, D.vx, dEase((t - 40) / 30)) : D.vx; },
+  step(g, D, t) {
+    const man = D.a, v = D.v, gy = D.gy, side = D.side;
+    duoPlace(v, t < 12 ? dLerp(D.vx0, D.vx, dEase(t / 12)) : D.vx, t < 12 ? dLerp(D.vy0, gy, dEase(t / 12)) : gy, -side);
+    duoStand(v, 'hitstun');
+    duoPlace(man, D.mx, gy, side);
+    if (t < 14) duoPose(man, 'rubyUlt', 'rec', t / 14);
+    else if (t < 30) duoStand(man);
+    else if (t < 96) duoPose(man, 'usmash', 'act');                          // abre el pecho y manda la señal hacia arriba
+    else duoStand(man);
+    // efectos
+    if (t >= 6 && t < 30 && t % 5 === 0) Sfx.blip();
+    if (t === 30) Sfx.join();                                                  // OBJETIVO FIJADO
+    if (t >= 34 && t < 70 && t % 8 === 0) Sfx.blip();
+    if (t === 80) Sfx.freeze();
+    if (t >= 96 && t < 126) {                                                  // el láser orbital
+      g.shake = Math.max(g.shake, 5); if (t % 3 === 0) v.flash = 2;
+      if (t % 6 === 0) Sfx.hit(8);
+      g.fx.push({ kind: 'part', ptype: 'spark', x: D.vx + (Math.random() * 2 - 1) * 14, y: gy - 2, vx: (Math.random() * 2 - 1) * 2.4, vy: -1.6 - Math.random() * 1.4, t: 0, life: 16, size: 1 + (t % 2), col: t % 3 ? '#9fe8ff' : '#ffffff' });
+      g.burst(D.vx + (Math.random() * 2 - 1) * 12, gy, 1, 'smoke');
+    }
+    if (t === 126) {                                                          // ¡explosión!
+      D.flash = 12; g.shake = 18; Sfx.hit(24); Sfx.brk(); v.flash = 6;
+      duoRadial(g, D.vx, gy - v.S.hh * 0.5, 44, ['#9fe8ff', '#ffffff', '#ffd34a', '#ff7a20', RUBY_COL.l], 3.4);
+      g.burst(D.vx, gy - 10, 14, 'fire'); g.burst(D.vx - 16, gy, 10, 'dust'); g.burst(D.vx + 16, gy, 10, 'dust');
+    }
+  },
+  draw(c, g, D, layer) {
+    const t = D.t - D.pre, man = D.a, v = D.v, gy = D.gy, vx = Math.round(D.vx), sky = Math.round(D.sky);
+    if (layer === 'back') {
+      if (t >= 80 && t < 140) rect(c, -W, -H, W * 3, H * 3, '#0a1830', 0.28 * Math.min(1, (t - 80) / 10, (140 - t) / 10));   // todo se oscurece
+      return;
+    }
+    // interfaz de laboratorio sobre el rival
+    if (t < 64) {
+      const a = Math.min(1, t / 4, (64 - t) / 8), top = gy - v.S.hh - 3, k = Math.min(1, t / 24), locked = t >= 30;
+      const col = locked ? '#5ee08a' : '#ff5a6a', pad = Math.round(dLerp(40, 6, k));
+      const x0 = vx - v.S.hw - pad, x1 = vx + v.S.hw + pad, y0 = top - pad, y1 = gy + pad;
+      withAlpha(c, a, () => {
+        for (const [x, y, sx, sy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
+          rect(c, sx > 0 ? x : x - 6, y - (sy > 0 ? 0 : 1), 7, 2, col); rect(c, x - (sx > 0 ? 0 : 1), sy > 0 ? y : y - 6, 2, 7, col);
+        }
+        if (!locked) for (let yy = top; yy < gy; yy += 3) rect(c, vx - v.S.hw - 3, yy, v.S.hw * 2 + 6, 1, '#ff3a4a', 0.25);
+        else { ring(c, vx, Math.round(gy - v.S.hh * 0.5), v.S.hh * 0.6 + ((t >> 2) % 2), col); pline(c, vx - 12, gy - v.S.hh * 0.5, vx + 12, gy - v.S.hh * 0.5, 1, col); pline(c, vx, top - 4, vx, gy + 3, 1, col); }
+        for (let i = 0; i < 4; i++) rect(c, x1 + 4, y0 + 2 + i * 4, 6 + ((t + i * 3) % 9), 2, col, 0.7);   // datos
+      });
+    }
+    // el pecho abierto y la señal hacia el cielo
+    if (t >= 30 && t < 100) {
+      const cx = Math.round(man.x + man.dir * 1), cy = Math.round(gy - man.S.hh * 0.6), a = Math.min(1, (t - 30) / 6);
+      withAlpha(c, a, () => { rect(c, cx - 3, cy - 3, 6, 6, OUTLINE); rect(c, cx - 2, cy - 2, 4, 4, '#9fe8ff'); px(c, cx - 1, cy - 1, '#ffffff'); });
+      glow(c, cx, cy, 6 + (t % 4), '#9fe8ff', 0.4 * a, 3);
+      for (let i = 0; i < 5; i++) { const y = cy - 8 - ((t * 4 + i * 26) % 130); if (y > sky) { const r = 3 + ((cy - y) / 26 | 0); withAlpha(c, 0.6, () => pline(c, cx - r, y, cx + r, y, 1, '#9fe8ff')); } }   // ondas de la señal
+    }
+    // el satélite
+    const sx = this.satX(D, t);
+    if (sx != null && t < 140) {
+      const x = Math.round(sx), y = sky + Math.round(Math.sin(t * 0.08) * 2), open = Math.min(1, Math.max(0, (t - 60) / 12));
+      const pw = Math.round(4 + 10 * open);
+      c.save(); c.translate(x, y); c.scale(1.6, 1.6); c.translate(-x, -y);             // un poco más grande: que se vea bien
+      rect(c, x - 5, y - 4, 10, 8, OUTLINE); rect(c, x - 4, y - 3, 8, 6, '#bcc0da'); rect(c, x - 4, y - 3, 8, 1, '#f1f2fb'); rect(c, x - 2, y - 1, 4, 2, man.pal.main);
+      for (const s of [-1, 1]) {                                                 // paneles solares
+        const px0 = s > 0 ? x + 6 : x - 6 - pw;
+        rect(c, px0 - 1, y - 3, pw + 2, 6, OUTLINE); rect(c, px0, y - 2, pw, 4, '#2d4a9a');
+        for (let i = 2; i < pw; i += 3) rect(c, px0 + i, y - 2, 1, 4, '#5a7ae0');
+      }
+      rect(c, x - 2, y + 4, 4, 2, '#8084aa'); rect(c, x - 3, y + 6, 6, 1, '#4f5180');   // antena hacia abajo
+      if (t >= 70 && t < 126) glow(c, x, y + 7, 4 + ((t - 70) / 56) * 6, '#9fe8ff', 0.5, 3);
+      c.restore();
+    }
+    // láser de puntería (rojo, parpadea)
+    if (t >= 80 && t < 96 && (t >> 1) % 2) withAlpha(c, 0.8, () => pline(c, vx, sky + 12, vx, gy, 1, '#ff3a4a'));
+    // ¡el láser orbital!
+    if (t >= 96 && t < 132) {
+      const k = (t - 96) / 30, w = t < 126 ? Math.round(10 + Math.sin(t * 0.9) * 2 + Math.min(1, k * 3) * 6) : Math.round(16 * (1 - (t - 126) / 6));
+      if (w > 0) {
+        rect(c, vx - w - 4, sky + 12, (w + 4) * 2, gy - sky - 12, '#9fe8ff', 0.25);
+        rect(c, vx - w, sky + 12, w * 2, gy - sky - 12, '#9fe8ff', 0.7);
+        rect(c, vx - (w >> 1), sky + 12, w, gy - sky - 12, '#ffffff', 0.95);
+        groundEllipse(c, vx, gy, w + 8, '#ffffff', 0.9); groundEllipse(c, vx, gy, w + 14, '#9fe8ff', 0.6);
+      }
+    }
+    if (t >= 126 && t < 146) {                                                   // onda de la explosión
+      const q = (t - 126) / 20;
+      withAlpha(c, 1 - q, () => { ring(c, vx, Math.round(gy - 14), 8 + (t - 126) * 6, '#ffffff'); ring(c, vx, Math.round(gy - 14), 4 + (t - 126) * 4, '#ffd34a'); });
+    }
+  },
+  // "OBJETIVO FIJADO" sobre el rival (texto de pantalla)
+  text(tx, g, D, t) {
+    if (t < 30 || t >= 64) return;
+    const p = g.toScreen(D.vx, D.gy - D.v.S.hh - 14);
+    tx.text('OBJETIVO FIJADO', clamp(p.x, 70, W - 70), Math.round(p.y) - 8, 8, (t >> 2) % 2 ? '#5ee08a' : '#ffffff', 'center');
+  },
+  launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 74 } }; },
+};
