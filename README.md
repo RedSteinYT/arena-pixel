@@ -102,7 +102,7 @@ La quinta, **Burbuja Arcana** (Brisa + Runa), mejor descúbrela jugando.
 | **Todos contra todos** | Cuatro luchadores, caos total. |
 | **🌐 En línea** | Hasta 4 amigos, cada uno desde su casa, con un código de sala. |
 | **🎯 Práctica** | Tú contra el Dummy, con vidas infinitas y tu mejor combo apuntado. |
-| **📘 Tutorial** | Lecciones de básicos, combos, avanzados y objetos, con tareas que te dicen qué pulsar. |
+| **📘 Tutorial** | Lecciones de básicos, combos, avanzados, objetos, ataques rubí y duplas, con tareas que te dicen qué pulsar. |
 
 Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difícil.
 

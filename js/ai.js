@@ -31,6 +31,7 @@ function aiInput(f, g) {
     return I;
   }
   if (f.st === 'respawn') { if (f.t > 40 + Math.random() * 40) I.my = 1; return I; }
+  if (g.cfg.tutorial && !g.tutAlly) return I;                         // tutorial: el compañero solo se mueve en las tareas de DUPLA
   // EQUIPOS: si un compañero sujeta a un rival, ir a agarrarlo también (¡DUPLA!)
   if (g.teams && f.grounded && (f.st === 'ground' || f.st === 'landing')) {
     const mate = g.fighters.find(o => o !== f && g.allies(f, o) && o.st === 'hold' && o.holding && !g.allies(f, o.holding));
@@ -42,6 +43,7 @@ function aiInput(f, g) {
       return I;
     }
   }
+  if (g.cfg.tutorial) return I;                                       // (y solo para eso)
 
   // ---- en el borde: subir ----
   if (f.st === 'ledge') {

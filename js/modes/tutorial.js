@@ -13,6 +13,7 @@ const Tutorial = (() => {
     fsmash: 'Fuerte →', usmash: 'Fuerte ↑', dsmash: 'Fuerte ↓', nair: 'Ataque aéreo', fair: '→ + Ataque aéreo', bair: '← + Ataque aéreo',
     uair: '↑ + Ataque aéreo', dair: '↓ + Ataque aéreo', nspc: 'Especial', sspc: '→ + Especial', uspc: '↑ + Especial', dspc: '↓ + Especial',
     dspcLand: '↓ + Especial', grab: 'Agarre', fthrow: 'Lanzamiento', bthrow: 'Lanzamiento', uthrow: 'Lanzamiento', dthrow: 'Lanzamiento',
+    rubyCb: 'Comeback de Rubí', rubyUlt: 'Ultimate Ruby',
   };
   const nameOf = n => MOVE_NAME[n] || (n && n.startsWith('I:') ? 'ataque con el arma' : n);
 
@@ -111,6 +112,44 @@ const Tutorial = (() => {
         setup(c) { c.p.dmg = 60; const it = ItemSys.spawn(c.g, 'corazon', c.p.x + 40, STAGE.main.y); it.st = 'ground'; it.plat = STAGE.main; },
         check(c) { return c.p.dmg < 60; } },
     ] },
+    { id: 'rubi', name: 'RUBÍ', icon: '♦', desc: 'Comeback de Rubí y Ultimate Ruby.', tasks: [
+      { title: 'Corazón en llamas', text: 'Con 100 % de daño o más tu corazón ARDE: tienes el Comeback de Rubí. Acércate al Dummy y pulsa ataque + especial a la vez. Es un golpe: si no estás cerca, falla.',
+        keys: [['atk', 'spc']], setup(c) { c.p.dmg = 110; near(c, 18); },
+        check(c) {
+          if (c.ev.move === 'rubyCb') c.used = true;
+          if (c.used && c.ev.hit) return true;
+          if (c.used && c.p.st !== 'attack') return 'El Comeback falló: es un golpe, tienes que estar pegado al Dummy.';
+        } },
+      { title: 'Concéntrate', text: 'Mantén escudo + especial, quieto en el suelo, hasta que la barra de rubí se llene (unos 3 segundos). Si te golpean, se corta.',
+        keys: [['hold:shd', 'hold:spc']], setup(c) { c.d.spawn(c.p.x + 120, STAGE.main.y, -1); },
+        check(c) { return c.p.ultReady; } },
+      { title: 'Ultimate Ruby', text: 'Con el Ultimate cargado, ponte delante del Dummy y pulsa ataque + especial: si el golpe acierta, explota el corazón de rubí y empieza la técnica.',
+        keys: [['atk', 'spc']], setup(c) { c.p.ultReady = true; near(c, 18); },
+        check(c) {
+          if (c.g.duo) c.cine = true;
+          if (c.cine && !c.g.duo) return true;
+          if (c.ev.move === 'rubyUlt') c.tried = true;
+          if (c.tried && !c.cine && c.p.st !== 'attack') return 'El golpe inicial no acertó: ponte justo delante del Dummy (y recuerda: se pierde la carga, no la vida).';
+        } },
+    ] },
+    { id: 'dupla', name: 'DUPLA', icon: '✚', desc: 'Ataques en pareja con tu compañero de equipo.',
+      teams: true, ally: { char: 'bloque', pal: 1 }, tasks: [
+      { title: 'Agarra al rival', text: 'En EQUIPOS, si tu compañero y tú agarráis al mismo rival, sale una DUPLA. Primero: agarra al Dummy.',
+        keys: [['grab']], setup: c => near(c, 16), check(c) { return c.p.st === 'hold'; } },
+      { title: '¡DUPLA!', text: 'Agarra al Dummy y NO lo lances: tu compañero (CPU) vendrá a agarrarlo también. Con el rival a poco daño, sale la ¡DUPLA! sencilla.',
+        keys: [['grab']], setup(c) { near(c, 16); c.d.dmg = 20; c.d.duoRest = 0; c.g.tutAlly = true; },
+        check(c) {
+          if (c.d.duoTxtT > 0) return true;
+          if (/throw$/.test(c.ev.move || '')) return 'Lo lanzaste: mantén el agarre y espera a tu compañero.';
+        } },
+      { title: '¡¡¡DUPLA!!!', text: 'Algunas parejas tienen su propia técnica: Maniquí + Bloque = PRENSA INDUSTRIAL. Solo sale si el rival tiene 60 % o más. ¡Agárralo otra vez y espera a tu compañero!',
+        keys: [['grab']], setup(c) { near(c, 16); c.d.dmg = 80; c.d.duoRest = 0; c.g.tutAlly = true; },
+        check(c) {
+          if (c.g.duo) c.cine = true;
+          if (c.cine && !c.g.duo) return true;
+          if (/throw$/.test(c.ev.move || '')) return 'Lo lanzaste: mantén el agarre y espera a tu compañero.';
+        } },
+    ] },
   ];
 
   // ---------- progreso guardado ----------
@@ -123,12 +162,15 @@ const Tutorial = (() => {
   const lesson = id => LESSONS.find(l => l.id === id);
   function setupTask(g) {
     const T = L.tasks[idx];
-    const p = g.fighters[0], d = g.fighters[1];
-    // todo a su sitio
+    const p = g.fighters[0], d = g.fighters[1], a = g.fighters[2] || null;
+    // todo a su sitio (y ninguna técnica a medias)
+    g.duo = null; g.tutAlly = false; g.slow = 0;
+    for (const f of g.fighters) { f.holding = null; f.heldBy = null; f._giant = 0; }    // nadie sigue agarrado de la tarea anterior
     p.spawn(176, STAGE.main.y, 1); d.spawn(304, STAGE.main.y, -1);
+    if (a) a.spawn(112, STAGE.main.y, 1);
     for (const f of g.fighters) { f.dmg = 0; f.burn = 0; f.comboN = 0; f.comboT = 0; f.remateT = 0; f.item = null; f.buffs = {}; ItemSys.refreshStats(f); }
     g.items = []; g.projectiles = [];
-    ctx = { g, p, d, step: 0, seqT: 0, lastHitMove: undefined };
+    ctx = { g, p, d, a, step: 0, seqT: 0, lastHitMove: undefined };
     if (T.setup) T.setup(ctx);
     prev = snap(p, d);
     phase = 'task'; timer = 0; msg = '';
@@ -136,8 +178,9 @@ const Tutorial = (() => {
   const snap = (p, d) => ({ st: p.st, move: p.moveName, t: p.t, grounded: p.grounded, jumps: p.jumps, ddmg: d.dmg, rem: d.remateT, dst: d.st });
   function start(id) {
     L = lesson(id); idx = 0;
-    startFight({ tutorial: id, teams: false, stocks: 99, stage: 'entrenamiento', items: false,
-      players: [{ device: 'any', pal: 0, team: 0, char: 'maniqui', num: 1 }, { device: 'dummy', pal: 2, team: 1, char: 'dummy', num: 0 }] });
+    const players = [{ device: 'any', pal: 0, team: 0, char: 'maniqui', num: 1 }, { device: 'dummy', pal: 2, team: 1, char: 'dummy', num: 0 }];
+    if (L.ally) players.push({ device: 'cpu', level: 'normal', pal: L.ally.pal, team: 0, char: L.ally.char, num: 0 });   // compañero de equipo (CPU)
+    startFight({ tutorial: id, teams: !!L.teams, stocks: 99, stage: 'entrenamiento', items: false, players });
   }
   function ok() { phase = 'ok'; timer = 70; Sfx.powerup(); }
   function fail(m) { phase = 'fail'; timer = 150; msg = m; Sfx.brk(); }

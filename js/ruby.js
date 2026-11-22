@@ -17,7 +17,7 @@ const RUBY_COL = { l: '#ff8aa0', m: '#e8284a', d: '#8a0f2a', glow: '#ff3a5a' };
 
 const RubySys = (() => {
   // ¿esta pelea / este luchador usa los ataques rubí?
-  const on = (f, g) => !!(g && g.cfg && g.cfg.ruby !== false && !g.cfg.tutorial && !g.sd && f.ch.moves.rubyCb && f.ch.moves.rubyUlt);
+  const on = (f, g) => !!(g && g.cfg && g.cfg.ruby !== false && (!g.cfg.tutorial || g.cfg.tutorial === 'rubi') && !g.sd && f.ch.moves.rubyCb && f.ch.moves.rubyUlt);
   const cbReady = f => f.dmg >= RUBY_CB_DMG && !f.cbUsed && !f.cbOff;
   function resetLife(f) { f.cbUsed = false; f.cbOff = false; f.ultReady = false; f.ultUsed = false; f.chargeT = 0; f.rubyTxtT = 0; }
   function canCharge(f, g) { return on(f, g) && f.grounded && !f.ultReady && !f.ultUsed && g.phase === 'play' && !f.item; }
