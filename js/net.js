@@ -235,7 +235,7 @@ const Net = (() => {
   }
   function roomInfo() {
     const S = Select.state, M = Select.MODES[S.mode] || Select.MODES['1v1'];
-    return { mode: M.name, cap: roomCap, stocks: S.stocks, time: S.time || 0, items: !!S.items, vote: !!S.arenaVote };
+    return { mode: M.name, cap: roomCap, stocks: S.stocks, time: S.time || 0, items: !!S.items, ruby: S.ruby !== false, vote: !!S.arenaVote };
   }
   // tras simular: estado de la pelea para cada invitado (solo lo que cambió desde lo que confirmó)
   function hostSend(g) {
@@ -432,10 +432,10 @@ const Net = (() => {
     else if (what === 'clr') i.value = '';
     lastCode = i.value; Sfx.blip(); return true;
   }
-  // resumen de la sala: modo, vidas, tiempo, objetos y cómo se elige la arena
+  // resumen de la sala: modo, vidas, tiempo, objetos, rubí y cómo se elige la arena
   function roomTags(R) {
     return `<div class="onlRoom"><span>MODO <b>${R.mode}</b></span><span>VIDAS <b>${R.stocks}</b></span><span>TIEMPO <b>${R.time ? R.time + ' MIN' : 'SIN LÍMITE'}</b></span>
-      <span>OBJETOS <b>${R.items ? 'SÍ' : 'NO'}</b></span><span>ARENA <b>${R.vote ? 'VOTACIÓN' : 'ANFITRIÓN'}</b></span></div>`;
+      <span>OBJETOS <b>${R.items ? 'SÍ' : 'NO'}</b></span><span>RUBÍ <b>${R.ruby !== false ? 'SÍ' : 'NO'}</b></span><span>ARENA <b>${R.vote ? 'VOTACIÓN' : 'ANFITRIÓN'}</b></span></div>`;
   }
   function copy(txt, ok) {
     const done = () => { uiMsg = ok; renderUI(); };
