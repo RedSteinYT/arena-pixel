@@ -22,13 +22,26 @@ function aiInput(f, g) {
   if (f.st === 'grabbed') { if (Math.random() < L.mash) I[['atk', 'spc', 'jump'][Math.random() * 3 | 0]] = !f.prev.atk; return I; }
   // sosteniendo a alguien: elegir lanzamiento
   if (f.st === 'hold') {
-    if (f.t > 8 + Math.random() * 10) {
+    // EQUIPOS: si un compañero está cerca, esperar un poco a que venga a por la DUPLA
+    const mateNear = g.teams && g.fighters.some(o => o !== f && g.allies(f, o) && !o.out && o.alive() && o.st !== 'respawn' && Math.abs(o.x - f.x) < 150 && Math.abs(o.y - f.y) < 50);
+    if (f.t > (mateNear ? 55 : 8 + Math.random() * 10)) {
       const r = Math.random();
       if (r < 0.3) I.my = -1; else if (r < 0.5) I.my = 1; else if (r < 0.75) I.mx = f.dir; else I.mx = -f.dir;
     }
     return I;
   }
   if (f.st === 'respawn') { if (f.t > 40 + Math.random() * 40) I.my = 1; return I; }
+  // EQUIPOS: si un compañero sujeta a un rival, ir a agarrarlo también (¡DUPLA!)
+  if (g.teams && f.grounded && (f.st === 'ground' || f.st === 'landing')) {
+    const mate = g.fighters.find(o => o !== f && g.allies(f, o) && o.st === 'hold' && o.holding && !g.allies(f, o.holding));
+    if (mate && Math.abs(mate.holding.y - f.y) < 50) {
+      const v = mate.holding, dx = v.x - f.x, reach = f.S.hw + v.S.hw + 4;
+      if (Math.abs(dx) > reach) I.mx = sgn(dx);
+      else if (sgn(dx) !== f.dir && Math.abs(dx) > 2) I.mx = sgn(dx);
+      else I.grab = !f.prev.grab;
+      return I;
+    }
+  }
 
   // ---- en el borde: subir ----
   if (f.st === 'ledge') {

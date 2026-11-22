@@ -32,6 +32,7 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 </p>
 
 - **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo con un ataque fuerte o un especial.
+- **Ataques en DUPLA (Equipos).** Si tu compañero sujeta a un rival y tú también lo agarras, sale una **¡DUPLA!**. Algunas parejas tienen su propia técnica cinematográfica, la **¡¡¡DUPLA!!!**: la arena se detiene, la cámara se acerca y los dos la ejecutan juntos. Por ahora: **Espada Rúnica** (RedStein + Runa), **Terremoto** (Bloque + Coloso) y **Burbuja Arcana** (Brisa + Runa). Solo sale si el rival ya tiene bastante daño, y quien la recibe tiene un respiro antes de la siguiente.
 - **14 objetos** que caen en plena pelea: armas que cambian tu ataque (espada láser, bláster, bumerán…), cosas para lanzar y poderes temporales.
 - **Pantalla VS** con pullas antes de cada combate y música rock propia para cada arena.
 - **Finales de película:** cámara lenta en el golpe final, zoom al ganador y animaciones de victoria y derrota propias de cada luchador. Si el ganador (o su compañero de equipo) ya había caído, vuelve por un portal para celebrarlo.

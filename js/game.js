@@ -40,6 +40,7 @@ class Game {
     this.sd = false;
     this.endSeq = null;
     this.cam = { x: W / 2, y: H / 2, z: 1 };
+    this.duo = null;             // ataque en dupla en curso (ver duo.js)
     this.cloudX = 0;
     // objetos
     this.items = []; this.itemsOn = cfg.items !== false; this.itemT = 240 + (Math.random() * 180 | 0);
@@ -52,9 +53,14 @@ class Game {
   step(inputs) {
     STAGE = this.stage;
     this.frame++; this.phaseT++;
-    this.cloudX += 0.12;
-    stepStage(this.stage, this);
+    if (!this.duo || this.frame % 6 === 0) { this.cloudX += 0.12; stepStage(this.stage, this); }   // ¡¡¡DUPLA!!!: el mundo, a velocidad ultra lenta
     this.stepCam();
+    if (this.duo) {                                      // solo se mueven los de la técnica; el resto, quieto
+      this.stepDuo(); this.stepFx();
+      if (this.shake > 0) this.shake *= 0.85; if (this.shake < 0.3) this.shake = 0;
+      return;
+    }
+    for (const f of this.fighters) if (f.duoTxtT > 0) f.duoTxtT--;
     if (this.finalSlow && this.slow <= 0 && this.phase === 'play') this.finalSlow = false;   // se salvó: falsa alarma
     if (this.slow > 0) { this.slow--; if (this.slow % 3 !== 0) { this.stepFx(); return; } }
 
@@ -228,10 +234,10 @@ class Game {
   // cámara suave hacia el objetivo (sin salirse del escenario)
   stepCam() {
     const E = this.endSeq;
-    let T = E && E.focus && E.step !== 'settle' ? E.focus : { x: W / 2, y: H / 2, z: 1 };
+    let T = this.duo && this.duo.focus ? this.duo.focus : E && E.focus && E.step !== 'settle' ? E.focus : { x: W / 2, y: H / 2, z: 1 };
     // con los resultados en pantalla, el ganador sube a la parte de arriba para que el cuadro no lo tape
     if (E && E.done && T.z > 1) T = { x: T.x, y: T.y + H * 0.18 / T.z, z: T.z };
-    const c = this.cam, k = 0.07;
+    const c = this.cam, k = this.duo ? 0.14 : 0.07;
     c.z += (T.z - c.z) * k; c.x += (T.x - c.x) * k; c.y += (T.y - c.y) * k;
     if (Math.abs(c.z - T.z) < 0.002) c.z = T.z;
     const hw = W / 2 / c.z, hh = H / 2 / c.z;
@@ -244,6 +250,12 @@ class Game {
       if (!a.alive()) continue;
       for (const hb of a.activeHits()) {
         for (const d of this.fighters) {
+          // dupla: agarrar al rival que ya sujeta tu compañero
+          if (hb.h0.grab && d.st === 'grabbed' && d !== a && this.canDuo(a, d)) {
+            if (boxHit(hb, d.hurtbox())) { this.startDuo(d.heldBy, a, d); return; }
+            continue;
+          }
+          if (d.duoSafeT > this.frame && (a === d.duoA || a === d.duoB)) continue;      // tras una ¡DUPLA! simple
           if (d === a || !d.alive() || d.st === 'respawn' || d.st === 'grabbed' || d.invuln > 0 || this.allies(a, d)) continue;
           const key = d.slot + '|' + hb.key;
           if (a.hitSet.has(key)) continue;
@@ -474,6 +486,7 @@ class Game {
 
     for (const f of this.fighters) if (f.st === 'respawn') drawRespawnPad(c, f, this.frame);
     ItemSys.drawGround(c, this);
+    this.renderDuo(c, 'back');
     // luchadores (el que está atacando, delante)
     const order = this.phase === 'end'
       ? this.fighters.filter(f => f.alive()).sort((a, b) => b.S.hh - a.S.hh)            // al final: los grandes detrás
@@ -493,6 +506,7 @@ class Game {
       if (f.st === 'shield') drawShield(c, f, this.frame);
       for (const hb of f.activeHits()) if (!hb.h0.grab && !hb.h0.noFx) drawSwoosh(c, hb, f.dir, f.pal.light, f.move.smash);
     }
+    this.renderDuo(c, 'front');
     for (const p of this.projectiles) if (!(p.delay > 0)) drawProjectile(c, p, this.frame);
     for (const e of this.fx) {
       if (e.kind === 'spark') drawSpark(c, e);
@@ -502,12 +516,14 @@ class Game {
     for (const e of this.fx) if (e.kind === 'ko') drawKO(c, e);
     // etiquetas e indicadores fuera de pantalla
     for (const f of this.fighters) {
+      if (this.duo) break;                          // durante la técnica, sin etiquetas
       if (!f.alive() || f.st === 'gone' || f.st === 'portal' || f.st === 'win' || f.st === 'lose') continue;   // en las poses, sin etiqueta
       const off = f.x < 0 || f.x > W || f.y < 8 || f.y - 12 > 228;
       if (off && f.st !== 'respawn') drawOffscreen(c, f, f.label);
       else drawTag(c, f, f.label);
     }
     c.restore();
+    this.renderDuoScreen(c);
     if (cam.z < 1.02) this.renderHudArt(c);       // con zoom, el marcador se esconde (que se luzcan)
   }
 
@@ -558,6 +574,7 @@ class Game {
 
   // ---------- texto (pantalla a resolución real) ----------
   renderText(t) {
+    if (this.duo) return this.renderDuoText(t);
     if (this.cam.z >= 1.02) return this.renderEndText(t);       // con zoom, solo los textos de la secuencia final
     if (this.cfg.time && !this.sd) {
       const s = Math.ceil(this.timeLeft / 60), last = s <= 10;
@@ -574,6 +591,11 @@ class Game {
       if (f.stocks > 5 && !this.cfg.practice && !this.cfg.tutorial) t.text('x' + f.stocks, x + 88, y + 29, 8, '#ff8aa0');
     }
     if (this.phase === 'end') return this.renderEndText(t);
+    // ¡DUPLA! simple sobre el rival
+    for (const f of this.fighters) if (f.duoTxtT > 0 && f.alive()) {
+      const y = clamp(f.y - f.S.hh - 30, 26, H - 60), pop = f.duoTxtT > 52 ? 24 : 16;
+      t.text('¡DUPLA!', clamp(f.x, 40, W - 40), y - 14, pop, f.duoA && f.duoA.pal ? f.duoA.pal.light : '#ffd34a', 'center');
+    }
     // contador de combo sobre el rival y ¡REMATE!
     for (const f of this.fighters) {
       if (!f.alive() || f.st === 'respawn' || !f.comboBy) continue;
