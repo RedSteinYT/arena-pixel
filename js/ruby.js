@@ -115,7 +115,7 @@ const RubySys = (() => {
   // nombre del ataque sobre el luchador
   function drawText(t, f) {
     if (!(f.rubyTxtT > 0) || !f.alive()) return;
-    const half = f.rubyTxt.length * 8 + 4, x = clamp(f.x, half, W - half), y = clamp(f.y - f.S.hh - 34, 22, H - 60);
+    const half = f.rubyTxt.length * 8 + 4, x = clamp(f.x, half, W - half), y = clamp(f.y - f.S.hh - 58, 14, H - 80);   // por encima del contador de golpes
     t.text(f.rubyTxt, x, y, f.rubyTxtT > 62 ? 16 : 16, (f.rubyTxtT >> 2) % 2 ? RUBY_COL.l : '#ffd34a', 'center');
   }
 

@@ -117,3 +117,112 @@ DUO_ANIMS['ult:redstein'] = {
   },
   launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 72 } }; },
 };
+
+// ======================= Brisa: OJO DEL HURACÁN =======================
+//  Atrapa al rival en un huracán, gira a su alrededor a toda velocidad golpeándolo desde todos los
+//  lados (dejando imágenes de sí misma), sube a lo más alto y cae en picada atravesándolo.
+DUO_ANIMS['ult:brisa'] = {
+  name: 'OJO DEL HURACÁN', len: 150,
+  setup(g, D) {
+    const a = D.a, v = D.v, P = a.plat || STAGE.main;
+    D.side = sgn(v.x - a.x) || a.dir;
+    D.hx = clamp(v.x, P.x1 + 40, P.x2 - 40);
+    D.cy = D.gy - 46;                                                // centro del huracán (donde flota el rival)
+    D.vx0 = v.x; D.vy0 = v.y;
+    D.focus = { x: D.hx, y: D.gy - 52, z: 1.7 };
+  },
+  // dónde está Brisa y qué postura tiene en cada momento (lo usan también sus imágenes fantasma)
+  pos(D, t) {
+    const { hx, cy, gy, side } = D, a0 = Math.PI * (side > 0 ? 1 : 0);
+    if (t < 8) return { x: dLerp(D.a.x, hx - side * 40, t / 8), y: gy, dir: side, st: 'ground' };
+    if (t < 20) return { x: hx - side * 40, y: gy, dir: side, st: 'jumpsquat' };
+    if (t < 92) {                                                    // órbita: una vuelta cada ~18 fotogramas
+      const ang = a0 + (t - 20) * 0.35, r = 30, x = hx + Math.cos(ang) * r, y = cy + Math.sin(ang) * 10 + 12;
+      const dir = Math.cos(ang) > 0 ? -1 : 1;                        // siempre mirando al rival
+      return { x, y: t < 26 ? dLerp(gy, y, (t - 20) / 6) : y, dir, mv: ((t >> 2) % 2) ? 'fair' : 'nair', ph: 'act' };
+    }
+    if (t < 110) {                                                   // sube en espiral a lo más alto
+      const k = (t - 92) / 18, ang = a0 + 72 * 0.35 + (t - 92) * 0.45, r = 30 * (1 - k);
+      return { x: hx + Math.cos(ang) * r, y: dLerp(cy + 12, cy - 72, dEase(k)), dir: side, mv: 'uair', ph: 'act' };
+    }
+    if (t < 118) return { x: hx, y: cy - 72 - Math.sin((t - 110) / 8 * Math.PI) * 3, dir: side, mv: 'dair', ph: 'wind', k: (t - 110) / 8 };
+    if (t < 126) { const k = (t - 118) / 8; return { x: hx, y: dLerp(cy - 72, cy + 14, k * k), dir: side, mv: 'dair', ph: 'act' }; }
+    if (t < 134) { const k = (t - 126) / 8; return { x: hx + side * k * 10, y: dLerp(cy + 14, gy, k), dir: side, mv: 'dair', ph: 'act' }; }
+    return { x: hx + side * 10, y: gy, dir: side, st: 'landing' };
+  },
+  apply(f, P) {
+    duoPlace(f, P.x, P.y, P.dir);
+    if (P.mv) { duoPose(f, P.mv, P.ph, P.k ?? 1); if (P.ph === 'act') { const m = f.ch.moves[P.mv]; f.t = m.s + (f.animT % Math.max(1, m.a)); } }
+    else duoStand(f, P.st);
+  },
+  step(g, D, t) {
+    const bri = D.a, v = D.v, { hx, cy, gy, side } = D;
+    // el rival, atrapado en el centro del huracán (y luego atravesado por la picada)
+    let vy = t < 20 ? dLerp(D.vy0, cy + v.S.hh * 0.5, dEase(t / 20)) : cy + v.S.hh * 0.5 + Math.sin(t * 0.25) * 2;
+    if (t >= 126) vy = cy + v.S.hh * 0.5 + (t - 126) * 0.8;
+    duoPlace(v, t < 20 ? dLerp(D.vx0, hx, dEase(t / 20)) : hx + (t >= 20 && t < 92 ? Math.sin(t * 0.7) * 2 : 0), vy, -side);
+    duoStand(v, 'hitstun'); if (t >= 20 && t < 110) v.dir = (t >> 3) % 2 ? 1 : -1;   // da vueltas en el viento
+    this.apply(bri, this.pos(D, t));
+    bri.vy = t >= 92 && t < 110 ? -2 : 1;
+    if (t >= 92 && t < 110) D.focus = { x: hx, y: dLerp(gy - 52, cy - 50, (t - 92) / 18), z: 1.7 };
+    if (t >= 118) D.focus = { x: hx, y: dLerp(cy - 50, gy - 52, Math.min(1, (t - 118) / 10)), z: 1.7 };
+    // efectos
+    if (t === 2) Sfx.freeze();
+    if (t === 20) { Sfx.jump(); g.burst(hx - side * 40, gy, 8, 'dust'); }
+    if (t >= 24 && t < 92 && t % 6 === 0) {                                  // golpes desde todos los lados
+      const P = this.pos(D, t), hx2 = (P.x + v.x) / 2, hy2 = (P.y - 10 + v.y - v.S.hh * 0.5) / 2;
+      v.flash = 2; g.spark(hx2, hy2, 8, t % 12 ? '#ffffff' : RUBY_COL.l); g.shake = Math.max(g.shake, 2); if (t % 12 === 0) Sfx.hit(6); else Sfx.swing();
+    }
+    if (t >= 10 && t < 118 && t % 2 === 0) {                                  // polvo y hojas girando en el huracán
+      const k = Math.random(), a = Math.random() * Math.PI * 2, r = 14 + k * 34;
+      g.fx.push({ kind: 'part', ptype: k > 0.85 ? 'star' : 'spark', x: hx + Math.cos(a) * r, y: gy - k * 100, vx: -Math.sin(a) * 2, vy: -0.6, t: 0, life: 14, size: 1, col: k > 0.85 ? '#bff2ff' : k > 0.5 ? '#ffffff' : '#9fd8c8' });
+    }
+    if (t === 110) Sfx.freeze();
+    if (t === 118) Sfx.swing();
+    if (t === 126) {                                                          // ¡la picada lo atraviesa!
+      D.flash = 10; g.shake = 16; Sfx.hit(22); Sfx.brk(); v.flash = 6;
+      const y = v.y - v.S.hh * 0.5;
+      duoRadial(g, hx, y, 40, ['#ffffff', '#bff2ff', RUBY_COL.l, RUBY_COL.m], 3.2);
+    }
+    if (t === 134) { g.burst(hx + side * 10, gy, 14, 'dust'); g.shake = Math.max(g.shake, 6); Sfx.land(); }
+  },
+  draw(c, g, D, layer) {
+    const t = D.t - D.pre, { hx, cy, gy } = D;
+    // el huracán: anillos girando (mitad de atrás detrás de los luchadores, la de delante encima)
+    if (t >= 6 && t < 130) {
+      const grow = dEase((t - 6) / 16), fade = t >= 118 ? Math.max(0, 1 - (t - 118) / 12) : 1, Ht = 112 * grow;
+      for (let i = 0; i < 16; i++) {
+        const k = i / 15, y = gy - k * Ht, r = 16 + k * 34 + Math.sin(t * 0.1 + i) * 2, ph = t * 0.32 + i * 0.6, n = Math.ceil(r * 2.4);
+        if (layer === 'back') rect(c, Math.round(hx - r), Math.round(y), Math.round(r * 2), 2, '#dff6ff', 0.06 * fade);
+        for (let j = 0; j < n; j++) {
+          if (j % 5 >= 3) continue;
+          const a = j / n * Math.PI * 2 + ph, s = Math.sin(a);
+          if ((layer === 'front') !== (s > 0)) continue;
+          rect(c, Math.round(hx + Math.cos(a) * r), Math.round(y + s * r * 0.2), 2, 1, j % 2 ? '#ffffff' : '#bff2ff', (layer === 'front' ? 0.75 : 0.45) * fade);
+        }
+      }
+    }
+    if (layer === 'back') {
+      // imágenes fantasma de Brisa (velocidad)
+      if (t >= 22 && t < 126) {
+        const sv = { x: D.a.x, y: D.a.y, dir: D.a.dir, st: D.a.st, move: D.a.move, moveName: D.a.moveName, t: D.a.t, vx: D.a.vx, vy: D.a.vy, lvx: D.a.lvx, lvy: D.a.lvy };
+        for (const [lag, al] of [[6, 0.18], [4, 0.28], [2, 0.4]]) {
+          this.apply(D.a, this.pos(D, t - lag));
+          c.globalAlpha = al; renderFighter(c, D.a, g.frame); c.globalAlpha = 1;
+        }
+        Object.assign(D.a, sv);
+      }
+      return;
+    }
+    // estela de la picada
+    if (t >= 118 && t < 132) {
+      const y0 = cy - 72, y1 = Math.min(D.a.y, cy + 14);
+      withAlpha(c, Math.max(0, 1 - (t - 124) / 8), () => { rect(c, Math.round(hx) - 3, Math.round(y0), 6, Math.round(y1 - y0), '#bff2ff'); rect(c, Math.round(hx) - 1, Math.round(y0), 2, Math.round(y1 - y0), '#ffffff'); });
+    }
+    if (t >= 126 && t < 142) {                                                 // onda del impacto
+      const k = (t - 126) / 16, y = Math.round(cy);
+      withAlpha(c, 1 - k, () => { ring(c, Math.round(hx), y, 6 + (t - 126) * 5, '#ffffff'); ring(c, Math.round(hx), y, 3 + (t - 126) * 3, RUBY_COL.l); });
+    }
+  },
+  launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 58 } }; },
+};

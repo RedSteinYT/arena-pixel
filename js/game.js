@@ -313,9 +313,9 @@ class Game {
       (d.st === 'hitstun' || d.st === 'grabbed' || (d.stunEndF != null && this.frame - d.stunEndF <= 10));
     d.comboN = inCombo ? d.comboN + 1 : 1; d.comboBy = a; d.comboT = 110;
     if (a !== d && d.comboN > a.bestCombo) a.bestCombo = d.comboN;
-    if (d.comboN > 1) mult *= Math.max(0.65, 1 - 0.06 * (d.comboN - 1));          // cada golpe del combo pega algo menos
+    if (d.comboN > 1 && !String(a.moveName).startsWith('ruby')) mult *= Math.max(0.65, 1 - 0.06 * (d.comboN - 1));   // (los ataques rubí pegan entero)          // cada golpe del combo pega algo menos
     // ¡REMATE!: cerrar un combo de 3+ golpes con un fuerte o un especial (o de 4+ con el golpe final de la cadena)
-    const remate = a.move && ((d.comboN >= 3 && (a.move.smash || a.move.special || moveTier(a.moveName) >= 3)) || (d.comboN >= 4 && a.move.finisher));
+    const remate = a.move && !String(a.moveName).startsWith('ruby') && ((d.comboN >= 3 && (a.move.smash || a.move.special || moveTier(a.moveName) >= 3)) || (d.comboN >= 4 && a.move.finisher));
     const dmg = Math.round(h.d * mult);
     a.landedHit = true; a.landedAt = a.t;
     if (d.holding) d.releaseHeld(1.5);
@@ -368,7 +368,7 @@ class Game {
     if (!long && a.move && a.st === 'attack' && !a.move.smash && !a.move.special) d.stun = Math.max(d.stun, link ? 22 : 20);
     if (d.floatT > 0 && a.move && a.move.popup) d.stun = Math.max(d.stun, 40);   // mientras flota sigue aturdido
     if (this.sd) d.stun = 999;                         // muerte súbita: no se recupera hasta salir de la pantalla
-    d.flash = 4;
+    d.flash = String(a.moveName).startsWith('ruby') && dmg <= 2 ? 1 : 4;   // (las ráfagas rápidas no dejan al rival en blanco)
     d.upUsed = false; d.sideUsed = false; d.dodgeUsed = false;
     d.lastHitBy = a; d.lastHitT = this.frame;
     const lag = Math.min(14, 3 + Math.floor(dmg / 2.5) + (kb > 10 ? 3 : 0));

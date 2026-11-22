@@ -240,6 +240,30 @@
                   else { f.vy = -3; f.vx = -f.dir * 1.5; f.t = Math.max(f.t, 44); }   // rebota al acertar
                 },
                 noGrav: (f, t) => t >= 5 && !f.landedHit },
+      // ===== ATAQUES RUBÍ (ver ruby.js) =====
+      // Comeback de Rubí — RÁFAGA: giro en el sitio con nueve patadas veloces y un golpe de viento final.
+      // Sale casi al instante, pero el alcance es muy corto: hay que estar pegada al rival.
+      rubyCb: { s: 3, a: 22, e: 18, special: true, rubyName: 'RÁFAGA',
+                hit: [link([-14, -26, 28, 26], [3, 20], { rehit: 2, ang: 90, b: 0.5 }), fin([-17, -30, 34, 30], [22, 24], 13, 4.6, 9.0, 40, { away: true })],
+                pose: spinKicks(12, 1.25),
+                onFrame(f, t, g) {
+                  f.vx *= 0.6;
+                  // remolino: el rival que ya está encajando las patadas queda atrapado delante de ella
+                  if (t >= 3 && t < 22) for (const o of g.fighters) {
+                    if (o === f || g.allies(f, o) || o.comboBy !== f || o.st !== 'hitstun' || Math.abs(o.x - f.x) > 36 || Math.abs(o.y - f.y) > 40) continue;
+                    o.x += (f.x + f.dir * 9 - o.x) * 0.35; o.y += (f.y - o.y) * 0.25; o.lvx *= 0.3; o.lvy *= 0.3; o.stun = Math.max(o.stun, o.t + 6);
+                  }
+                  if (t >= 3 && t < 22) for (let i = 0; i < 2; i++) {                     // viento girando a su alrededor
+                    const a = t * 0.9 + i * Math.PI;
+                    g.fx.push({ kind: 'part', ptype: 'spark', x: f.x + Math.cos(a) * 16, y: f.y - 12 + Math.sin(a) * 6, vx: -Math.sin(a) * 1.2, vy: -0.3, t: 0, life: 10, size: 1, col: i ? '#ffffff' : '#bff2ff' });
+                  }
+                  if (t === 22) { duoRadial(g, f.x, f.y - 12, 18, ['#ffffff', '#bff2ff', '#ff8aa0'], 2.6, 'spark', 16); g.shake = Math.max(g.shake, 5); }
+                } },
+      // Ultimate Ruby — OJO DEL HURACÁN: patada de viento; si acierta, empieza la técnica (ultimates.js)
+      rubyUlt: { s: 6, a: 5, e: 24, special: true, rubyName: 'OJO DEL HURACÁN',
+                 hit: [{ box: [3, -21, 22, 17], ult: true, d: 0, b: 0, g: 0, ang: 45 }],
+                 pose: kick([15, -12], { fh: [-4, -13], lean: 1 }),
+                 onFrame(f, t, g) { if (t === 6) Sfx.swing(); } },
       dspcLand: { s: 1, a: 2, e: 10, special: true, hit: [{ box: [0, -8, 14, 8], d: 4, b: 2.2, g: 2.0, ang: 60 }],
                   pose: { crouch: true, ff: [6, 0] },
                   onStart(f, g) { f.vx = -f.dir * 1.5; g.burst(f.x, f.y, 4, 'dust'); } },
