@@ -211,11 +211,11 @@ const Controls = (() => {
     render(tab) {
       if (tab === 'kb') return {
         html: keyboardSVG() + keyboardLegend(),
-        notes: 'Ataque fuerte: dirección + su tecla (mantenla para cargar) · Agarrar: su tecla y luego una dirección para lanzar · Objetos: la tecla de agarre los recoge y, con uno en la mano, los lanza hacia donde apuntes (sin dirección, lo sueltas) · Volver: Esc o atrás',
+        notes: 'Ataque rubí: ATAQUE + ESPECIAL a la vez · Concentrarse para el Ultimate: mantén ESCUDO + ESPECIAL · Ataque fuerte: dirección + su tecla (mantenla para cargar) · Agarrar: su tecla y luego una dirección para lanzar · Objetos: la tecla de agarre los recoge y, con uno en la mano, los lanza hacia donde apuntes (sin dirección, lo sueltas) · Volver: Esc o atrás',
       };
       return {
         html: padSVG(tab),
-        notes: `Ataque fuerte: palanca derecha (para cargarlo: inclina rápido la izquierda + mantén atacar) · Agarrar y luego dirección para lanzar · Objetos: agarre para recoger, y con uno en la mano agarre + dirección para lanzarlo (sin dirección, lo sueltas) · ${PAD_NOTES[tab]}`,
+        notes: `Ataque rubí: ATAQUE + ESPECIAL a la vez · Concentrarse: mantén ESCUDO + ESPECIAL · Ataque fuerte: palanca derecha (para cargarlo: inclina rápido la izquierda + mantén atacar) · Agarrar y luego dirección para lanzar · Objetos: agarre para recoger, y con uno en la mano agarre + dirección para lanzarlo (sin dirección, lo sueltas) · ${PAD_NOTES[tab]}`,
       };
     },
   };

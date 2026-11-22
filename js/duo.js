@@ -519,17 +519,18 @@ Object.assign(Game.prototype, {
     this.spark(v.x, v.y - v.S.hh * 0.6, 14, '#ffd34a');
   },
   stepDuo() {
-    const D = this.duo, A = DUO_ANIMS[D.kind];
+    const D = this.duo, A = DUO_ANIMS[D.kind], who = [...new Set([D.a, D.b, D.v])];
     D.t++;
-    for (const f of [D.a, D.b, D.v]) { f.animT++; if (f.flash > 0) f.flash--; }
-    A.step(this, D, D.t);
-    for (const f of [D.a, D.b, D.v]) f.updateScarf();             // la bufanda sigue al luchador (si no, se estira hasta donde estaba)
+    for (const f of who) { f.animT++; if (f.flash > 0) f.flash--; }
+    if (D.ult && D.t <= D.pre) this.stepUltPre(D);                // Ultimate: primero, el corazón de rubí que explota
+    else A.step(this, D, D.ult ? D.t - D.pre : D.t);
+    for (const f of who) f.updateScarf();             // la bufanda sigue al luchador (si no, se estira hasta donde estaba)
     if (D.flash > 0) D.flash--;
     if (D.t >= D.len) this.endDuo();
   },
   endDuo() {
     const D = this.duo, A = DUO_ANIMS[D.kind]; this.duo = null;
-    for (const f of [D.a, D.b]) {
+    for (const f of new Set([D.a, D.b])) {
       f.move = null; f.moveName = null; f.hitSet = new Set(); f.holding = null; f.heldBy = null; f.vx = f.vy = f.lvx = f.lvy = 0;
       if (Math.abs(f.y - D.gy) < 1) { f.y = D.gy; f.grounded = true; f.plat = D.plat; f.setSt('ground'); }
       else { f.grounded = false; f.plat = null; f.setSt('air'); }
@@ -537,11 +538,16 @@ Object.assign(Game.prototype, {
     const v = D.v, L = A.launch(D);
     v.heldBy = null; v.grounded = false; v.plat = null; v.setSt('air');
     L.lead.move = null; L.lead.moveName = null;
-    this.applyHit(L.lead, v, { d: 16, b: 6.5, g: 2.1, ang: L.ang }, L.dir, 1, v.x, v.y - v.S.hh * 0.5);
+    this.applyHit(L.lead, v, L.h || { d: 16, b: 6.5, g: 2.1, ang: L.ang }, L.dir, 1, v.x, v.y - v.S.hh * 0.5);
   },
 
   // dibujo: efectos propios de la técnica
-  renderDuo(c, layer) { const D = this.duo; if (D && D.big) DUO_ANIMS[D.kind].draw(c, this, D, layer); },
+  renderDuo(c, layer) {
+    const D = this.duo; if (!D || !D.big) return;
+    if (D.ult && D.t <= D.pre) { if (layer === 'front') this.renderUltPre(c, D); return; }
+    DUO_ANIMS[D.kind].draw(c, this, D, layer);
+    if (D.ult && layer === 'front') this.renderUltPre(c, D);       // la onda expansiva termina de abrirse
+  },
   // bandas de cine y destellos (en pantalla, sin zoom)
   renderDuoScreen(c) {
     const D = this.duo; if (!D || !D.big) return;
@@ -552,6 +558,14 @@ Object.assign(Game.prototype, {
   renderDuoText(t) {
     const D = this.duo; if (!D || !D.big) return;
     const A = DUO_ANIMS[D.kind], k = D.t;
+    if (D.ult) {                                                     // Ultimate Ruby
+      if (k > D.pre - 6 && k < D.pre + 80) {
+        const kk = k - D.pre + 6, pop = kk < 6 ? 1 + (6 - kk) * 0.15 : 1;
+        t.text('¡ULTIMATE RUBY!', W / 2, Math.round(4 + Math.min(1, kk / 6) * 6), Math.round(24 * pop), (k >> 2) % 2 ? RUBY_COL.l : '#ffffff', 'center');
+        if (kk > 10) t.text(A.name, W / 2, H - 20, 16, '#ffd34a', 'center');
+      }
+      return;
+    }
     if (k < 70) {
       const pop = k < 6 ? 1 + (6 - k) * 0.15 : 1, col = (k >> 2) % 2 ? '#ffd34a' : '#ffffff';
       t.text('¡¡¡DUPLA!!!', W / 2, Math.round(4 + Math.min(1, k / 6) * 6), Math.round(24 * pop), col, 'center');

@@ -33,6 +33,10 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 
 - **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo con un ataque fuerte o un especial.
 - **Ataques en DUPLA (Equipos).** Si tu compañero sujeta a un rival y tú también lo agarras, sale una **¡DUPLA!**. Algunas parejas tienen su propia técnica cinematográfica, la **¡¡¡DUPLA!!!**: la arena se detiene, la cámara se acerca y los dos la ejecutan juntos. Por ahora: **Espada Rúnica** (RedStein + Runa), **Terremoto** (Bloque + Coloso), **Burbuja Arcana** (Brisa + Runa), **Torbellino de Fuego** (Brisa + RedStein) y **Prensa Industrial** (Maniquí + Bloque). Solo sale si el rival ya tiene bastante daño, y quien la recibe tiene un respiro antes de la siguiente. Ojo: si golpean a quien está agarrando, suelta al rival.
+- **Ataques RUBÍ.** Cada luchador tendrá dos (por ahora, RedStein):
+  - **Comeback de Rubí:** cuando tu daño llega al **100 %**, tu corazón **arde**. Pulsa **ATAQUE + ESPECIAL** en el suelo y sale un golpe brutal y espectacular, pero que **puede fallar**. Una vez por vida.
+  - **Ultimate Ruby:** **concéntrate** manteniendo **ESCUDO + ESPECIAL** quieto unos 3 segundos (cualquier golpe te interrumpe). Luego, **ATAQUE + ESPECIAL**: si el golpe inicial acierta, **un corazón de rubí explota**, todo se congela y empieza la técnica. Una vez por vida, tiene prioridad sobre el Comeback y lo apaga hasta tu siguiente vida.
+  - RedStein: **Tajo Carmesí** (embestida de fuego que frena en el borde) y **Lluvia Carmesí** (lanza al rival al cielo y le llueven flechas de rubí en llamas). Ninguno es KO directo, y se pueden quitar en las opciones de combate.
 - **Filtro CRT opcional:** un interruptor en la portada pone el juego dentro de un televisor antiguo de madera, con líneas de barrido, antena, perillas y el papel tapiz de la casa de los abuelos.
 - **Música y efectos con volumen separado,** desde el menú o en plena pausa.
 - **14 objetos** que caen en plena pelea: armas que cambian tu ataque (espada láser, bláster, bumerán…), cosas para lanzar y poderes temporales.
@@ -113,12 +117,14 @@ Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difí
 | Escudo | `L` / `Shift izq.` | `Ctrl der.` / `Num 3` |
 | Agarre / objeto | `Ñ` / `H` | `,` / `Num 4` |
 | Ataque fuerte | `U` | `M` / `Num 5` |
+| Ataque rubí | Ataque + Especial a la vez | Ataque + Especial a la vez |
+| Concentrarse (Ultimate) | Escudo + Especial, mantenidos | Escudo + Especial, mantenidos |
 
 **Mandos:** Xbox, PlayStation y Nintendo, sin configurar nada. Si el navegador no detecta tu mando, pulsa cualquier botón con la página abierta. Todos los botones están en **CONTROLES**, en el menú principal.
 
 ## 🌐 Jugar en línea
 
-1. El anfitrión entra en **EN LÍNEA → CREAR SALA**, elige el **modo** y las **opciones de combate** (vidas, tiempo, objetos y cómo se elige la arena) y recibe un código de 5 letras (o el enlace, con **COPIAR ENLACE**).
+1. El anfitrión entra en **EN LÍNEA → CREAR SALA**, elige el **modo** y las **opciones de combate** (vidas, tiempo, objetos, rubí y cómo se elige la arena) y recibe un código de 5 letras (o el enlace, con **COPIAR ENLACE**).
 2. Los demás entran en **EN LÍNEA**, escriben ese código y pulsan **ENTRAR**. La sala admite justo los jugadores del modo (2 en 1 contra 1, 3 en Triple amenaza, 4 en el resto).
 3. Con la sala llena, el anfitrión pulsa **EMPEZAR** y se elige la arena:
    - **Elige el anfitrión:** todos ven su puntero y la arena que va mirando, en vivo.

@@ -61,6 +61,7 @@ class Game {
       return;
     }
     for (const f of this.fighters) if (f.duoTxtT > 0) f.duoTxtT--;
+    RubySys.step(this);
     if (this.finalSlow && this.slow <= 0 && this.phase === 'play') this.finalSlow = false;   // se salvó: falsa alarma
     if (this.slow > 0) { this.slow--; if (this.slow % 3 !== 0) { this.stepFx(); return; } }
 
@@ -272,6 +273,10 @@ class Game {
               continue;
             }
             this.grab(a, d); continue;
+          }
+          if (hb.h0.ult) {                                       // golpe inicial de un Ultimate Ruby: si acierta, empieza la técnica (ignora el escudo)
+            if (!this.duo && this.phase === 'play') { a.hitSet.add(key); this.startUlt(a, d); return; }
+            continue;
           }
           a.hitSet.add(key);
           let dirSign = a.dir;
@@ -499,6 +504,7 @@ class Game {
     for (const f of order) {
       if (f.st === 'gone') continue;
       if (f.st === 'portal') { drawPortal(c, f, this.frame); continue; }
+      RubySys.drawAura(c, f, this);
       renderFighter(c, f, this.frame);
       if (f.ch.overlay) f.ch.overlay(c, f, this.frame);
       ItemSys.drawHeld(c, f, this);
@@ -567,7 +573,8 @@ class Game {
       if (!this.cfg.practice && !this.cfg.tutorial) {
         const total = this.sd ? 1 : Math.min(5, Math.max(this.cfg.stocks || 0, f.stocks)), left = Math.min(f.stocks, 5);
         for (let i = 0; i < total; i++) drawRuby(c, x + 37 + i * 10, y + 29, i < left, (this.frame + i * 7) % 170);
-      }
+        if (left > 0) RubySys.drawHud(c, f, this, x + 37 + (Math.min(left, total) - 1) * 10, y + 29);   // el corazón de esta vida: arde o brilla
+      } else RubySys.drawHud(c, f, this, x + 37, y + 29);
       if (!f.out) ItemSys.drawHud(c, f, x + 2, y - 18);    // objeto en la mano y poderes activos
     }
   }
@@ -596,6 +603,7 @@ class Game {
       const y = clamp(f.y - f.S.hh - 30, 26, H - 60), pop = f.duoTxtT > 52 ? 24 : 16;
       t.text('¡DUPLA!', clamp(f.x, 40, W - 40), y - 14, pop, f.duoA && f.duoA.pal ? f.duoA.pal.light : '#ffd34a', 'center');
     }
+    for (const f of this.fighters) RubySys.drawText(t, f);          // nombre del ataque rubí
     // contador de combo sobre el rival y ¡REMATE!
     for (const f of this.fighters) {
       if (!f.alive() || f.st === 'respawn' || !f.comboBy) continue;

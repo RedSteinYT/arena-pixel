@@ -164,6 +164,9 @@ function poseFor(f) {
     const top = -ch.stats.hh + 3;
     p.fh = [5 * z, top]; p.bh = [4 * z, top - 1]; p.ff = Z(1, 2); p.bf = Z(-1, 3);
     call('ledge');
+  } else if (st === 'rubyCharge') {             // concentración: firme, puños juntos ante el pecho
+    crouchPose(p, 2 * z); p.fh = [4 * z, p.neck[1] + 4 * z]; p.bh = [3 * z, p.neck[1] + 5 * z]; p.head[1] += z;
+    call('focus', T);
   } else if (st === 'hold') {
     const G = f.ch.moves.grab.hold || [8, -11];
     p.fh = [G[0] - 2 * z, G[1]]; p.bh = [G[0] - 4 * z, G[1] + 2 * z];

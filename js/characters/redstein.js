@@ -226,6 +226,34 @@
                       delay: 32 + i * 7, h: { d: 6, b: 2.6, g: 3.2, ang: 75, burn: 60 } }));
                   }
                 } },
+
+      // ===== ATAQUES RUBÍ (ver ruby.js) =====
+      // Comeback de Rubí — TAJO CARMESÍ: carga un instante y embiste con un tajo de fuego. Puede fallar.
+      // Frena en el borde de la plataforma (no se tira solo al vacío).
+      rubyCb: { s: 10, a: 14, e: 20, special: true, keepVel: true, rubyName: 'TAJO CARMESÍ',
+                hit: [{ box: [-2, -27, 28, 28], d: 25, b: 4.8, g: 9.5, ang: 38, burn: 150 }],
+                pose: swordPose(-2.2, 0.35, -2.6, [12, -14], [-2, -22], 1, (p, f, k) => { if (k > 0) { p.neck[0] += 3; p.head[0] += 3; } }),
+                onFrame(f, t, g) {
+                  if (t < 10) {
+                    f.vx = 0;
+                    if (t % 2 === 0) { const [x, y] = tipOf(f); g.fx.push({ kind: 'part', ptype: 'spark', x: x + (Math.random() * 16 - 8), y: y + (Math.random() * 16 - 8), vx: 0, vy: 0, t: 0, life: 8, size: 1, col: '#ff8aa0' }); }
+                  } else if (t < 24) {
+                    let v = f.dir * 7.5;
+                    if (f.grounded && f.plat) {
+                      const lim = f.dir > 0 ? f.plat.x2 - 3 : f.plat.x1 + 3;
+                      v = f.dir > 0 ? Math.min(v, Math.max(0, lim - f.x)) : Math.max(v, Math.min(0, lim - f.x));
+                    }
+                    f.vx = v;
+                    g.burst(f.x - f.dir * 6, f.y - 6 - Math.random() * 16, 2, 'fire');
+                    g.fx.push({ kind: 'part', ptype: 'spark', x: f.x - f.dir * 4, y: f.y - 10 - Math.random() * 10, vx: -f.dir * 0.5, vy: 0, t: 0, life: 16, size: 2, col: t % 2 ? '#ff2a4a' : '#ff8aa0' });
+                    flameAlong(f, g);
+                  } else f.vx *= 0.7;
+                } },
+      // Ultimate Ruby — LLUVIA CARMESÍ: tajo hacia arriba; si acierta, empieza la técnica (ultimates.js)
+      rubyUlt: { s: 8, a: 5, e: 26, special: true, rubyName: 'LLUVIA CARMESÍ',
+                 hit: [{ box: [-4, -44, 26, 44], ult: true, d: 0, b: 0, g: 0, ang: 90 }],
+                 pose: swordPose(0.3, -3.1, 0.6, [3, -26], [8, -6], 1),
+                 onFrame(f, t, g) { if (t < 8 && t % 2 === 0) flameAtTip(f, g, 1); if (t === 8) Sfx.swing(); } },
     },
 
     draw(c, f, p, A, frame) {

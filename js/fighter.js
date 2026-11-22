@@ -51,6 +51,7 @@ class Fighter {
     this.move = null; this.charge = 0; this.flash = 0; this.stun = 0; this.lag = 0;
     this.lastHitBy = null; this.lastHitT = -9999; this.trail = 0;
     this.scarf = null;
+    RubySys.resetLife(this);
   }
 
   setSt(s) { this.st = s; this.t = 0; }
@@ -242,6 +243,7 @@ class Fighter {
       case 'portal': case 'gone': this.t++; return;              // apareciendo por el portal / fuera de escena
       case 'ledge': this.stLedge(g); return;
       case 'hold': this.stHold(g); break;
+      case 'rubyCharge': RubySys.stCharge(this, g); break;        // concentrándose para el Ultimate Ruby
       case 'grabbed': this.stGrabbed(g); return;
       case 'dead':
         if (this.t >= 70) this.respawn();
@@ -262,6 +264,7 @@ class Fighter {
 
   stGround(g) {
     const I = this.inp;
+    if (RubySys.ground(this, g)) return;                          // ataques rubí (ATAQUE + ESPECIAL) y concentración
     if (this.cstick) { const c = this.cstick; this.cBufT = 0; this.cstick = null; this.groundAttack(g, c); return; }
     if (this.use('str')) { this.groundAttack(g, this.strongDir()); return; }
     if (this.use('jump')) { this.setSt('jumpsquat'); return; }
@@ -375,6 +378,7 @@ class Fighter {
     if (this.use('grab')) { if (!ItemSys.grabButton(this, g)) this.startMove('grab', g); return; }
     if (Math.abs(I.mx) > 0.6 && this.flickX <= 3) { this.dodge(sgn(I.mx), 0, g); return; }
     if (I.my > 0.6 && this.flickY <= 3) { this.dodge(0, 0, g); return; }
+    if (I.spc && RubySys.canCharge(this, g)) { this.buf.spc = 0; this.chargeT = 0; this.setSt('rubyCharge'); return; }   // ESCUDO + ESPECIAL: concentrarse
     if (!I.shd) this.setSt('ground');
   }
 
@@ -575,6 +579,7 @@ class Fighter {
     this.x = R.x; this.y = R.y; this.vx = this.vy = this.lvx = this.lvy = 0; this.sdLaunch = false;
     this.dmg = 0; this.burn = 0; this.grounded = false; this.plat = null; this.dir = 1;
     this.setSt('respawn'); this.invuln = 120; this.scarf = null;
+    RubySys.resetLife(this);                                     // vida nueva: el rubí también
     this.jumps = this.S.jumps; this.upUsed = this.sideUsed = this.dodgeUsed = false; this.shieldHP = 50;
   }
 

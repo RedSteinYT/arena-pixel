@@ -81,6 +81,7 @@ function aiInput(f, g) {
   const z = f.ch.z || 1;
   const armed = f.item && ITEMS[f.item.id].kind === 'weapon';
   const reach = f.S.hw + tgt.S.hw + 12 * z + (armed ? 14 * z : 0), vreach = 10 + f.S.hh * 0.5 + (armed ? 8 : 0);
+  if (RubySys.ai(f, g, I, tgt, dx, dy, L)) return I;                 // ataques rubí y concentración
 
   // combos: si su golpe ha acertado, sigue la cadena (cuanto más difícil, más a menudo)
   if (f.st === 'attack' && f.landedHit && (f.chain || 0) < 4 && Math.random() < L.combo) {
