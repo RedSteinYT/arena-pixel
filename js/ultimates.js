@@ -527,3 +527,110 @@ DUO_ANIMS['ult:maniqui'] = {
   },
   launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 74 } }; },
 };
+
+// ======================= Coloso: FURIA DE LA MONTAÑA =======================
+//  Hunde las manos en la tierra y arranca una roca gigantesca con vetas de rubí, la levanta sobre la
+//  cabeza mientras todo tiembla y la lanza contra el rival, que acaba hecha mil pedazos.
+// roca grande en pixel art (centro x,y; ancho w, alto h)
+function drawBoulder(c, x, y, w, h, T, glowK = 1) {
+  x = Math.round(x); y = Math.round(y);
+  const x0 = x - (w >> 1), y0 = y - (h >> 1);
+  for (let r = -1; r <= h; r++) {                                           // contorno + cuerpo, fila a fila
+    const k = (r + 0.5) / h * 2 - 1, half = Math.round((w / 2) * Math.sqrt(Math.max(0, 1 - k * k * 0.9)) + (r % 5 === 2 ? 1 : 0));
+    if (half <= 0) continue;
+    rect(c, x - half - 1, y0 + r, half * 2 + 2, 1, OUTLINE);
+  }
+  for (let r = 0; r < h; r++) {
+    const k = (r + 0.5) / h * 2 - 1, half = Math.round((w / 2) * Math.sqrt(Math.max(0, 1 - k * k * 0.9)) + (r % 5 === 2 ? 1 : 0));
+    if (half <= 0) continue;
+    for (let s = -half; s < half; s++) {
+      const v = 1.4 - (s / half) * 0.5 - k * 0.6 + (BAYER[r & 3][(s + 64) & 3] / 16 - 0.5) * 0.5;
+      px(c, x + s, y0 + r, v > 1.6 ? '#b3a089' : v > 1.1 ? '#8a7663' : v > 0.6 ? '#6b5a4a' : '#4a3d31');
+    }
+  }
+  // vetas de rubí que brillan
+  const pulse = (0.6 + 0.4 * Math.sin(T * 0.3)) * glowK;
+  withAlpha(c, pulse, () => {
+    pline(c, x - w * 0.3, y - h * 0.2, x - w * 0.05, y + h * 0.1, 1, RUBY_COL.l);
+    pline(c, x - w * 0.05, y + h * 0.1, x + w * 0.2, y - h * 0.05, 1, RUBY_COL.l);
+    pline(c, x + w * 0.1, y + h * 0.25, x + w * 0.3, y + h * 0.35, 1, RUBY_COL.m);
+  });
+  glow(c, x, y, w * 0.4, RUBY_COL.glow, 0.12 * glowK, 2);
+}
+DUO_ANIMS['ult:coloso'] = {
+  name: 'FURIA DE LA MONTAÑA', len: 150,
+  setup(g, D) {
+    const a = D.a, v = D.v, P = a.plat || STAGE.main;
+    D.side = sgn(v.x - a.x) || a.dir;
+    D.vx = clamp(a.x + D.side * 112, P.x1 + 14, P.x2 - 14);
+    D.cx0 = Math.abs(D.vx - a.x) < 80 ? clamp(D.vx - D.side * 112, P.x1 + 16, P.x2 - 16) : a.x;
+    D.vx0 = v.x; D.vy0 = v.y; D.bw = 46; D.bh = 38;
+    D.focus = { x: (D.cx0 + D.vx) / 2, y: D.gy - 78, z: 1.35 };
+  },
+  // dónde está la roca (centro) en cada momento
+  rock(D, t) {
+    const col = D.a, gy = D.gy, side = D.side, dig = { x: D.cx0 + side * 34, y: gy - D.bh / 2 + 4 };
+    const over = { x: D.cx0 + side * 4, y: gy - 112 - D.bh / 2 }, back = { x: D.cx0 - side * 14, y: gy - 106 - D.bh / 2 };
+    if (t < 16) return null;
+    if (t < 44) return { x: dig.x, y: dLerp(gy + D.bh / 2, dig.y, dEase((t - 16) / 28)), clip: true };     // sale de la tierra
+    if (t < 68) { const k = dEase((t - 44) / 24); return { x: dLerp(dig.x, over.x, k), y: dLerp(dig.y, over.y, k) }; }
+    if (t < 82) { const k = dEase((t - 68) / 14); return { x: dLerp(over.x, back.x, k), y: dLerp(over.y, back.y, k) + Math.sin(t * 0.9) }; }
+    if (t < 88) return back;
+    if (t < 104) { const k = (t - 88) / 16; return { x: dLerp(back.x, D.vx, k), y: dLerp(back.y, gy - D.bh / 2 + 4, k) - Math.sin(k * Math.PI) * 40 }; }   // ¡la lanza!
+    return null;
+  },
+  step(g, D, t) {
+    const col = D.a, v = D.v, gy = D.gy, side = D.side;
+    duoPlace(v, t < 14 ? dLerp(D.vx0, D.vx, dEase(t / 14)) : D.vx, t < 14 ? dLerp(D.vy0, gy, dEase(t / 14)) : gy, -side);
+    duoStand(v, t >= 104 ? 'hitstun' : t >= 60 ? 'ground' : 'hitstun');    // levanta la vista y ve venir la roca
+    duoPlace(col, D.cx0, gy, side);
+    if (t < 14) duoPose(col, 'rubyUlt', 'rec', t / 14);
+    else if (t < 44) duoPose(col, 'ulDig', 'act');
+    else if (t < 68) duoPose(col, 'ulLift', 'act');
+    else if (t < 88) duoPose(col, 'ulBack', 'act');
+    else if (t < 112) duoPose(col, 'ulThrow', 'act');
+    else duoStand(col);
+    // efectos
+    if (t === 16) { Sfx.hit(14); g.shake = 8; }
+    if (t >= 16 && t < 70 && t % 4 === 0) { g.shake = Math.max(g.shake, 4); g.burst(D.cx0 + side * (20 + Math.random() * 30), gy, 3, 'dust'); if (t % 12 === 0) Sfx.hit(6); }
+    if (t === 44) { Sfx.brk(); g.burst(D.cx0 + side * 34, gy, 14, 'dust'); }
+    const R = this.rock(D, t);
+    if (R && t >= 44 && t < 88 && t % 3 === 0) g.fx.push({ kind: 'part', ptype: 'dust', x: R.x + (Math.random() * 2 - 1) * D.bw * 0.4, y: R.y + D.bh * 0.4, vx: (Math.random() - 0.5), vy: 1.2, t: 0, life: 18, size: 2 });   // se le desmorona tierra
+    if (t === 88) Sfx.swing();
+    if (t === 104) {                                                         // ¡mil pedazos!
+      D.flash = 10; g.shake = 18; Sfx.hit(24); Sfx.brk(); v.flash = 6;
+      duoRadial(g, D.vx, gy - 20, 36, ['#b3a089', '#8a7663', '#ffffff', RUBY_COL.l], 3.2);
+      g.burst(D.vx - 18, gy, 12, 'dust'); g.burst(D.vx + 18, gy, 12, 'dust');
+    }
+  },
+  draw(c, g, D, layer) {
+    const t = D.t - D.pre, gy = D.gy, R = this.rock(D, t);
+    if (layer === 'back') {
+      if (t >= 16 && t < 60) {                                               // grietas alrededor de donde sale la roca
+        const x = D.cx0 + D.side * 34, k = Math.min(1, (t - 16) / 20);
+        for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI, len = (14 + (i * 7) % 12) * k; withAlpha(c, 0.9, () => pline(c, x, gy, x + Math.cos(a) * len * 1.8, gy + 1, 1, '#2a1a10')); }
+        glow(c, x, gy - 4, 14 * k, RUBY_COL.glow, 0.25, 3);
+      }
+      if (R && R.clip) {                                                     // saliendo de la tierra: solo se ve lo que asoma
+        c.save(); c.beginPath(); c.rect(R.x - D.bw, gy - D.bh * 2, D.bw * 2, D.bh * 2); c.clip();
+        drawBoulder(c, R.x, R.y, D.bw, D.bh, g.frame); c.restore();
+      }
+      return;
+    }
+    if (R && !R.clip) {
+      if (t >= 88) shadow(c, R.x, gy, D.bw * 0.5 * Math.min(1, (t - 88) / 12), 0.35);
+      drawBoulder(c, R.x, R.y, D.bw, D.bh, g.frame);
+    }
+    if (t >= 104 && t < 136) {                                               // la roca hecha pedazos
+      const k = (t - 104) / 32, tt = t - 104;
+      for (let i = 0; i < 16; i++) {
+        const a = -Math.PI / 2 + (i / 15 - 0.5) * 2.8, s = 1.6 + (i % 4) * 0.8, sz = 3 + (i % 3) * 2;
+        const x = D.vx + Math.cos(a) * s * tt, y = gy - 20 + Math.sin(a) * s * tt + 0.14 * tt * tt;
+        rect(c, Math.round(x) - 1, Math.round(y) - 1, sz + 2, sz + 2, OUTLINE, 1 - k);
+        rect(c, Math.round(x), Math.round(y), sz, sz, i % 3 ? '#8a7663' : i % 2 ? '#6b5a4a' : RUBY_COL.m, 1 - k);
+      }
+      for (const s of [-1, 1]) for (let i = 0; i < 4; i++) rect(c, Math.round(D.vx + s * (20 + k * 100 + i * 8)) - 2, gy - 2 - i, 5, 1, '#ffe9b0', 0.8 * (1 - k));
+    }
+  },
+  launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 66 } }; },
+};

@@ -259,6 +259,45 @@
                 path: t => { const k = Math.min(t / 12, 1); return [34, -50 + k * 46]; },
                 pose: { fh: [40, -4], crouch: true },
                 onFrame(f, t, g) { if (t === 12) quake(f, g, 6, 30); } },
+
+      // ===== ATAQUES RUBÍ (ver ruby.js) =====
+      // Comeback de Rubí — PISOTÓN SÍSMICO: levanta el pie y pisa con todo; una onda sísmica recorre el suelo
+      // hacia los dos lados. Ocupa medio escenario, pero solo alcanza a quien esté en el suelo.
+      rubyCb: { s: 16, a: 16, e: 28, special: true, rubyName: 'PISOTÓN SÍSMICO', aiRange: [0, 110],
+                hit: [0, 1, 2, 3, 4, 5, 6, 7].flatMap(k => [1, -1].map(s => ({
+                  box: [s > 0 ? 14 + k * 12 : -30 - k * 12, -14, 16, 14], d: 24, b: 4.6, g: 9.2, ang: 72, away: true, on: [16 + k * 2, 17 + k * 2], group: 'sis' }))),
+                pose(p, f, k, t) {
+                  p.fh = [30, -44]; p.bh = [-26, -46];
+                  if (k < 0) { p.ff = [12, Math.round(-34 * Math.min(1, -k * 1.3))]; p.hip[1] -= 2; p.neck[0] -= 2; p.head[0] -= 2; }   // pie en alto
+                  else { crouchPose(p, 6); p.ff = [16, 0]; }
+                },
+                onFrame(f, t, g) {
+                  f.vx *= 0.5;
+                  if (t === 16) { quake(f, g, 12, 46); Sfx.hit(18); Sfx.brk(); }
+                  if (t > 16 && t < 32 && t % 2 === 0) { const d = 20 + (t - 16) * 6; g.burst(f.x + d, f.y, 2, 'dust'); g.burst(f.x - d, f.y, 2, 'dust'); g.shake = Math.max(g.shake, 4); }
+                },
+                draw(c, f, t, g) {                                         // grietas y onda sísmica por el suelo
+                  if (t < 16 || t >= 40) return;
+                  const d = Math.min(116, 20 + (t - 16) * 6), a = t < 32 ? 1 : 1 - (t - 32) / 8, y = Math.round(f.y);
+                  for (const s of [-1, 1]) {
+                    let x = f.x + s * 10, yy = y;
+                    withAlpha(c, a, () => {
+                      for (let i = 0; x * s < (f.x + s * d) * s; i++) { const nx = x + s * 6, ny = y + ((i * 7) % 3) - 1; pline(c, x, yy, nx, ny, 1, '#2a1a10'); x = nx; yy = ny; }
+                      const fx = Math.round(f.x + s * d);
+                      if (t < 32) for (let j = -6; j <= 6; j++) { const h = Math.round(7 * Math.cos(j / 6 * Math.PI / 2)); rect(c, fx + j, y - h, 1, h, j % 2 ? '#c8a878' : '#8a6a48'); }
+                    });
+                  }
+                } },
+      // Ultimate Ruby — FURIA DE LA MONTAÑA: manotazo enorme; si acierta, empieza la técnica (ultimates.js)
+      rubyUlt: { s: 12, a: 6, e: 28, special: true, rubyName: 'FURIA DE LA MONTAÑA', aiRange: [10, 72],
+                 hit: [{ box: [10, -80, 56, 78], ult: true, d: 0, b: 0, g: 0, ang: 40 }],
+                 pose: { fh: [60, -30], wind: [-10, -64], lean: 6 },
+                 onFrame(f, t, g) { f.vx *= 0.5; if (t === 12) Sfx.swing(); } },
+      // posturas para su Ultimate (no se usan en la pelea normal)
+      ulDig:   { s: 1, a: 1, e: 1, hit: [], pose: { crouch: true, fh: [30, -4], bh: [22, -6], lean: 4 } },
+      ulLift:  { s: 1, a: 1, e: 1, hit: [], pose: { fh: [4, -112], both: true, upper: true } },
+      ulBack:  { s: 1, a: 1, e: 1, hit: [], pose: { fh: [-16, -106], both: true, upper: true } },
+      ulThrow: { s: 1, a: 1, e: 1, hit: [], pose: { fh: [58, -62], both: true, lean: 6 } },
     },
 
     draw(c, f, p, A, frame) {

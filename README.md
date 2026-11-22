@@ -33,14 +33,15 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 
 - **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo con un ataque fuerte o un especial.
 - **Ataques en DUPLA (Equipos).** Si tu compañero sujeta a un rival y tú también lo agarras, sale una **¡DUPLA!**. Algunas parejas tienen su propia técnica cinematográfica, la **¡¡¡DUPLA!!!**: la arena se detiene, la cámara se acerca y los dos la ejecutan juntos. Por ahora: **Espada Rúnica** (RedStein + Runa), **Terremoto** (Bloque + Coloso), **Burbuja Arcana** (Brisa + Runa), **Torbellino de Fuego** (Brisa + RedStein) y **Prensa Industrial** (Maniquí + Bloque). Solo sale si el rival ya tiene bastante daño, y quien la recibe tiene un respiro antes de la siguiente. Ojo: si golpean a quien está agarrando, suelta al rival.
-- **Ataques RUBÍ.** Cada luchador tendrá dos (por ahora, todos menos Coloso):
+- **Ataques RUBÍ.** Cada luchador tiene dos:
   - **Comeback de Rubí:** cuando tu daño llega al **100 %**, tu corazón **arde**. Pulsa **ATAQUE + ESPECIAL** en el suelo y sale un golpe brutal y espectacular, pero que **puede fallar**. Una vez por vida.
   - **Ultimate Ruby:** **concéntrate** manteniendo **ESCUDO + ESPECIAL** quieto unos 3 segundos (cualquier golpe te interrumpe). Luego, **ATAQUE + ESPECIAL**: si el golpe inicial acierta, **un corazón de rubí explota**, todo se congela y empieza la técnica. Una vez por vida, tiene prioridad sobre el Comeback y lo apaga hasta tu siguiente vida.
   - RedStein: **Tajo Carmesí** (embestida de fuego que frena en el borde) y **Lluvia Carmesí** (lanza al rival al cielo y le llueven flechas de rubí en llamas).
   - Brisa: **Ráfaga** (nueve patadas giratorias y un golpe de viento; hay que estar pegada al rival) y **Ojo del Huracán** (lo atrapa en un huracán, lo golpea desde todos los lados y cae en picada).
   - Runa: **Runa Súbita** (un círculo rúnico estalla a distancia fija delante de ella: hay que medir) y **Grimorio Prohibido** (sella al rival, abre un grimorio y del círculo rúnico del cielo cae un meteoro de runas).
   - Bloque: **Avalancha** (golpe al suelo y picos de roca a ambos lados; saltando se esquiva) y **Montaña Viviente** (absorbe rocas, se vuelve gigante y aplasta con el puño).
-  - Maniquí: **Sobrecarga** (directo cargado de electricidad que aturde) y **Protocolo Final** (fija el objetivo, llama a un satélite y cae un láser orbital). Ninguno es KO directo, y se pueden quitar en las opciones de combate.
+  - Maniquí: **Sobrecarga** (directo cargado de electricidad que aturde) y **Protocolo Final** (fija el objetivo, llama a un satélite y cae un láser orbital).
+  - Coloso: **Pisotón Sísmico** (una onda sísmica recorre medio escenario por el suelo) y **Furia de la Montaña** (arranca una roca gigantesca del suelo y se la lanza al rival). Ninguno es KO directo, y se pueden quitar en las opciones de combate.
 - **Filtro CRT opcional:** un interruptor en la portada pone el juego dentro de un televisor antiguo de madera, con líneas de barrido, antena, perillas y el papel tapiz de la casa de los abuelos.
 - **Música y efectos con volumen separado,** desde el menú o en plena pausa.
 - **14 objetos** que caen en plena pelea: armas que cambian tu ataque (espada láser, bláster, bumerán…), cosas para lanzar y poderes temporales.
