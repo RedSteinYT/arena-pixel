@@ -148,15 +148,23 @@
   .lives { display: flex; align-items: center; gap: .6em; font-size: 1em; color: #cfc8f0; }
   .itemsBtn { margin-left: .4em; white-space: nowrap; }
   /* opciones de combate: una fila grande por opción (caben más conforme crezca el juego) */
-  .optList { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.6em; width: min(100%, 92em); margin: 0 auto; }
+  .optList { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 1.2em; width: min(100%, 92em); margin: 0 auto; }
   .optRow { position: relative; display: grid; grid-template-columns: 5em 1fr auto; align-items: center; gap: 1.6em;
-    padding: 1.4em 2em 1.4em 1.4em; background: linear-gradient(90deg, rgba(36,31,74,.95), rgba(26,22,58,.92));
+    padding: 1.1em 2em 1.1em 1.4em; background: linear-gradient(90deg, rgba(36,31,74,.95), rgba(26,22,58,.92));
     border: .3em solid var(--line); box-shadow: 0 .5em 0 var(--line), inset 0 .2em 0 var(--hi);
     clip-path: polygon(1.2em 0, 100% 0, 100% calc(100% - 1.2em), calc(100% - 1.2em) 100%, 0 100%, 0 1.2em); }
   .optRow::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: .5em; background: var(--oc); }
   .optRow .oi { justify-self: center; font-size: 3em; color: var(--oc); text-shadow: .08em .08em 0 var(--line); }
-  .optRow .ot b { display: block; font-size: 1.7em; color: #fff; text-shadow: .12em .12em 0 var(--line); margin-bottom: .45em; }
-  .optRow .ot small { display: block; font-size: .95em; line-height: 1.7; color: #cfc8f0; }
+  .optRow .ot b { display: block; font-size: 1.7em; color: #fff; text-shadow: .12em .12em 0 var(--line); margin-bottom: .35em; }
+  .optRow .ot small { display: block; font-size: .95em; line-height: 1.6; color: #cfc8f0; }
+  /* con muchas opciones (en línea, con ARENA): filas compactas para que el botón siga a la vista */
+  .optList.many { gap: .7em; }
+  .optList.many .optRow { padding: .55em 2em .55em 1.4em; gap: 1.2em; grid-template-columns: 4em 1fr auto; }
+  .optList.many .optRow .oi { font-size: 2.3em; }
+  .optList.many .optRow .ot b { font-size: 1.4em; margin-bottom: .2em; }
+  .optList.many .optRow .ot small { font-size: .85em; line-height: 1.45; }
+  .optList.many .optRow .ov b { font-size: 1.4em; padding: .35em .4em; }
+  .optList.many .optRow .arr { font-size: 1.1em; padding: .45em .7em; }
   .optRow .ov { display: flex; align-items: center; gap: 1em; }
   .optRow .ov b { width: 11em; box-sizing: border-box; white-space: nowrap; text-align: center;   /* mismo ancho en todas: flechas alineadas */ font-size: 1.7em; color: var(--oc); text-shadow: .12em .12em 0 var(--line);
     padding: .45em .4em; background: #120f2c; border: .2em solid var(--line); }

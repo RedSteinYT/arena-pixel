@@ -65,6 +65,7 @@ const Select = (() => {
     $('oRuby').textContent = S.ruby ? 'SÍ' : 'NO';
     const room = S.onlineSetup || Net.isHost;
     $('optArena').style.display = room ? '' : 'none';
+    document.querySelector('#optScr .optList').classList.toggle('many', !!room);   // 5 filas: más compactas
     $('oArena').textContent = S.arenaVote ? 'VOTACIÓN' : 'ANFITRIÓN';
     $('oNext').textContent = !S.onlineSetup ? 'ELEGIR ARENA ▶' : Net.isHost ? 'GUARDAR ▶' : 'CREAR SALA ▶';
   }
