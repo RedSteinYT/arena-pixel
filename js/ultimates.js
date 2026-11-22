@@ -226,3 +226,112 @@ DUO_ANIMS['ult:brisa'] = {
   },
   launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 58 } }; },
 };
+
+// ======================= Runa: GRIMORIO PROHIBIDO =======================
+//  Sella al rival, abre un grimorio antiguo, dibuja un círculo rúnico gigante en el cielo y de él baja
+//  despacio un meteoro de runas que estalla en una columna de luz.
+DUO_ANIMS['ult:runa'] = {
+  name: 'GRIMORIO PROHIBIDO', len: 156,
+  setup(g, D) {
+    const a = D.a, v = D.v, P = a.plat || STAGE.main;
+    D.side = sgn(v.x - a.x) || a.dir;
+    D.vx = clamp(a.x + D.side * 58, P.x1 + 18, P.x2 - 18);
+    D.rx = Math.abs(D.vx - a.x) < 40 ? clamp(D.vx - D.side * 58, P.x1 + 10, P.x2 - 10) : a.x;
+    D.vx0 = v.x; D.vy0 = v.y; D.sky = D.gy - 128;
+    D.focus = { x: (D.rx + D.vx) / 2, y: D.gy - 72, z: 1.5 };
+  },
+  meteorY(D, t) { return t < 60 ? null : dLerp(D.sky, D.gy - D.v.S.hh * 0.5, Math.pow((t - 60) / 50, 2.2)); },
+  step(g, D, t) {
+    const runa = D.a, v = D.v, gy = D.gy, side = D.side;
+    // el rival, sellado en el sitio (flota un poco, quieto)
+    duoPlace(v, t < 12 ? dLerp(D.vx0, D.vx, dEase(t / 12)) : D.vx, t < 12 ? dLerp(D.vy0, gy - 4, dEase(t / 12)) : gy - 4 + (t >= 110 ? -(t - 110) * 0.5 : 0), -side);
+    duoStand(v, 'hitstun');
+    // Runa: invoca el grimorio, alza el bastón hacia el círculo y lo hace caer
+    duoPlace(runa, D.rx, gy, side);
+    if (t < 14) duoPose(runa, 'rubyUlt', 'rec', t / 14);
+    else if (t < 104) duoPose(runa, 'uspc', 'act');
+    else if (t < 112) duoPose(runa, 'dspc', 'act');
+    else duoStand(runa);
+    // efectos
+    if (t === 14) Sfx.join();
+    if (t >= 20 && t < 60 && t % 8 === 0) Sfx.blip();
+    if (t === 60) { Sfx.freeze(); g.shake = Math.max(g.shake, 3); }
+    const my = this.meteorY(D, t);
+    if (my != null && t < 110 && t % 2 === 0) {                                  // estela de runas del meteoro
+      g.fx.push({ kind: 'part', ptype: t % 4 ? 'star' : 'spark', x: D.vx + (Math.random() * 14 - 7), y: my - 8 - Math.random() * 6, vx: (Math.random() - 0.5) * 0.6, vy: -0.8, t: 0, life: 16, size: 1, col: t % 4 ? runa.pal.light : RUBY_COL.l });
+    }
+    if (t === 110) {                                                             // ¡impacto!
+      D.flash = 10; g.shake = 16; Sfx.hit(22); Sfx.brk(); v.flash = 6;
+      duoRadial(g, D.vx, gy - v.S.hh * 0.5, 40, [runa.pal.light, '#ffffff', RUBY_COL.l, RUBY_COL.m], 3.2);
+      g.burst(D.vx - 14, gy, 10, 'dust'); g.burst(D.vx + 14, gy, 10, 'dust');
+    }
+  },
+  draw(c, g, D, layer) {
+    const t = D.t - D.pre, runa = D.a, v = D.v, gy = D.gy, col = runa.pal.light, vx = Math.round(D.vx), sky = Math.round(D.sky);
+    if (layer === 'back') {
+      // el cielo se oscurece y el círculo rúnico gigante se va dibujando
+      if (t >= 16 && t < 150) rect(c, -W, -H, W * 3, H * 3, '#1a0f3a', 0.22 * Math.min(1, (t - 16) / 12, (150 - t) / 12));
+      if (t >= 20 && t < 140) {
+        const k = Math.min(1, (t - 20) / 40), fade = Math.min(1, (140 - t) / 14), R = 52, sq = 0.32;
+        const n = Math.ceil(R * 7 * k);
+        for (let i = 0; i < n; i++) {                                            // anillo exterior trazándose
+          const a = i / (R * 7) * Math.PI * 2 + t * 0.01;
+          px(c, Math.round(vx + Math.cos(a) * R), Math.round(sky + Math.sin(a) * R * sq), '#ffffff', 0.9 * fade);
+          px(c, Math.round(vx + Math.cos(a) * (R - 6)), Math.round(sky + Math.sin(a) * (R - 6) * sq), col, 0.8 * fade);
+        }
+        if (k > 0.5) {                                                           // estrella de seis puntas
+          const kk = Math.min(1, (k - 0.5) * 2);
+          withAlpha(c, 0.8 * fade * kk, () => {
+            for (let i = 0; i < 6; i++) {
+              const a1 = i / 6 * Math.PI * 2 + t * 0.01, a2 = a1 + Math.PI * 2 / 3;
+              pline(c, vx + Math.cos(a1) * (R - 6), sky + Math.sin(a1) * (R - 6) * sq, vx + Math.cos(a2) * (R - 6), sky + Math.sin(a2) * (R - 6) * sq, 1, '#ff8aa0');
+            }
+          });
+          for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 - t * 0.02; drawGlyph(c, vx + Math.cos(a) * (R + 6), sky + Math.sin(a) * (R + 6) * sq, i, i % 2 ? '#ffffff' : col, fade * kk); }
+        }
+        glow(c, vx, sky, 26 * k, col, 0.18 * fade, 3);
+      }
+      return;
+    }
+    // el sello alrededor del rival: dos anillos de runas girando
+    if (t >= 4 && t < 110) {
+      const cy = Math.round(v.y - v.S.hh * 0.5), a = Math.min(1, (t - 4) / 8);
+      for (const [r, sp, n] of [[v.S.hw + 10, 0.08, 8], [v.S.hw + 16, -0.05, 10]]) {
+        withAlpha(c, 0.5 * a, () => ring(c, Math.round(v.x), cy, r, col));
+        for (let i = 0; i < n; i++) { const an = i / n * Math.PI * 2 + t * sp; drawGlyph(c, v.x + Math.cos(an) * r, cy + Math.sin(an) * r, i, '#ffffff', a); }
+      }
+    }
+    // el grimorio flotando delante de Runa
+    if (t >= 6 && t < 118) {
+      const bx = Math.round(runa.x + runa.dir * 15), by = Math.round(gy - 30 + Math.sin(t * 0.12) * 2), open = t >= 16, a = Math.min(1, (t - 6) / 6, (118 - t) / 8);
+      withAlpha(c, a, () => {
+        if (open) {
+          glow(c, bx, by - 2, 10, col, 0.35, 3);
+          rect(c, bx - 9, by - 4, 18, 9, OUTLINE); rect(c, bx - 8, by - 3, 7, 7, '#efe3c6'); rect(c, bx + 1, by - 3, 7, 7, '#efe3c6');
+          rect(c, bx - 1, by - 4, 2, 9, '#5a2a7a');
+          for (let i = 0; i < 3; i++) { rect(c, bx - 7, by - 2 + i * 2, 5, 1, '#8a6ab8'); rect(c, bx + 2, by - 2 + i * 2, 5, 1, '#8a6ab8'); }
+          if ((t >> 2) % 2) drawGlyph(c, bx - 4, by - 8 - ((t >> 1) % 6), t, '#ffffff');
+        } else {
+          rect(c, bx - 5, by - 6, 10, 12, OUTLINE); rect(c, bx - 4, by - 5, 8, 10, '#5a2a7a'); rect(c, bx - 4, by - 5, 8, 1, ROBE_GOLD); drawGlyph(c, bx, by, 2, ROBE_GOLD);
+        }
+      });
+    }
+    // el meteoro de runas
+    const my = this.meteorY(D, t);
+    if (my != null && t < 110) {
+      const k = (t - 60) / 50, r = Math.round(5 + k * 8), y = Math.round(my);
+      glow(c, vx, y, r * 2.2, col, 0.4, 3);
+      disc(c, vx, y, r + 1, OUTLINE); disc(c, vx, y, r, '#c48cff'); disc(c, vx - 1, y - 1, Math.max(1, r - 3), '#ffffff', 0.7);
+      for (let i = 0; i < 5; i++) { const an = i / 5 * Math.PI * 2 + t * 0.25; drawGlyph(c, vx + Math.cos(an) * (r + 5), y + Math.sin(an) * (r + 5), i, i % 2 ? '#ffffff' : RUBY_COL.l); }
+      withAlpha(c, 0.35, () => pline(c, vx, sky, vx, y - r, 2, col));               // rastro desde el círculo
+    }
+    // la columna de luz
+    if (t >= 110 && t < 140) {
+      const k = (t - 110) / 30, w = Math.max(2, Math.round(20 * (1 - k)));
+      rect(c, vx - w, sky, w * 2, gy - sky, col, 0.6 * (1 - k)); rect(c, vx - (w >> 1), sky, w, gy - sky, '#ffffff', 0.85 * (1 - k));
+      withAlpha(c, 1 - k, () => { ring(c, vx, gy - 12, 6 + (t - 110) * 5, '#ffffff'); });
+    }
+  },
+  launch(D) { return { lead: D.a, dir: D.side, h: { d: 36, b: 7.2, g: 2.4, ang: 84 } }; },
+};
+const ROBE_GOLD = '#ffd34a';

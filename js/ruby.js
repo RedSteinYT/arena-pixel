@@ -128,8 +128,8 @@ const RubySys = (() => {
     if (f.st === 'rubyCharge') { if (!near) { I.shd = true; I.spc = true; } return true; }
     if (!f.grounded || f.st !== 'ground') return false;
     // lanzar el ataque rubí si el rival está delante y a tiro
-    const reach = f.ultReady ? 30 : 64;
-    if ((f.ultReady || cbReady(f)) && adx < reach + f.S.hw && ady < 18 && Math.random() < 0.25 + L.punish * 0.5) {
+    const m = f.ch.moves[f.ultReady ? 'rubyUlt' : 'rubyCb'], rng = m && m.aiRange || [0, f.ultReady ? 30 + f.S.hw : 64 + f.S.hw];   // a qué distancia acierta
+    if ((f.ultReady || cbReady(f)) && adx >= rng[0] && adx < rng[1] && ady < 18 && Math.random() < 0.25 + L.punish * 0.5) {
       if (sgn(dx) !== f.dir) { I.mx = sgn(dx); return true; }                // primero, mirarle
       I.atk = !f.prev.atk; I.spc = !f.prev.spc; return true;
     }

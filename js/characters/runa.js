@@ -175,6 +175,48 @@
                   if (!f.grounded) f.vy = Math.min(f.vy, 0.8);
                   if (t === 10) g.spawnProjectile(f, { kind: 'mine', x: 16, y: -6, vx: 0, life: 300, r: 6, max: 1, h: { d: 12, b: 3.2, g: 6.0, ang: 70, away: true } });
                 } },
+
+      // ===== ATAQUES RUBÍ (ver ruby.js) =====
+      // Comeback de Rubí — RUNA SÚBITA: clava el bastón y un círculo rúnico estalla A DISTANCIA FIJA delante
+      // de ella (avisa un instante antes). Si el rival no está justo ahí, falla.
+      rubyCb: { s: 12, a: 6, e: 22, special: true, rubyName: 'RUNA SÚBITA', aiRange: [32, 54],
+                hit: [{ box: [30, -48, 26, 48], d: 24, b: 4.6, g: 9.4, ang: 82 }],
+                pose: staffPose(-1.3, 1.25, -1.9, [8, -8], [4, -24], p => crouchPose(p, 2)),
+                onFrame(f, t, g) {
+                  f.vx *= 0.5;
+                  const x = f.x + f.dir * 43;
+                  if (t < 12 && t % 2 === 0) g.fx.push({ kind: 'part', ptype: 'spark', x: x + (Math.random() * 24 - 12), y: f.y - 1, vx: 0, vy: -0.5, t: 0, life: 10, size: 1, col: t % 4 ? f.pal.light : '#ff8aa0' });
+                  if (t === 12) {
+                    g.shake = Math.max(g.shake, 6); Sfx.brk();
+                    duoRadial(g, x, f.y - 8, 16, [f.pal.light, '#ffffff', '#ff8aa0'], 2.4);
+                    for (let i = 0; i < 10; i++) g.fx.push({ kind: 'part', ptype: 'star', x: x + (Math.random() * 16 - 8), y: f.y - Math.random() * 40, vx: 0, vy: -1.4 - Math.random(), t: 0, life: 22, size: 1, col: i % 2 ? '#ffffff' : f.pal.light });
+                  }
+                },
+                draw(c, f, t, g) {                                       // el círculo que avisa y la columna de luz
+                  const x = Math.round(f.x + f.dir * 43), y = Math.round(f.y), col = f.pal.light;
+                  if (t < 12) {
+                    const r = 4 + t, a = 0.5 + t * 0.04;
+                    glow(c, x, y - 1, r, col, 0.2, 2);
+                    groundEllipse(c, x, y, r, col, a); groundEllipse(c, x, y, r * 0.6, '#ff8aa0', a);
+                    for (let i = 0; i < 6; i++) { const an = i / 6 * Math.PI * 2 + t * 0.2; drawGlyph(c, x + Math.cos(an) * r, y + Math.sin(an) * r * 0.3, i, '#ffffff', a); }
+                  } else if (t < 26) {
+                    const k = (t - 12) / 14, w = Math.max(2, Math.round(13 * (1 - k))), h = 56;
+                    rect(c, x - w, y - h, w * 2, h, col, 0.55 * (1 - k)); rect(c, x - (w >> 1), y - h, w, h, '#ffffff', 0.8 * (1 - k));
+                    groundEllipse(c, x, y, 14 + k * 10, col, 1 - k);
+                  }
+                } },
+      // Ultimate Ruby — GRIMORIO PROHIBIDO: lanza un sello rúnico; si acierta, empieza la técnica (ultimates.js)
+      rubyUlt: { s: 10, a: 5, e: 24, special: true, rubyName: 'GRIMORIO PROHIBIDO', aiRange: [16, 54],
+                 hit: [{ box: [12, -30, 40, 26], ult: true, d: 0, b: 0, g: 0, ang: 45 }],
+                 pose: staffPose(-1.6, -0.15, -1.9, [11, -16], null),
+                 onFrame(f, t, g) { if (t < 10 && t % 2 === 0) sparkle(f, g); if (t === 10) Sfx.freeze(); },
+                 draw(c, f, t, g) {                                      // el sello que sale disparado
+                   if (t < 10 || t >= 16) return;
+                   const x = Math.round(f.x + f.dir * (16 + (t - 10) * 7)), y = Math.round(f.y - 17);
+                   glow(c, x, y, 7, f.pal.light, 0.4, 3);
+                   withAlpha(c, 0.9, () => ring(c, x, y, 5, '#ffffff'));
+                   drawGlyph(c, x, y, t, '#ff8aa0');
+                 } },
     },
 
     draw(c, f, p, A, frame) {

@@ -507,6 +507,7 @@ class Game {
       RubySys.drawAura(c, f, this);
       renderFighter(c, f, this.frame);
       if (f.ch.overlay) f.ch.overlay(c, f, this.frame);
+      if (f.st === 'attack' && f.move && f.move.draw) f.move.draw(c, f, f.t, this);   // efectos propios del golpe (ataques rubí)
       ItemSys.drawHeld(c, f, this);
       ItemSys.drawBuffs(c, f, this);
       if (f.st === 'shield') drawShield(c, f, this.frame);
