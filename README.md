@@ -18,6 +18,8 @@ Hasta 4 jugadores en el mismo teclado o con mandos, o en línea con tus amigos s
 [![TikTok](https://img.shields.io/badge/TikTok-@redstein__la-000000?style=flat-square&logo=tiktok&logoColor=white)](https://www.tiktok.com/@redstein_la)
 [![GitHub](https://img.shields.io/badge/GitHub-RedSteinYT-24292f?style=flat-square&logo=github&logoColor=white)](https://github.com/RedSteinYT)
 
+[De qué va](#-de-qué-va) · [Ataques RUBÍ](#-ataques-rubí) · [Ataques en DUPLA](#-ataques-en-dupla) · [Luchadores](#-luchadores) · [Arenas](#️-arenas) · [Modos](#-modos) · [Controles](#️-controles) · [En línea](#-jugar-en-línea)
+
 </div>
 
 ---
@@ -32,28 +34,73 @@ Saca a tus rivales del escenario. Cuanto más daño (%) llevan, más lejos salen
 </p>
 
 - **Combos de verdad.** Cadena de golpes 1-2-3, ataques que se encadenan subiendo de nivel y un **¡REMATE!** cuando cierras un combo con un ataque fuerte o un especial.
-- **Ataques en DUPLA (Equipos).** Si tu compañero sujeta a un rival y tú también lo agarras, sale una **¡DUPLA!**. Algunas parejas tienen su propia técnica cinematográfica, la **¡¡¡DUPLA!!!**: la arena se detiene, la cámara se acerca y los dos la ejecutan juntos. Por ahora: **Espada Rúnica** (RedStein + Runa), **Terremoto** (Bloque + Coloso), **Burbuja Arcana** (Brisa + Runa), **Torbellino de Fuego** (Brisa + RedStein) y **Prensa Industrial** (Maniquí + Bloque). Solo sale si el rival ya tiene bastante daño, y quien la recibe tiene un respiro antes de la siguiente. Ojo: si golpean a quien está agarrando, suelta al rival.
-- **Ataques RUBÍ.** Cada luchador tiene dos:
-  - **Comeback de Rubí:** cuando tu daño llega al **100 %**, tu corazón **arde**. Pulsa **ATAQUE + ESPECIAL** en el suelo y sale un golpe brutal y espectacular, pero que **puede fallar**. Una vez por vida.
-  - **Ultimate Ruby:** **concéntrate** manteniendo **ESCUDO + ESPECIAL** quieto unos 3 segundos (cualquier golpe te interrumpe). Luego, **ATAQUE + ESPECIAL**: si el golpe inicial acierta, **un corazón de rubí explota**, todo se congela y empieza la técnica. Una vez por vida, tiene prioridad sobre el Comeback y lo apaga hasta tu siguiente vida.
-  - RedStein: **Tajo Carmesí** (embestida de fuego que frena en el borde) y **Lluvia Carmesí** (lanza al rival al cielo y le llueven flechas de rubí en llamas).
-  - Brisa: **Ráfaga** (nueve patadas giratorias y un golpe de viento; hay que estar pegada al rival) y **Ojo del Huracán** (lo atrapa en un huracán, lo golpea desde todos los lados y cae en picada).
-  - Runa: **Runa Súbita** (un círculo rúnico estalla a distancia fija delante de ella: hay que medir) y **Grimorio Prohibido** (sella al rival, abre un grimorio y del círculo rúnico del cielo cae un meteoro de runas).
-  - Bloque: **Avalancha** (golpe al suelo y picos de roca a ambos lados; saltando se esquiva) y **Montaña Viviente** (absorbe rocas, se vuelve gigante y aplasta con el puño).
-  - Maniquí: **Sobrecarga** (directo cargado de electricidad que aturde) y **Protocolo Final** (fija el objetivo, llama a un satélite y cae un láser orbital).
-  - Coloso: **Pisotón Sísmico** (una onda sísmica recorre medio escenario por el suelo) y **Furia de la Montaña** (arranca una roca gigantesca del suelo y se la lanza al rival). Ninguno es KO directo, y se pueden quitar en las opciones de combate.
-- **Filtro CRT opcional:** un interruptor en la portada pone el juego dentro de un televisor antiguo de madera, con líneas de barrido, antena, perillas y el papel tapiz de la casa de los abuelos.
-- **Música y efectos con volumen separado,** desde el menú o en plena pausa.
+- **💎 Ataques RUBÍ.** Cada luchador tiene un **Comeback** para cuando va perdiendo y un **Ultimate** cinematográfico. [Más abajo](#-ataques-rubí).
+- **🤝 Ataques en DUPLA.** En Equipos, si tu compañero y tú agarráis al mismo rival, ¡sale una técnica en pareja! [Más abajo](#-ataques-en-dupla).
 - **14 objetos** que caen en plena pelea: armas que cambian tu ataque (espada láser, bláster, bumerán…), cosas para lanzar y poderes temporales.
 - **Pantalla VS** con pullas antes de cada combate y música rock propia para cada arena.
-- **Finales de película:** cámara lenta en el golpe final, zoom al ganador y animaciones de victoria y derrota propias de cada luchador. Si el ganador (o su compañero de equipo) ya había caído, vuelve por un portal para celebrarlo.
-- **Opciones de combate:** vidas (1 a 9), tiempo (2, 3, 5 u 8 minutos, o sin límite) y objetos sí o no.
+- **Finales de película:** cámara lenta en el golpe final, zoom al ganador y animaciones de victoria y derrota propias de cada luchador. Si el ganador (o su compañero) ya había caído, vuelve por un portal para celebrarlo.
 - **¡MUERTE SÚBITA!** Si se acaba el tiempo con empate en vidas: un solo corazón, todos al 300 % y el más mínimo roce te saca de la arena.
 - **Resultados** con una tarjeta por luchador: su puesto, sus estadísticas y su animación de victoria o derrota.
-- **Modo en línea** con código de sala: uno crea la sala, los demás escriben el código y a pelear.
-- **PRÁCTICA y TUTORIAL** para aprender todo lo anterior paso a paso.
+- **Modo en línea** con código de sala, y **PRÁCTICA** y **TUTORIAL** para aprenderlo todo paso a paso.
 
-### ¡¡¡DUPLA!!!
+## 💎 Ataques RUBÍ
+
+Las vidas son corazones de rubí… y su poder se puede usar. Cada luchador tiene **dos** ataques rubí, que se lanzan con **ATAQUE + ESPECIAL a la vez** y solo en tierra firme.
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/img/rubi-corazon-llamas.jpg" alt="El corazón en llamas en el marcador"><br><b>1 · Corazón en llamas</b><br>Con tu daño en 100 % o más, el corazón de esta vida arde: tienes el <b>Comeback</b>.</td>
+    <td width="33%"><img src="docs/img/rubi-concentracion.jpg" alt="Concentrándose para el Ultimate"><br><b>2 · Concentración</b><br>Mantén ESCUDO + ESPECIAL quieto unos 3 s para cargar el <b>Ultimate</b>. Si te golpean, se corta.</td>
+    <td width="33%"><img src="docs/img/rubi-corazon-explota.jpg" alt="El corazón de rubí explota"><br><b>3 · ¡El corazón explota!</b><br>Si el golpe inicial del Ultimate acierta, todo se congela y empieza la técnica.</td>
+  </tr>
+</table>
+
+| | **Comeback de Rubí** | **Ultimate Ruby** |
+|---|---|---|
+| **Se consigue** | Con tu daño en **100 %** o más | **Concentrándote** (ESCUDO + ESPECIAL, ~3 s) |
+| **Cómo es** | Un golpe brutal y rápido, sin pausa: **puede fallar** | Un golpe inicial; si acierta, una **cinemática** con la arena en pausa |
+| **Cuántos** | Uno por vida | Uno por vida (si falla, se pierde la carga, no la vida) |
+| **Reglas** | — | Tiene prioridad sobre el Comeback y lo apaga hasta tu siguiente vida |
+
+Ninguno es KO directo: el % sigue decidiendo. Y se pueden quitar en las **opciones de combate**.
+
+### Ultimate Ruby
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/img/ult-lluvia-carmesi.jpg" alt="Lluvia Carmesí"><br><b>Lluvia Carmesí</b> · RedStein<br>Lanza al rival al cielo y le llueven flechas de rubí en llamas, hasta la flecha gigante.</td>
+    <td width="33%"><img src="docs/img/ult-ojo-del-huracan.jpg" alt="Ojo del Huracán"><br><b>Ojo del Huracán</b> · Brisa<br>Lo atrapa en un huracán, lo golpea desde todos los lados y cae en picada.</td>
+    <td width="33%"><img src="docs/img/ult-grimorio-prohibido.jpg" alt="Grimorio Prohibido"><br><b>Grimorio Prohibido</b> · Runa<br>Lo sella, abre un grimorio y del círculo rúnico del cielo cae un meteoro de runas.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/img/ult-montana-viviente.jpg" alt="Montaña Viviente"><br><b>Montaña Viviente</b> · Bloque<br>Absorbe las rocas del escenario, se vuelve gigante y aplasta con el puño.</td>
+    <td><img src="docs/img/ult-protocolo-final.jpg" alt="Protocolo Final"><br><b>Protocolo Final</b> · Maniquí<br>Fija el objetivo, llama a un satélite y cae un láser orbital.</td>
+    <td><img src="docs/img/ult-furia-de-la-montana.jpg" alt="Furia de la Montaña"><br><b>Furia de la Montaña</b> · Coloso<br>Arranca una roca gigantesca del suelo y se la lanza al rival.</td>
+  </tr>
+</table>
+
+### Comeback de Rubí
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/img/cb-tajo-carmesi.jpg" alt="Tajo Carmesí"><br><b>Tajo Carmesí</b> · RedStein<br>Embestida con un tajo de fuego (frena en el borde).</td>
+    <td width="33%"><img src="docs/img/cb-rafaga.jpg" alt="Ráfaga"><br><b>Ráfaga</b> · Brisa<br>Nueve patadas giratorias y un golpe de viento. Hay que estar pegada al rival.</td>
+    <td width="33%"><img src="docs/img/cb-runa-subita.jpg" alt="Runa Súbita"><br><b>Runa Súbita</b> · Runa<br>Un círculo rúnico estalla a distancia fija delante de ella: hay que medir.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/img/cb-avalancha.jpg" alt="Avalancha"><br><b>Avalancha</b> · Bloque<br>Picos de roca a ambos lados. Saltando se esquiva.</td>
+    <td><img src="docs/img/cb-sobrecarga.jpg" alt="Sobrecarga"><br><b>Sobrecarga</b> · Maniquí<br>Directo cargado de electricidad que deja al rival aturdido.</td>
+    <td><img src="docs/img/cb-pisoton-sismico.jpg" alt="Pisotón Sísmico"><br><b>Pisotón Sísmico</b> · Coloso<br>Una onda sísmica recorre medio escenario por el suelo.</td>
+  </tr>
+</table>
+
+## 🤝 Ataques en DUPLA
+
+Solo en **Equipos**. Si tu compañero sujeta a un rival y tú también lo agarras, sale una **¡DUPLA!**: un golpe hacia arriba entre los dos. Algunas parejas tienen además su propia técnica cinematográfica, la **¡¡¡DUPLA!!!**: la arena se detiene, la cámara se acerca y los dos la ejecutan juntos.
+
+- La ¡¡¡DUPLA!!! solo sale si el rival ya tiene **60 % o más**, y quien la recibe tiene **20 segundos de respiro** antes de la siguiente.
+- Si golpean a quien está agarrando, **suelta al rival**: el otro equipo puede impedirla.
+- Las CPU compañeras acuden al agarre para hacerla contigo.
 
 <table>
   <tr>
@@ -70,14 +117,14 @@ La quinta, **Burbuja Arcana** (Brisa + Runa), mejor descúbrela jugando.
 
 ## 🧙 Luchadores
 
-| | Luchador | Estilo |
-|---|---|---|
-| 🔥 | **RedStein** | El luchador del canal. Espada de cristal en llamas, arco que se carga y golpes que queman. |
-| 🌪️ | **Brisa** | Exploradora del viento. Ataques de varios golpes que se encadenan, triple salto y muy ligera. |
-| 🔮 | **Runa** | Hechicera rúnica. Bastón largo, flota, se teletransporta y deja trampas. Mejor lejos que cerca. |
-| 🪨 | **Bloque** | Gólem de roca. Lento y torpe en el aire, pero cada golpe pesa una tonelada. |
-| 🤖 | **Maniquí** | Robot de entrenamiento. Equilibrado: ni muy rápido ni muy pesado. |
-| ⛰️ | **Coloso** | Gigante de la montaña. Lentísimo, pero sus golpes ocupan medio escenario. No se le puede agarrar. |
+| | Luchador | Estilo | Comeback | Ultimate |
+|---|---|---|---|---|
+| 🔥 | **RedStein** | El luchador del canal. Espada de cristal en llamas, arco que se carga y golpes que queman. | Tajo Carmesí | Lluvia Carmesí |
+| 🌪️ | **Brisa** | Exploradora del viento. Ataques de varios golpes que se encadenan, triple salto y muy ligera. | Ráfaga | Ojo del Huracán |
+| 🔮 | **Runa** | Hechicera rúnica. Bastón largo, flota, se teletransporta y deja trampas. Mejor lejos que cerca. | Runa Súbita | Grimorio Prohibido |
+| 🪨 | **Bloque** | Gólem de roca. Lento y torpe en el aire, pero cada golpe pesa una tonelada. | Avalancha | Montaña Viviente |
+| 🤖 | **Maniquí** | Robot de entrenamiento. Equilibrado: ni muy rápido ni muy pesado. | Sobrecarga | Protocolo Final |
+| ⛰️ | **Coloso** | Gigante de la montaña. Lentísimo, pero sus golpes ocupan medio escenario. No se le puede agarrar. | Pisotón Sísmico | Furia de la Montaña |
 
 ## 🗺️ Arenas
 
@@ -97,19 +144,26 @@ La quinta, **Burbuja Arcana** (Brisa + Runa), mejor descúbrela jugando.
 | Modo | |
 |---|---|
 | **1 contra 1** | El duelo clásico. |
-| **Equipos** | Rojo contra azul: 2 contra 2, o incluso 3 contra 1 si alguien se atreve. |
+| **Equipos** | Rojo contra azul: 2 contra 2, o incluso 3 contra 1 si alguien se atreve. Aquí salen las DUPLAS. |
 | **Triple amenaza** | Tres luchadores, todos contra todos. |
 | **Todos contra todos** | Cuatro luchadores, caos total. |
 | **🌐 En línea** | Hasta 4 amigos, cada uno desde su casa, con un código de sala. |
 | **🎯 Práctica** | Tú contra el Dummy, con vidas infinitas y tu mejor combo apuntado. |
-| **📘 Tutorial** | Lecciones de básicos, combos, avanzados, objetos, ataques rubí y duplas, con tareas que te dicen qué pulsar. |
+| **📘 Tutorial** | Seis lecciones (básicos, combos, avanzados, objetos, rubí y dupla) con tareas que te dicen qué pulsar con TU teclado o mando. |
 
 Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difícil.
 
 <p align="center">
-  <img src="docs/img/practica.png" alt="Modo práctica en la Arena de entrenamiento" width="70%"><br>
-  <sub>La Arena de entrenamiento: una arena que todavía no ha terminado de cargar.</sub>
+  <img src="docs/img/tutorial-rubi.jpg" alt="Tutorial: lección RUBÍ" width="49%">
+  <img src="docs/img/tutorial-dupla.jpg" alt="Tutorial: lección DUPLA" width="49%"><br>
+  <sub>El tutorial en la Arena de entrenamiento: una arena que todavía no ha terminado de cargar.</sub>
 </p>
+
+## ⚙️ Opciones y extras
+
+- **Opciones de combate:** vidas (1 a 9), tiempo (2, 3, 5 u 8 minutos, o sin límite), objetos sí o no y ataques rubí sí o no.
+- **Filtro CRT:** un interruptor en la portada pone el juego dentro de un televisor antiguo de madera, con líneas de barrido, antena, perillas y el papel tapiz de la casa de los abuelos.
+- **Volumen** de música y efectos por separado, desde el menú o en plena pausa.
 
 ## ⌨️ Controles
 
@@ -122,8 +176,8 @@ Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difí
 | Escudo | `L` / `Shift izq.` | `Ctrl der.` / `Num 3` |
 | Agarre / objeto | `Ñ` / `H` | `,` / `Num 4` |
 | Ataque fuerte | `U` | `M` / `Num 5` |
-| Ataque rubí | Ataque + Especial a la vez | Ataque + Especial a la vez |
-| Concentrarse (Ultimate) | Escudo + Especial, mantenidos | Escudo + Especial, mantenidos |
+| **Ataque rubí** | Ataque + Especial a la vez | Ataque + Especial a la vez |
+| **Concentrarse** (Ultimate) | Escudo + Especial, mantenidos | Escudo + Especial, mantenidos |
 
 **Mandos:** Xbox, PlayStation y Nintendo, sin configurar nada. Si el navegador no detecta tu mando, pulsa cualquier botón con la página abierta. Todos los botones están en **CONTROLES**, en el menú principal.
 
@@ -165,11 +219,18 @@ Después abre `http://localhost:8080`.
 ```
 index.html          menú, estilos y orden de carga
 js/core.js          lienzo, utilidades y efectos de sonido
+js/art.js           primitivas de pixel art
 js/fighter.js       física, estados y combos de los luchadores
 js/game.js          la pelea: golpes, cámara, HUD y reglas
+js/duo.js           motor de cinemáticas y ataques en DUPLA
+js/ruby.js          ataques RUBÍ: corazón en llamas, concentración y reglas
+js/ultimates.js     la cinemática de cada Ultimate Ruby
 js/ai.js            las CPU
 js/net.js           modo en línea (PeerJS, el anfitrión manda)
-js/characters/      un archivo por luchador
+js/menu.js          pantallas, bucle principal y filtro CRT
+js/select.js        modos, opciones, arenas y selección de luchador
+js/sonido.js        volumen de música y efectos
+js/characters/      un archivo por luchador (con sus ataques rubí)
 js/stages/          un archivo por arena
 js/items/           armas, lanzables y poderes
 js/modes/           práctica y tutorial
