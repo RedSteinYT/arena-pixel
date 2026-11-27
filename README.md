@@ -162,7 +162,7 @@ Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difí
 ## ⚙️ Opciones y extras
 
 - **Opciones de combate:** vidas (1 a 9), tiempo (2, 3, 5 u 8 minutos, o sin límite), objetos, ataques rubí y eventos de arena (sí o no).
-- **⚡ Eventos de arena:** cada 45–60 s, una sorpresa propia de la arena. Siempre **avisa** antes (cartel y 3 s de advertencia) y dura unos segundos, con sus sonidos y su cambio de música. En la Fortaleza: **¡EL PISO ES LAVA!** (el suelo arde 15 s: ¡a las plataformas!) y **¡PAPA CALIENTE!** (una bomba con 7 s que pasa al rival que golpeas; al llegar a 0, ¡BUM!). Pronto, en el resto de arenas.
+- **⚡ Eventos de arena:** cada 45–60 s, una sorpresa propia de la arena. Siempre **avisa** antes (cartel y 3 s de advertencia) y dura unos segundos, con sus sonidos y su cambio de música. En la Fortaleza: **¡EL PISO ES LAVA!** (el suelo arde 15 s y cada toque quema fuerte, 13 %: ¡a las plataformas!) y **¡PAPA CALIENTE!** (una bomba con 7 s que pasa al rival que golpeas; al llegar a 0, ¡BUM!). Pronto, en el resto de arenas.
 - **Filtro CRT:** un interruptor en la portada pone el juego dentro de un televisor antiguo de madera, con líneas de barrido, antena, perillas y el papel tapiz de la casa de los abuelos.
 - **Volumen** de música y efectos por separado, desde el menú o en plena pausa.
 

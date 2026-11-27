@@ -263,6 +263,8 @@ const Sfx = (() => {
     tick(urgent) { tone(urgent ? 2200 : 1500, 'square', urgent ? 0.09 : 0.07, 0.04); noise(0.12, 0.03, 3000); if (urgent) sub(160, 90, 0.15, 0.05); },
     // la bomba cambia de manos
     pass() { noise(0.2, 0.15, 0, 0, { sweep: [800, 4000], q: 1.5 }); tone(990, 'square', 0.07, 0.08); tone(1320, 'square', 0.07, 0.1, null, 0.06, 0.3); },
+    // ¡te quemaste! golpe grave + chasquido + llamarada que baja
+    lavaBurn() { sub(90, 35, 0.7, 0.35); crunch(160, 0.12, 0.35); noise(0.45, 0.35, 0, 0, { sweep: [3000, 400], q: 1, wet: 0.4 }); tone(220, 'sawtooth', 0.06, 0.25, 110); },
     // siseo y burbujeo de la lava
     lavaHiss() { noise(0.12, 0.7, 1800, 0, { wet: 0.3 }); for (let i = 0; i < 3; i++) sub(90 + Math.random() * 60, 50, 0.12, 0.12, Math.random() * 0.4); },
     // pantalla VS: un "swinggg" de espada que cruza de izquierda a derecha y choca

@@ -33,9 +33,11 @@ const STAGE_EVENTS = {
         for (const f of g.fighters) {
           if (!alive(f) || f.invuln > 0 || !f.grounded || f.plat !== STAGE.main) continue;
           if ((f.lavaCD || 0) > g.frame) continue;
-          f.lavaCD = g.frame + 40;                                               // un respiro para escapar
-          evHit(g, f, { d: 5, b: 4.4, g: 0.7, ang: 90, burn: 60 }, f.dir || 1);
-          for (let i = 0; i < 6; i++) g.burst(f.x + (Math.random() * 10 - 5), f.y - 2, 1, 'fire');
+          f.lavaCD = g.frame + 30;                                               // un respiro corto para escapar
+          evHit(g, f, { d: 13, b: 5.4, g: 0.85, ang: 90, burn: 100 }, f.dir || 1);   // ¡duele! caer es un castigo
+          g.shake = Math.max(g.shake, 5);
+          Sfx.lavaBurn();
+          for (let i = 0; i < 14; i++) g.burst(f.x + (Math.random() * 14 - 7), f.y - 2 - Math.random() * 6, 1, 'fire');
         }
       },
       drawBack(c, g, E) {
@@ -162,14 +164,41 @@ const EventSys = {
       }
     }
   },
-  // la CPU: huir del suelo de lava y de quien lleva la bomba
+  // la CPU, DESPUÉS de decidir qué hacer: durante la lava (y al final del aviso) no pisa el suelo.
+  //  En el suelo -> corre y salta a la plataforma más cercana; en el aire -> se guía hacia una
+  //  plataforma (sin caída rápida); sobre una plataforma -> no se deja caer ni camina fuera del borde.
+  aiPost(f, g, I) {
+    const E = g.ev;
+    if (!E || E.id !== 'lava' || E.phase === 'end' || (E.phase === 'warn' && E.t < EVENT_WARN - 110)) return I;
+    if (!alive(f) || f.st === 'hitstun' || f.st === 'helpless' || f.st === 'ledge' || f.st === 'grabbed' || f.holding) return I;
+    const M = STAGE.main;
+    if (f.x < M.x1 - 4 || f.x > M.x2 + 4) return I;                         // fuera del escenario: que se recupere a su modo
+    let best = null, bd = 1e9;
+    for (const p of STAGE.plats) {
+      const d = Math.abs((p.x1 + p.x2) / 2 - f.x) + (p.y > f.y + 4 ? 0 : 30);
+      if (d < bd) { bd = d; best = p; }
+    }
+    if (!best) return I;
+    const tx = (best.x1 + best.x2) / 2, half = (best.x2 - best.x1) / 2, ddx = tx - f.x;
+    if (f.grounded && f.plat && f.plat !== M) {                              // a salvo en una plataforma
+      if (I.my > 0.5) I.my = 0;
+      const P = f.plat;
+      if ((I.mx < 0 && f.x - P.x1 < 10) || (I.mx > 0 && P.x2 - f.x < 10)) I.mx = 0;
+      return I;
+    }
+    if (f.grounded) {                                                        // en el suelo que arde: ¡fuera!
+      I.mx = Math.abs(ddx) > 6 ? sgn(ddx) : 0; I.my = 0; I.shd = false; I.grab = false;
+      if (Math.abs(ddx) < half + 34) I.jump = !f.prev.jump;
+      return I;
+    }
+    if (Math.abs(ddx) > half - 6) I.mx = sgn(ddx);                           // en el aire: hacia la plataforma
+    if (I.my > 0.5) I.my = 0;
+    if (f.vy > 0 && f.y > best.y - 2 && f.jumps > 0) I.jump = !f.prev.jump;  // por debajo y cayendo: salta otra vez
+    return I;
+  },
+  // la CPU: huir de quien lleva la bomba
   ai(f, g, I) {
     const E = g.ev; if (!E) return false;
-    if (E.id === 'lava' && E.phase !== 'end' && f.grounded && f.plat === STAGE.main && (f.st === 'ground' || f.st === 'landing')) {
-      let best = null, bd = 1e9;
-      for (const p of STAGE.plats) { const d = Math.abs((p.x1 + p.x2) / 2 - f.x); if (d < bd) { bd = d; best = p; } }
-      if (best) { const tx = (best.x1 + best.x2) / 2; if (Math.abs(tx - f.x) > 24) I.mx = sgn(tx - f.x); if (Math.abs(tx - f.x) < 40) I.jump = !f.prev.jump; return true; }
-    }
     if (E.id === 'papa' && E.phase === 'on' && E.holder && E.holder !== f) {
       const h = E.holder, dx = f.x - h.x;
       if (Math.abs(dx) < 70 && Math.abs(f.y - h.y) < 60 && (f.st === 'ground' || f.st === 'air')) { I.mx = sgn(dx) || 1; if (f.grounded && Math.random() < 0.08) I.jump = !f.prev.jump; return true; }
