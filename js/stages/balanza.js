@@ -169,7 +169,7 @@
       };
     },
     init(st) {
-      st.bal = { d: 0, v: 0, wl: 0, wr: 0 };
+      st.bal = { d: 0, v: 0, wl: 0, wr: 0, max: MAX_D, force: null, pivot: PIVOT, arm: ARM };   // force: la mueve un evento
       st.L = st.plats[0]; st.R = st.plats[1];
       const r = rng(9);
       st.motes = [];
@@ -185,9 +185,10 @@
       }
       B.wl = wl; B.wr = wr;
       const diff = wl - wr;
-      const target = diff === 0 ? 0 : sgn(diff) * Math.min(MAX_D - 2, 10 + Math.abs(diff) * 0.12);
-      // muelle amortiguado: se mueve con inercia, como una balanza pesada
-      B.v += (target - B.d) * 0.015;
+      const F = B.force;                                              // ¡BALANZA ENLOQUECIDA!: manda el evento, no el peso
+      const target = F != null ? F : diff === 0 ? 0 : sgn(diff) * Math.min(MAX_D - 2, 10 + Math.abs(diff) * 0.12);
+      // muelle amortiguado: se mueve con inercia, como una balanza pesada (enloquecida: mucho más rápida)
+      B.v += (target - B.d) * (F != null ? 0.06 : 0.015);
       B.v *= 0.88;
       B.d += B.v;
       if (Math.abs(B.d) > MAX_D) { B.d = sgn(B.d) * MAX_D; if (Math.abs(B.v) > 0.5 && g.shake !== undefined) { g.shake = Math.max(g.shake, 2); Sfx.land(); } B.v = 0; }

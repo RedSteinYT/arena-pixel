@@ -134,6 +134,58 @@ function iceChunk(size) {
   return (STORM_ART[key] = cv);
 }
 
+// ---------- arte del Templo: runas doradas y espíritus guardianes ----------
+const RUNES = [                                                                    // glifos de 5x5 (bits por fila)
+  [0b00100, 0b01110, 0b10101, 0b00100, 0b00100], [0b10001, 0b01010, 0b00100, 0b01010, 0b10001],
+  [0b11111, 0b10001, 0b10101, 0b10001, 0b11111], [0b00100, 0b01010, 0b10001, 0b01010, 0b00100],
+  [0b10101, 0b10101, 0b11111, 0b00100, 0b00100], [0b01110, 0b10000, 0b01100, 0b00010, 0b11100],
+];
+function drawRune(c, x, y, i, col, hi) {
+  const g = RUNES[i % RUNES.length];
+  for (let r = 0; r < 5; r++) for (let b = 0; b < 5; b++) if (g[r] >> (4 - b) & 1) px(c, x + b - 2, y + r - 2, r === 0 || b === 0 ? hi : col);
+}
+const SPIRIT = { dd: '#0e2a3a', d: '#1a5a66', m: '#2f9a96', l: '#6fe0cc', hi: '#c8fff2' };
+const TGOLD = { dd: '#7a4c1e', d: '#b07a2a', m: '#e6ac3c', l: '#ffd96a', hi: '#fff3b8' };
+// espíritu guardián: capucha de luz turquesa, máscara de oro con ojos encendidos y cola de humo que ondula
+function drawSpirit(c, x, y, T, alpha, dir, angry) {
+  withAlpha(c, alpha, () => {
+    x = Math.round(x); y = Math.round(y);
+    glow(c, x, y, 22, SPIRIT.l, 0.22, 3);
+    // cola: segmentos que se estrechan y ondulan
+    for (let i = 0; i < 14; i++) {
+      const k = i / 14, wv = Math.sin(T * 0.18 - i * 0.55) * (2 + i * 0.35);
+      const tx = Math.round(x - dir * i * 1.1 + wv * 0.4), ty = Math.round(y + 7 + i * 1.3), w = Math.max(1, Math.round(6 * (1 - k)));
+      rect(c, tx - w, ty, w * 2, 2, k < 0.3 ? SPIRIT.m : k < 0.65 ? SPIRIT.d : SPIRIT.dd, 1 - k * 0.7);
+      if (i < 9 && i % 2 === 0) px(c, tx - w, ty, SPIRIT.l);
+    }
+    // capucha (óvalo con 4 tonos, luz de arriba)
+    for (let yy = -10; yy <= 8; yy++) {
+      const hw = Math.round(8 * Math.sqrt(Math.max(0, 1 - (yy * yy) / 100)));
+      if (hw <= 0) continue;
+      rect(c, x - hw, y + yy, hw * 2 + 1, 1, yy < -6 ? SPIRIT.l : yy < -1 ? SPIRIT.m : yy < 5 ? SPIRIT.d : SPIRIT.dd);
+      px(c, x - hw, y + yy, yy < 2 ? SPIRIT.hi : SPIRIT.dd); px(c, x + hw, y + yy, SPIRIT.dd);   // borde con luz a la izquierda
+      if (yy < 0 && hw > 2) px(c, x - hw + 1, y + yy, SPIRIT.l);
+    }
+    rect(c, x - 3, y - 10, 5, 1, SPIRIT.hi);
+    // máscara de oro
+    for (let yy = -5; yy <= 4; yy++) {
+      const hw = yy < 2 ? 5 : 5 - (yy - 1);
+      rect(c, x - hw, y + yy, hw * 2 + 1, 1, yy < -3 ? TGOLD.l : yy < 1 ? TGOLD.m : TGOLD.d);
+      px(c, x + hw, y + yy, TGOLD.dd); if (yy > 0) px(c, x - hw, y + yy, TGOLD.dd);     // contorno de la máscara
+    }
+    px(c, x - 4, y + 1, '#ff9a8a'); px(c, x + 4, y + 1, '#ff9a8a');                     // mejillas pintadas
+    px(c, x - 4, y - 5, TGOLD.hi); px(c, x - 3, y - 5, TGOLD.hi);
+    rect(c, x - 1, y - 4, 2, 6, TGOLD.d); px(c, x, y - 4, TGOLD.l);                  // nariz / arista
+    rect(c, x - 2, y + 3, 5, 1, TGOLD.dd);                                             // boca
+    const eye = angry ? '#ff5f6d' : '#ffffff', eg = angry ? '#ff9a8a' : SPIRIT.hi;
+    rect(c, x - 4, y - 2, 3, 2, '#1a0c24'); rect(c, x + 2, y - 2, 3, 2, '#1a0c24');
+    px(c, x - 3 + (dir > 0 ? 1 : 0), y - 2, eye); px(c, x + 3 + (dir > 0 ? 1 : 0), y - 2, eye);
+    if ((T >> 3) % 4) { px(c, x - 3, y - 3, eg); px(c, x + 3, y - 3, eg); }
+    // diadema con gema
+    rect(c, x - 5, y - 7, 11, 1, TGOLD.d); px(c, x, y - 8, '#ff5f6d'); px(c, x, y - 9, TGOLD.l);
+  });
+}
+
 const STAGE_EVENTS = {
   fortaleza: [
     // ---------------- ¡EL PISO ES LAVA! ----------------
@@ -553,6 +605,158 @@ const STAGE_EVENTS = {
       },
     },
   ],
+  // ======================= TEMPLO DEL EQUILIBRIO =======================
+  balanza: [
+    // ---------------- ¡BALANZA ENLOQUECIDA! ----------------
+    //  12 s en los que la balanza no obedece al peso: se columpia sola, cada vez más rápido,
+    //  y el plato que sube de golpe CATAPULTA a quien esté encima.
+    {
+      id: 'loca', name: '¡BALANZA ENLOQUECIDA!', sub: '¡Los platos se vuelven catapultas!', dur: 720, col: '#ffd96a', icon: '⚖',
+      warn(g, E) {
+        const B = g.stage.bal; if (!B) return;
+        if (E.t > 60) B.v += Math.sin(E.t * 0.9) * 0.25;                       // tiembla
+        if (E.t % 45 === 0) Sfx.creak(0.5);
+      },
+      start(g, E) { E.side = Math.random() < 0.5 ? -1 : 1; E.flip = 40; E.top = false; },
+      step(g, E) {
+        const B = g.stage.bal; if (!B) return;
+        if (--E.flip <= 0) {                                                       // cambia de lado (cada vez más seguido)
+          E.side = -E.side;
+          E.flip = E.t > 480 ? 46 : E.t > 240 ? 62 : 80;
+          if (Math.random() < 0.2) E.flip = 34;
+          Sfx.creak(1);
+        }
+        B.force = E.side * (B.max - 2);
+        // ¿llegó un plato arriba de golpe? catapulta a quien esté encima
+        const atTop = Math.abs(B.d) >= B.max - 4;
+        if (atTop && !E.top) {                                                   // (acaba de llegar arriba)
+          const up = B.d > 0 ? g.stage.R : g.stage.L;                            // d>0: baja el izquierdo, sube el derecho
+          let any = false;
+          for (const f of g.fighters) {
+            if (!alive(f) || !f.grounded || f.plat !== up) continue;
+            f.grounded = false; f.plat = null; f.y -= 2; f.vy = -7.2; f.dropT = 10; f.setSt('air');
+            f.jumps = Math.max(f.jumps, 1); any = true;
+            for (let i = 0; i < 6; i++) g.fx.push({ kind: 'part', ptype: 'spark', x: f.x + (Math.random() * 10 - 5), y: f.y, vx: (Math.random() - 0.5) * 2, vy: 1 + Math.random(), t: 0, life: 14, size: 1, col: TGOLD.l });
+          }
+          if (any) { Sfx.catapult(); g.shake = Math.max(g.shake, 4); }
+          E.launch = { pan: up === g.stage.R ? 1 : -1, t: 0 };
+        }
+        E.top = atTop;
+        if (E.launch) E.launch.t++;
+      },
+      stop(g) { if (g.stage.bal) g.stage.bal.force = null; },
+      drawBack(c, g, E) {
+        const B = g.stage.bal; if (!B) return;
+        const T = g.frame, P = B.pivot, k = E.phase === 'warn' ? E.t / EVENT_WARN : E.phase === 'on' ? 1 : Math.max(0, 1 - E.t / 40);
+        if (k <= 0) return;
+        const lx = P.x - B.arm, ly = P.y + B.d, rx = P.x + B.arm, ry = P.y - B.d;
+        glow(c, P.x, P.y, 40 + 6 * Math.sin(T * 0.2), '#ff5fb0', 0.18 * k, 3);
+        // anillo de runas que gira alrededor del eje (y otro más pequeño al revés)
+        withAlpha(c, k, () => {
+          for (let i = 0; i < 10; i++) {
+            const a = i / 10 * Math.PI * 2 + T * 0.03, xx = Math.round(P.x + Math.cos(a) * 30), yy = Math.round(P.y + Math.sin(a) * 30);
+            drawRune(c, xx, yy, i, (T >> 2) % 10 === i ? TGOLD.hi : TGOLD.m, TGOLD.l);
+          }
+          for (let i = 0; i < 16; i++) { const a = -i / 16 * Math.PI * 2 - T * 0.05; px(c, Math.round(P.x + Math.cos(a) * 15), Math.round(P.y + Math.sin(a) * 15), i % 2 ? '#ff9ad0' : TGOLD.l); }
+        });
+        // el brazo brilla con energía rosa
+        withAlpha(c, 0.55 * k * (0.7 + 0.3 * Math.sin(T * 0.4)), () => { pline(c, lx, ly - 3, rx, ry - 3, 1, '#ff9ad0'); pline(c, lx, ly + 3, rx, ry + 3, 1, '#ff5fb0'); });
+        // la gema del eje late
+        if ((T >> 2) % 2) { disc(c, P.x, P.y, 3, '#ff5f6d'); px(c, P.x - 1, P.y - 1, '#ffffff'); }
+        // chispas de energía por el brazo y las cadenas
+        if (E.phase !== 'end') for (let i = 0; i < 3; i++) {
+          const s = ((T * 0.07 + i / 3) % 1), xx = lerp(lx, rx, s), yy = lerp(ly, ry, s);
+          px(c, Math.round(xx), Math.round(yy) - 1, '#ffffff'); px(c, Math.round(xx) - 1, Math.round(yy) - 1, '#ff9ad0');
+        }
+        for (const [p, ex, ey] of [[g.stage.L, lx, ly], [g.stage.R, rx, ry]]) {   // aura en el borde de cada plato
+          withAlpha(c, 0.5 * k * (0.6 + 0.4 * Math.sin(T * 0.3)), () => { rect(c, p.x1 - 1, Math.round(p.y) - 2, p.x2 - p.x1 + 2, 1, '#ff9ad0'); });
+          if ((T + ex) % 9 < 3) px(c, Math.round(lerp(ex, (p.x1 + p.x2) / 2, ((T % 20) / 20))), Math.round(lerp(ey, p.y, ((T % 20) / 20))), '#fff3b8');
+        }
+        // destello del plato que catapulta
+        if (E.launch && E.launch.t < 14) {
+          const p = E.launch.pan > 0 ? g.stage.R : g.stage.L, q = E.launch.t / 14;
+          withAlpha(c, 1 - q, () => { for (let i = 0; i < 5; i++) { const xx = Math.round(lerp(p.x1 + 6, p.x2 - 6, i / 4)); pline(c, xx, Math.round(p.y) - 3, xx, Math.round(p.y) - 3 - Math.round(14 * (1 - q)), 1, TGOLD.hi); } });
+        }
+      },
+    },
+    // ---------------- ¡ESPÍRITUS GUARDIANES! ----------------
+    //  12 s: dos espíritus del templo persiguen a quien va ganando. Antes de cazar se MATERIALIZAN (1 s, con
+    //  un círculo de runas); son más lentos que tú. Si te tocan: 8 % y desaparecen para volver a formarse.
+    {
+      id: 'espiritus', name: '¡ESPÍRITUS GUARDIANES!', sub: '¡Persiguen al que va ganando!', dur: 720, col: '#6fe0cc', icon: '👻',
+      FORM: 60,
+      warn(g, E) { if (E.t % 50 === 25) Sfx.spiritWhisper(); },
+      leaders(g) {
+        const c = g.fighters.filter(f => alive(f) && !f.out);
+        return c.sort((a, b) => (b.stocks - a.stocks) || (a.dmg - b.dmg));
+      },
+      spawnAt(g, s) {
+        const T = this.leaders(g)[s.rank] || this.leaders(g)[0];
+        const side = T && T.x < W / 2 ? 1 : -1;
+        s.x = T ? clamp(T.x + side * (70 + Math.random() * 40), 30, W - 30) : W / 2; s.y = T ? clamp(T.y - 50 - Math.random() * 30, 30, 140) : 80;
+        s.form = this.FORM; Sfx.spiritAppear();
+      },
+      start(g, E) {
+        E.spirits = [0, 1].map(rank => ({ rank, x: 0, y: 0, form: 0, cd: 0, vx: 0, vy: 0, dir: 1 }));
+        for (const s of E.spirits) this.spawnAt(g, s);
+      },
+      step(g, E) {
+        const L = this.leaders(g);
+        for (const s of E.spirits) {
+          if (s.cd > 0) { if (--s.cd === 0) this.spawnAt(g, s); continue; }
+          if (s.form > 0) { s.form--; continue; }                                  // materializándose: aún no hace daño
+          const T = L[s.rank] || L[0]; if (!T) continue;
+          const tx = T.x, ty = T.y - T.S.hh / 2, dx = tx - s.x, dy = ty - s.y, d = Math.hypot(dx, dy) || 1;
+          const sp = 1.05 + (E.t > 480 ? 0.25 : 0);                               // más lento que caminar (2.3)
+          s.vx += (dx / d * sp - s.vx) * 0.08; s.vy += (dy / d * sp - s.vy) * 0.08;
+          s.x += s.vx; s.y += s.vy + Math.sin(g.frame * 0.08 + s.rank * 3) * 0.3; s.dir = sgn(s.vx) || s.dir;
+          if (g.frame % 4 === s.rank * 2) g.fx.push({ kind: 'part', ptype: 'spark', x: s.x + (Math.random() * 12 - 6), y: s.y + 4 + Math.random() * 8, vx: -s.vx * 0.3, vy: -0.3, t: 0, life: 22, size: 1, col: Math.random() < 0.5 ? SPIRIT.l : SPIRIT.hi });   // estela de luz
+          if (g.frame % 70 === s.rank * 35) Sfx.spiritWhisper();
+          for (const f of g.fighters) {                                            // ¡te alcanzó!
+            if (!alive(f) || f.invuln > 0) continue;
+            if (Math.abs(f.x - s.x) < 9 + f.S.hw && Math.abs(f.y - f.S.hh / 2 - s.y) < 8 + f.S.hh / 2) {
+              evHit(g, f, { d: 8, b: 4.6, g: 0.9, ang: 55 }, sgn(f.x - s.x) || s.dir);
+              Sfx.spiritHit();
+              for (let i = 0; i < 14; i++) g.fx.push({ kind: 'part', ptype: 'spark', x: s.x, y: s.y, vx: (Math.random() - 0.5) * 3.5, vy: (Math.random() - 0.5) * 3.5, t: 0, life: 20, size: 1, col: i % 3 ? SPIRIT.l : TGOLD.l });
+              s.cd = 70; s.burst = { x: s.x, y: s.y, t: 0 };
+              break;
+            }
+          }
+        }
+        for (const s of E.spirits) if (s.burst) s.burst.t++;
+      },
+      danger(f, E) {
+        if (!E.spirits) return null;
+        for (const s of E.spirits) if (!s.cd && Math.abs(f.x - s.x) < 46 && Math.abs(f.y - 10 - s.y) < 46) return s;
+        return null;
+      },
+      drawBack(c, g, E) {
+        const k = E.phase === 'warn' ? E.t / EVENT_WARN : E.phase === 'on' ? 1 : Math.max(0, 1 - E.t / 50);
+        if (k > 0) rect(c, 0, 0, W, H, '#1e1036', 0.28 * k);                      // el atardecer se apaga: hora de los espíritus
+        if (k > 0) for (let i = 0; i < 18; i++) {                                  // luciérnagas turquesa
+          const x = (i * 83 + Math.sin(g.frame * 0.02 + i) * 20 + g.frame * 0.2) % W, y = 40 + (i * 37 + Math.sin(g.frame * 0.03 + i * 2) * 10) % 150;
+          if ((g.frame + i * 7) % 40 < 30) px(c, Math.round(x), Math.round(y), i % 2 ? SPIRIT.l : SPIRIT.hi, k);
+        }
+      },
+      drawFront(c, g, E) {
+        if (!E.spirits) return;
+        const T = g.frame;
+        for (const s of E.spirits) {
+          if (s.burst && s.burst.t < 16) withAlpha(c, 1 - s.burst.t / 16, () => { ring(c, Math.round(s.burst.x), Math.round(s.burst.y), 4 + s.burst.t * 2, SPIRIT.hi); });
+          if (s.cd > 0) continue;
+          if (s.form > 0) {                                                        // AVISO: círculo de runas y el espíritu aparece
+            const q = 1 - s.form / this.FORM;
+            withAlpha(c, 0.4 + 0.6 * q, () => {
+              for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + T * 0.06; drawRune(c, Math.round(s.x + Math.cos(a) * 18 * (1.4 - q * 0.4)), Math.round(s.y + Math.sin(a) * 18 * (1.4 - q * 0.4)), i, SPIRIT.m, SPIRIT.hi); }
+            });
+            if ((T >> 1) % 2 || q > 0.6) drawSpirit(c, s.x, s.y, T, q * 0.8, s.dir, false);
+            continue;
+          }
+          drawSpirit(c, s.x, s.y + Math.sin(T * 0.1 + s.rank) * 1.5, T, E.phase === 'end' ? Math.max(0, 1 - E.t / 30) : 1, s.dir, true);
+        }
+      },
+    },
+  ],
 };
 
 const EventSys = {
@@ -590,7 +794,7 @@ const EventSys = {
   },
   // ¿le acaba de caer un rayo? (parpadea en amarillo)
   zapped(g, f) { const E = g.ev; if (!E || E.id !== 'storm') return false; return this.def('storm').zapped(g, E, f); },
-  clear(g) { g.ev = null; g.evGrav = 1; },
+  clear(g) { g.ev = null; g.evGrav = 1; if (g.stage && g.stage.bal) g.stage.bal.force = null; },
   onHit(g, a, d) { const E = g.ev; if (!E) return; const D = this.def(E.id); if (D && D.onHit) D.onHit(g, E, a, d); },
   holder(g) { return g.ev && g.ev.id === 'papa' && g.ev.phase === 'on' ? g.ev.holder : null; },
   // ¿qué evento suena ahora? (para la música)

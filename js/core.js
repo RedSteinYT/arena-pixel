@@ -283,6 +283,13 @@ const Sfx = (() => {
       noise(0.3, 0.25, 3000, 0, { wet: 0.4 });
       ring([[1760 + Math.random() * 400, 0.05, 0.5], [2793, 0.04, 0.6], [3951, 0.03, 0.7]], 0.01, 0.6);
     },
+    // ¡BALANZA ENLOQUECIDA!: crujido de bronce al cambiar de lado y golpe de catapulta
+    creak(k = 1) { tone(90, 'sawtooth', 0.06 * k, 0.5, 60, 0, 0.4); noise(0.12 * k, 0.45, 0, 0, { sweep: [300, 900], q: 8, wet: 0.4 }); ring([[523, 0.02 * k, 0.6], [784, 0.015 * k, 0.7]], 0.05, 0.5); },
+    catapult() { sub(160, 60, 0.5, 0.3); noise(0.3, 0.3, 0, 0, { sweep: [500, 3500], q: 1.5, wet: 0.3 }); tone(440, 'square', 0.05, 0.25, 1320, 0, 0.3); },
+    // ¡ESPÍRITUS GUARDIANES!: aparecen (oleaje al revés + campana), susurran y golpean
+    spiritAppear() { noise(0.18, 0.8, 0, 0, { sweep: [200, 2400], q: 3, wet: 0.7, att: 0.7 }); ring([[659, 0.03, 1.2], [988, 0.025, 1.4], [1319, 0.02, 1.6]], 0.6, 0.8); },
+    spiritWhisper() { noise(0.07, 0.9, 0, 0, { sweep: [1200, 700], q: 6, wet: 0.8, att: 0.3, pan: Math.random() - 0.5 }); },
+    spiritHit() { noise(0.3, 0.4, 0, 0, { sweep: [3000, 300], q: 2, wet: 0.6 }); ring([[880, 0.05, 0.8], [1320, 0.04, 1], [1760, 0.03, 1.1]], 0, 0.7); sub(130, 60, 0.35, 0.25); },
     // siseo y burbujeo de la lava
     lavaHiss() { noise(0.12, 0.7, 1800, 0, { wet: 0.3 }); for (let i = 0; i < 3; i++) sub(90 + Math.random() * 60, 50, 0.12, 0.12, Math.random() * 0.4); },
     // pantalla VS: un "swinggg" de espada que cruza de izquierda a derecha y choca

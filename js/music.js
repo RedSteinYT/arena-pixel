@@ -388,7 +388,27 @@ const Music = (() => {
   function setEvent(id) {
     if (!ac || id === evId) return;
     evId = id; stopEvLayer();
-    evMul = id === 'lava' ? 1.12 : id === 'papa' ? 1.1 : id === 'luna' ? 0.86 : id === 'storm' ? 1.08 : id === 'ventisca' ? 1.06 : id === 'granizo' ? 1.08 : 1;
+    evMul = id === 'lava' ? 1.12 : id === 'papa' ? 1.1 : id === 'luna' ? 0.86 : id === 'storm' ? 1.08 : id === 'ventisca' ? 1.06 : id === 'granizo' ? 1.08 : id === 'loca' ? 1.14 : id === 'espiritus' ? 0.92 : 1;
+    if (id === 'loca') {                                 // la balanza enloquecida: bajo que se tambalea (vibrato ancho) + campanita de péndulo
+      const t = ac.currentTime, g = ac.createGain(), srcs = [];
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 0.8); g.connect(cineBus);
+      const o = osc('square', hz(root() - 12), t, t + 40), lp = ac.createBiquadFilter(), og = ac.createGain(), lfo = osc('sine', 1.6, t, t + 40), ld = ac.createGain();
+      lp.type = 'lowpass'; lp.frequency.value = 500; og.gain.value = 0.035; ld.gain.value = 18; lfo.connect(ld).connect(o.detune);
+      o.connect(lp).connect(og).connect(g); srcs.push(o, lfo);
+      evLayer = { g, srcs };
+    }
+    if (id === 'espiritus') {                            // coro fantasmal: senos con vibrato lento + susurro de aire
+      const t = ac.currentTime, g = ac.createGain(), srcs = [];
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 1.5); g.connect(cineVerb || cineBus);
+      [12, 19, 24].forEach((st, i) => {
+        const o = osc('sine', hz(root() + st), t, t + 40, i * 5), og = ac.createGain(), vib = osc('sine', 4.5 + i * 0.4, t, t + 40), vd = ac.createGain();
+        og.gain.value = 0.02; vd.gain.value = 12; vib.connect(vd).connect(o.detune); o.connect(og).connect(g); srcs.push(o, vib);
+      });
+      const s = ac.createBufferSource(), bp = ac.createBiquadFilter(), ng = ac.createGain();
+      s.buffer = nbuf; s.loop = true; bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 5; ng.gain.value = 0.04;
+      s.connect(bp).connect(ng).connect(g); s.start(t); srcs.push(s);
+      evLayer = { g, srcs };
+    }
     if (id === 'ventisca') {                             // el viento aúlla: ruido en paso de banda que sube y baja + su volumen en ráfagas
       const t = ac.currentTime, g = ac.createGain(), srcs = [];
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 1); g.connect(cineBus);
