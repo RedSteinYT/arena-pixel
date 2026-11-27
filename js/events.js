@@ -15,6 +15,50 @@ const evHazard = { landedHit: false, landedAt: 0, t: 0, dealt: 0, hitlag: 0, kos
 const evHit = (g, d, h, dir) => { evHazard.hitSet = new Set(); g.applyHit(evHazard, d, h, dir, 1, d.x, d.y - d.S.hh / 2); };
 const alive = f => f.alive() && f.st !== 'respawn' && f.st !== 'gone' && f.st !== 'portal';
 
+
+// ---------- arte de la tormenta: nubarrones colgantes en pixel art (se generan una vez) ----------
+//  Siluetas de bultos achatados; el borde de abajo lo ilumina el relámpago (luz de abajo),
+//  el interior se oscurece hacia arriba, con tramado entre tonos y jirones sueltos debajo.
+const STORM_ART = {};
+function stormClouds(key, seed, count, y0, yv, cols) {
+  if (STORM_ART[key]) return STORM_ART[key];
+  const CW = W * 2, HH = y0 + yv + 34, cv = mkCanvas(CW, HH), x = cv.getContext('2d'), r = rng(seed), puffs = [];
+  for (let i = 0; i < count; i++) puffs.push([r() * CW, y0 + r() * yv, 7 + r() * 11 | 0]);
+  for (let i = 0; i < count; i++) puffs.push([r() * CW, y0 + yv * 0.55 + r() * yv * 0.6, 3 + r() * 5 | 0]);   // bultitos de abajo (borde irregular)
+  puffs.sort((a, b) => a[1] - b[1]);
+  const each = fn => { for (const p of puffs) for (const off of [-CW, 0, CW]) fn(p[0] + off, p[1], p[2]); };
+  const ell = (cx, cy, rr, col) => {
+    if (rr < 1) return;
+    x.fillStyle = col; cx = Math.round(cx); cy = Math.round(cy);
+    const rx = Math.round(rr * 1.55), ry = Math.max(1, Math.round(rr * 0.8));
+    for (let y = -ry; y <= ry; y++) { const hw = Math.floor(rx * Math.sqrt(Math.max(0, 1 - (y * y) / (ry * ry + 0.5)))); x.fillRect(cx - hw, cy + y, hw * 2 + 1, 1); }
+  };
+  // [0] borde iluminado, [1] cuerpo, [2] sombra, [3] núcleo, [4] brillo del borde
+  x.fillStyle = cols[3]; x.fillRect(0, 0, CW, y0 - 6);
+  x.fillStyle = cols[2]; x.fillRect(0, y0 - 6, CW, 6);
+  each((a, b, s) => ell(a, b + 2, s, cols[0]));                  // silueta = borde de abajo con luz
+  each((a, b, s) => ell(a + 1, b, s - 1, cols[1]));              // cuerpo
+  each((a, b, s) => ell(a + 2, b - 3, s - 4, cols[2]));          // sombra hacia dentro
+  each((a, b, s) => ell(a + 3, b - 6, s - 8, cols[3]));          // núcleo oscuro
+  // jirones sueltos debajo (scud)
+  for (let i = 0; i < count; i++) {
+    const sx = r() * CW | 0, sy = y0 + yv + 6 + r() * 16 | 0, sw = 10 + r() * 26 | 0;
+    x.fillStyle = cols[1];
+    for (let j = 0; j < sw; j++) { if (j > 2 && j < sw - 3 || !(j & 1)) x.fillRect(sx + j, sy, 1, 1); if (j > 4 && j < sw - 6 && (j & 1)) x.fillRect(sx + j + 2, sy + 1, 1, 1); }   // jirón con puntas tramadas
+    x.fillStyle = cols[0]; x.fillRect(sx + 3, sy, Math.max(2, sw >> 3), 1);
+  }
+  // tramado: una fila a cuadros entre tonos distintos (suaviza sin perder el píxel)
+  const img = x.getImageData(0, 0, CW, HH), d = img.data, src = new Uint8ClampedArray(d);
+  for (let yy = 1; yy < HH; yy++) for (let xx = 0; xx < CW; xx++) {
+    if ((xx + yy) & 1) continue;
+    const k = (yy * CW + xx) * 4, up = k - CW * 4;
+    if (src[k + 3] && src[up + 3] && (src[k] !== src[up] || src[k + 1] !== src[up + 1])) { d[k] = src[up]; d[k + 1] = src[up + 1]; d[k + 2] = src[up + 2]; }
+  }
+  x.putImageData(img, 0, 0);
+  each((a, b, s) => { if (s > 10) { x.fillStyle = cols[4]; const rx = Math.round(s * 1.55), by = Math.round(b + 2 + s * 0.8); for (let xx = Math.round(a - rx * 0.5), e = xx + Math.round(rx * 0.45); xx < e; xx++) { if (xx < 0 || xx >= CW || by + 1 >= HH) continue; if (d[((by + 1) * CW + xx) * 4 + 3] === 0 && d[(by * CW + xx) * 4 + 3]) x.fillRect(xx, by, 1, 1); } } });   // brillo en la panza (solo en el borde de abajo de verdad)
+  return (STORM_ART[key] = cv);
+}
+
 const STAGE_EVENTS = {
   fortaleza: [
     // ---------------- ¡EL PISO ES LAVA! ----------------
@@ -203,23 +247,50 @@ const STAGE_EVENTS = {
         else if (E.phase === 'on') k = 0.7 + 0.3 * Math.min(1, E.t / 20);
         else k = Math.max(0, 1 - E.t / 50);
         if (k <= 0) return;
-        rect(c, 0, 0, W, H, '#0c0820', 0.52 * k);                               // cielo de tormenta
-        const T = g.frame;
-        for (let i = 0; i < 7; i++) {                                            // nubarrones arriba
-          const x = ((i * 83 + T * 0.3) % (W + 120)) - 60;
-          disc(c, Math.round(x), 8 + (i % 3) * 5, 26 + (i % 2) * 8, '#1c1638');
-          disc(c, Math.round(x + 18), 14 + (i % 2) * 4, 20, '#251d48');
+        rect(c, 0, 0, W, H, '#0c0820', 0.5 * k);                                // cielo de tormenta
+        const T = g.frame, CW = W * 2;
+        // dos capas de nubarrones (lejos: más azuladas y lentas; cerca: oscuras y rápidas) que bajan durante el aviso
+        const back = stormClouds('b', 11, 44, 26, 20, ['#5d5296', '#3a3070', '#2a2256', '#1e1842', '#8a80c8']);
+        const front = stormClouds('f', 29, 36, 12, 18, ['#4a3f80', '#2a2150', '#1c1638', '#120d26', '#7a6eb8']);
+        const backL = stormClouds('bl', 11, 44, 26, 20, ['#c8c0ff', '#8a7ed8', '#6a5eb8', '#4e4494', '#ffffff']);
+        const frontL = stormClouds('fl', 29, 36, 12, 18, ['#b0a6f4', '#7466c4', '#54489e', '#3c3278', '#ffffff']);
+        const drop = Math.round(-80 * (1 - Math.min(1, k * 1.25)));
+        const flash = Math.max(E.flash ? E.flash / 5 : 0, E.far ? E.far / 6 * 0.7 : 0);
+        const bx = Math.round(T * 0.25) % CW, fx2 = Math.round(T * 0.6) % CW;
+        for (const [img, lit, ox, oy] of [[back, backL, bx, drop + 6], [front, frontL, fx2, drop]]) {
+          c.drawImage(img, -ox, oy); c.drawImage(img, CW - ox, oy);
+          if (flash > 0) withAlpha(c, flash, () => { c.drawImage(lit, -ox, oy); c.drawImage(lit, CW - ox, oy); });   // el relámpago ilumina las nubes
         }
-        if (E.far > 0) rect(c, 0, 0, W, H, '#c8c0ff', 0.07 * E.far);             // relámpago lejano
+        // relámpagos dentro de las nubes (destellos que parpadean)
+        const ph = (T * 7) % 113;
+        if (ph < 6 && E.phase !== 'end') {
+          const cx = (T * 37) % W, cy = 22 + drop + (T % 3) * 6;
+          glow(c, cx, cy, 26, '#c8c0ff', 0.25 * (ph % 2 ? 1 : 0.5), 3);
+          if (ph % 2) { pline(c, cx, cy - 6, cx + 5, cy, 1, '#fff6d0'); pline(c, cx + 5, cy, cx + 1, cy + 6, 1, '#fff6d0'); }
+        }
       },
       drawFront(c, g, E) {
         const T = g.frame;
         // lluvia
         let k = E.phase === 'on' ? 1 : E.phase === 'warn' ? E.t / EVENT_WARN : Math.max(0, 1 - E.t / 50);
-        if (k > 0) withAlpha(c, 0.6 * k, () => {
-          for (let i = 0; i < 90; i++) {
-            const x = (i * 71 + T * 3) % (W + 40) - 20, y = (i * 37 + T * 9) % (H + 20) - 10;
-            pline(c, Math.round(x), Math.round(y), Math.round(x - 3), Math.round(y + 7), 1, '#9aa8e0');
+        if (k > 0) withAlpha(c, k, () => {
+          for (let i = 0; i < 70; i++) {                                         // lejos: gotas cortas y tenues
+            const x = (i * 71 + T * 2) % (W + 40) - 20, y = (i * 37 + T * 6) % (H + 20) - 10;
+            rect(c, Math.round(x), Math.round(y), 1, 3, '#6f78b8', 0.45);
+          }
+          for (let i = 0; i < 55; i++) {                                         // cerca: trazos largos con punta brillante
+            const x = (i * 97 + T * 4) % (W + 40) - 20, y = (i * 53 + T * 11) % (H + 30) - 15;
+            pline(c, Math.round(x), Math.round(y), Math.round(x - 3), Math.round(y + 8), 1, '#8e9ad8');
+            px(c, Math.round(x - 3), Math.round(y + 8), '#d8e0ff');
+          }
+          for (const s of [STAGE.main, ...STAGE.plats]) {                       // salpicaduras en el suelo
+            const w = s.x2 - s.x1;
+            for (let i = 0; i < w / 16; i++) {
+              const ph = (T + i * 13 + s.x1) % 18; if (ph > 5) continue;
+              const sx = s.x1 + ((i * 37 + (T / 18 | 0) * 11 + s.x1) % w);
+              if (ph < 2) px(c, sx, s.y - 1, '#d8e0ff');
+              else { px(c, sx - ph + 1, s.y - 2, '#a8b4f0'); px(c, sx + ph - 1, s.y - 2, '#a8b4f0'); }
+            }
           }
         });
         if (!E.strikes) return;
@@ -247,7 +318,7 @@ const STAGE_EVENTS = {
           }
         }
       },
-      drawScreen(c, g, E) { if (E.flash > 0) rect(c, 0, 0, W, H, '#ffffff', 0.09 * E.flash); },
+      drawScreen(c, g, E) { if (E.flash > 0) rect(c, 0, 0, W, H, '#e8e4ff', 0.045 * E.flash); },
     },
   ],
 };

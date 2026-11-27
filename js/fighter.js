@@ -485,8 +485,10 @@ class Fighter {
     const freeze = this.st === 'dodge' && this.dodgeKind === 'air' && this.t < 18;
     if (!this.grounded && !noGrav && !freeze) {
       const grav = (this.st === 'hitstun' ? this.S.grav * (this.floatT > 0 ? 0.45 : 0.9) : this.S.grav) * (STAGE.grav || 1) * (g.evGrav || 1);   // tras un ataque hacia arriba flota un poco (y en ¡GRAVEDAD LUNAR!, todos)
-      this.vy += grav;
-      const capK = (g.evGrav || 1) < 1 ? 0.5 + 0.5 * g.evGrav : 1;             // en la luna también se cae más lento
+      // ¡GRAVEDAD LUNAR!: al BAJAR se flota aún más (la subida no cambia tanto, para no salirse de la pantalla)
+      const lun = (g.evGrav || 1) < 1 ? (1 - g.evGrav) / 0.4 : 0;               // 0..1 según lo avanzado del evento
+      this.vy += this.vy > 0 && lun ? grav * (1 - 0.45 * lun) : grav;
+      const capK = 1 - (this.ff ? 0.4 : 0.6) * lun;                              // caída máxima: 40 % (o 60 % con caída rápida)
       const cap = (this.ff ? this.S.fastFall : this.S.maxFall) * capK;
       if (this.vy > cap) this.vy = this.ff ? cap : Math.max(cap, this.vy - 0.6);
       if (this.ff && this.vy >= 0) this.vy = this.S.fastFall * capK;
