@@ -681,10 +681,11 @@ const STAGE_EVENTS = {
     },
     // ---------------- ¡ESPÍRITUS GUARDIANES! ----------------
     //  12 s: dos espíritus del templo persiguen a quien va ganando. Antes de cazar se MATERIALIZAN (1 s, con
-    //  un círculo de runas); son más lentos que tú. Si te tocan: 8 % y desaparecen para volver a formarse.
+    //  un círculo de runas); son algo más lentos que tú. Si te alcanzan te POSEEN: te alzan inmóvil mientras
+    //  las runas se cierran a tu alrededor... y estallan (15 % y un buen vuelo). Luego vuelven a formarse.
     {
-      id: 'espiritus', name: '¡ESPÍRITUS GUARDIANES!', sub: '¡Persiguen al que va ganando!', dur: 720, col: '#6fe0cc', icon: '👻',
-      FORM: 60,
+      id: 'espiritus', name: '¡ESPÍRITUS GUARDIANES!', sub: '¡Persiguen al que va ganando! ¡Que no te atrapen!', dur: 720, col: '#6fe0cc', icon: '👻',
+      FORM: 60, HOLD: 50,
       warn(g, E) { if (E.t % 50 === 25) Sfx.spiritWhisper(); },
       leaders(g) {
         const c = g.fighters.filter(f => alive(f) && !f.out);
@@ -704,30 +705,52 @@ const STAGE_EVENTS = {
         const L = this.leaders(g);
         for (const s of E.spirits) {
           if (s.cd > 0) { if (--s.cd === 0) this.spawnAt(g, s); continue; }
+          if (s.grab) { this.possess(g, E, s); continue; }
           if (s.form > 0) { s.form--; continue; }                                  // materializándose: aún no hace daño
           const T = L[s.rank] || L[0]; if (!T) continue;
           const tx = T.x, ty = T.y - T.S.hh / 2, dx = tx - s.x, dy = ty - s.y, d = Math.hypot(dx, dy) || 1;
-          const sp = 1.05 + (E.t > 480 ? 0.25 : 0);                               // más lento que caminar (2.3)
+          const sp = 1.3 + (E.t > 480 ? 0.3 : 0);                                 // algo más lento que caminar (2.3)
           s.vx += (dx / d * sp - s.vx) * 0.08; s.vy += (dy / d * sp - s.vy) * 0.08;
           s.x += s.vx; s.y += s.vy + Math.sin(g.frame * 0.08 + s.rank * 3) * 0.3; s.dir = sgn(s.vx) || s.dir;
           if (g.frame % 4 === s.rank * 2) g.fx.push({ kind: 'part', ptype: 'spark', x: s.x + (Math.random() * 12 - 6), y: s.y + 4 + Math.random() * 8, vx: -s.vx * 0.3, vy: -0.3, t: 0, life: 22, size: 1, col: Math.random() < 0.5 ? SPIRIT.l : SPIRIT.hi });   // estela de luz
           if (g.frame % 70 === s.rank * 35) Sfx.spiritWhisper();
           for (const f of g.fighters) {                                            // ¡te alcanzó!
-            if (!alive(f) || f.invuln > 0) continue;
+            if (!alive(f) || f.invuln > 0 || f.st === 'grabbed' || E.spirits.some(o => o.grab && o.grab.f === f)) continue;
             if (Math.abs(f.x - s.x) < 9 + f.S.hw && Math.abs(f.y - f.S.hh / 2 - s.y) < 8 + f.S.hh / 2) {
-              evHit(g, f, { d: 8, b: 4.6, g: 0.9, ang: 55 }, sgn(f.x - s.x) || s.dir);
-              Sfx.spiritHit();
-              for (let i = 0; i < 14; i++) g.fx.push({ kind: 'part', ptype: 'spark', x: s.x, y: s.y, vx: (Math.random() - 0.5) * 3.5, vy: (Math.random() - 0.5) * 3.5, t: 0, life: 20, size: 1, col: i % 3 ? SPIRIT.l : TGOLD.l });
-              s.cd = 70; s.burst = { x: s.x, y: s.y, t: 0 };
+              s.grab = { f, t: 0, dir: sgn(f.x - s.x) || s.dir };               // ¡TE ATRAPÓ!
+              if (f.holding) f.releaseHeld(1);
+              f.vx = f.vy = f.lvx = f.lvy = 0; f.hitlag = this.HOLD + 2;
+              g.shake = Math.max(g.shake, 4); Sfx.spiritGrab();
               break;
             }
           }
         }
         for (const s of E.spirits) if (s.burst) s.burst.t++;
       },
+      // posesión: el espíritu envuelve a la víctima, la alza y... ¡estalla!
+      possess(g, E, s) {
+        const G = s.grab, f = G.f; G.t++;
+        if (!alive(f)) { s.grab = null; s.cd = 60; return; }
+        f.hitlag = Math.max(f.hitlag, 2); f.vx = f.vy = f.lvx = f.lvy = 0;
+        if (G.t < 40) f.y -= 0.35;                                                 // la alza poco a poco
+        s.x += (f.x - s.x) * 0.3; s.y += (f.y - f.S.hh / 2 - s.y) * 0.3;
+        if (G.t % 3 === 0) g.fx.push({ kind: 'part', ptype: 'spark', x: f.x + (Math.random() * 20 - 10), y: f.y - Math.random() * f.S.hh, vx: 0, vy: -0.8, t: 0, life: 18, size: 1, col: Math.random() < 0.5 ? SPIRIT.l : TGOLD.l });
+        if (G.t === 30) Sfx.spiritRise();
+        if (G.t < this.HOLD) return;
+        // ¡ESTALLA!
+        f.hitlag = 0;
+        evHit(g, f, { d: 15, b: 6.2, g: 1.65, ang: 72 }, G.dir);
+        f.hitlag = Math.max(f.hitlag, 10);
+        g.shake = Math.max(g.shake, 12); Sfx.spiritBurst(); Sfx.bigImpact();
+        duoRadial(g, f.x, f.y - f.S.hh / 2, 36, [SPIRIT.l, SPIRIT.hi, TGOLD.l, '#ffffff'], 3);
+        for (let i = 0; i < 22; i++) { const a = i / 22 * Math.PI * 2; g.fx.push({ kind: 'part', ptype: 'spark', x: f.x, y: f.y - f.S.hh / 2, vx: Math.cos(a) * 3.2, vy: Math.sin(a) * 3.2, t: 0, life: 24, size: i % 4 ? 1 : 2, col: i % 3 ? SPIRIT.l : TGOLD.l }); }
+        s.burst = { x: f.x, y: f.y - f.S.hh / 2, t: 0, big: true };
+        s.grab = null; s.cd = 100;
+      },
+      possessed(g, f) { const E = g.ev; return !!(E && E.spirits && E.spirits.some(s => s.grab && s.grab.f === f)); },
       danger(f, E) {
         if (!E.spirits) return null;
-        for (const s of E.spirits) if (!s.cd && Math.abs(f.x - s.x) < 46 && Math.abs(f.y - 10 - s.y) < 46) return s;
+        for (const s of E.spirits) if (!s.cd && !s.grab && Math.abs(f.x - s.x) < 46 && Math.abs(f.y - 10 - s.y) < 46) return s;
         return null;
       },
       drawBack(c, g, E) {
@@ -742,8 +765,26 @@ const STAGE_EVENTS = {
         if (!E.spirits) return;
         const T = g.frame;
         for (const s of E.spirits) {
-          if (s.burst && s.burst.t < 16) withAlpha(c, 1 - s.burst.t / 16, () => { ring(c, Math.round(s.burst.x), Math.round(s.burst.y), 4 + s.burst.t * 2, SPIRIT.hi); });
+          if (s.burst && s.burst.t < 22) withAlpha(c, 1 - s.burst.t / 22, () => {
+            const bx = Math.round(s.burst.x), by = Math.round(s.burst.y);
+            ring(c, bx, by, 6 + s.burst.t * 4, SPIRIT.hi); ring(c, bx, by, 3 + s.burst.t * 3, TGOLD.l);
+            if (s.burst.t < 6) glow(c, bx, by, 40, SPIRIT.hi, 0.5, 3);
+          });
           if (s.cd > 0) continue;
+          if (s.grab) {                                                           // POSESIÓN: runas que se cierran + el espíritu envuelve
+            const G = s.grab, f = G.f, q = Math.min(1, G.t / this.HOLD), cx = Math.round(f.x), cy = Math.round(f.y - f.S.hh / 2);
+            glow(c, cx, cy, 26 + 8 * q, SPIRIT.l, 0.25 + 0.25 * q, 3);
+            for (let i = 0; i < 8; i++) {
+              const a = i / 8 * Math.PI * 2 + T * (0.08 + q * 0.25), r = 34 - 20 * q;
+              drawRune(c, Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r * 0.8), i, q > 0.7 && (T >> 1) % 2 ? TGOLD.hi : TGOLD.m, TGOLD.hi);
+            }
+            for (let i = 0; i < 3; i++) {                                         // cintas de luz que la envuelven
+              const a = T * 0.2 + i * 2.1;
+              pline(c, Math.round(cx + Math.cos(a) * 12), Math.round(cy + Math.sin(a) * 14), Math.round(cx + Math.cos(a + 0.9) * 12), Math.round(cy + Math.sin(a + 0.9) * 14), 1, SPIRIT.hi);
+            }
+            drawSpirit(c, cx - G.dir * 4, cy - f.S.hh / 2 - 4, T, 0.9, G.dir, true);
+            continue;
+          }
           if (s.form > 0) {                                                        // AVISO: círculo de runas y el espíritu aparece
             const q = 1 - s.form / this.FORM;
             withAlpha(c, 0.4 + 0.6 * q, () => {
@@ -793,6 +834,7 @@ const EventSys = {
     return 1;
   },
   // ¿le acaba de caer un rayo? (parpadea en amarillo)
+  possessed(g, f) { const E = g.ev; return !!(E && E.id === 'espiritus' && this.def('espiritus').possessed(g, f)); },
   zapped(g, f) { const E = g.ev; if (!E || E.id !== 'storm') return false; return this.def('storm').zapped(g, E, f); },
   clear(g) { g.ev = null; g.evGrav = 1; if (g.stage && g.stage.bal) g.stage.bal.force = null; },
   onHit(g, a, d) { const E = g.ev; if (!E) return; const D = this.def(E.id); if (D && D.onHit) D.onHit(g, E, a, d); },
@@ -816,7 +858,7 @@ const EventSys = {
     const D = this.def(E.id);
     if (E.phase === 'warn') {
       const pop = E.t < 8 ? 1 + (8 - E.t) * 0.12 : 1, blink = (E.t >> 3) % 2;
-      t.text(D.name, W / 2, 64, Math.round(24 * pop), blink ? D.col : '#ffffff', 'center');
+      t.text(D.name, W / 2, 64, Math.round((D.name.length > 20 ? 19 : 24) * pop), blink ? D.col : '#ffffff', 'center');   // (los nombres largos, algo más pequeños para que quepan)
       if (E.t > 10) t.text(D.subOf ? D.subOf(E) : D.sub, W / 2, 92, 8, '#ffd34a', 'center');
       t.text('en ' + Math.ceil((EVENT_WARN - E.t) / 60) + '…', W / 2, 102, 8, '#ffffff', 'center');
     } else if (E.phase === 'on') {

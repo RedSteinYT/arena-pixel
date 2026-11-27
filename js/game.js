@@ -511,6 +511,7 @@ class Game {
       const bomb = EventSys.holder(this) === f;                // ¡PAPA CALIENTE!: parpadea en rojo (más rápido al final)
       f._bomb = bomb ? (this.ev.t > 300 ? 2 : 1) : 0;
       f._zap = EventSys.zapped(this, f);                         // ¡le cayó un rayo!
+      f._possessed = EventSys.possessed(this, f);                // ¡lo atrapó un espíritu!
       renderFighter(c, f, this.frame);
       if (f.ch.overlay) f.ch.overlay(c, f, this.frame);
       if (f.st === 'attack' && f.move && f.move.draw) f.move.draw(c, f, f.t, this);   // efectos propios del golpe (ataques rubí)

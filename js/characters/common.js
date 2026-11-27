@@ -217,6 +217,7 @@ function renderFighter(c, f, frame) {
   let tint = null;
   if (f.flash > 0) tint = 'rgba(255,255,255,0.85)';
   else if (f._zap && (frame >> 1) % 2) tint = 'rgba(255,240,120,0.7)';   // electrocutado
+  else if (f._possessed) tint = (frame >> 1) % 2 ? 'rgba(111,224,204,0.7)' : 'rgba(200,255,242,0.45)';   // poseído por un espíritu
   else if (f._bomb && (frame >> (f._bomb > 1 ? 1 : 3)) % 2) tint = 'rgba(255,40,40,0.55)';   // lleva la bomba
   else if (f.st === 'helpless') tint = 'rgba(20,10,50,0.35)';
   else if (f.st === 'attack' && f.move && f.move.smash && f.charge > 0 && (frame >> 2) % 2) tint = 'rgba(255,240,150,0.45)';

@@ -289,6 +289,12 @@ const Sfx = (() => {
     // ¡ESPÍRITUS GUARDIANES!: aparecen (oleaje al revés + campana), susurran y golpean
     spiritAppear() { noise(0.18, 0.8, 0, 0, { sweep: [200, 2400], q: 3, wet: 0.7, att: 0.7 }); ring([[659, 0.03, 1.2], [988, 0.025, 1.4], [1319, 0.02, 1.6]], 0.6, 0.8); },
     spiritWhisper() { noise(0.07, 0.9, 0, 0, { sweep: [1200, 700], q: 6, wet: 0.8, att: 0.3, pan: Math.random() - 0.5 }); },
+    // te atrapa: acorde que se hincha y aire que gira
+    spiritGrab() { noise(0.25, 1.0, 0, 0, { sweep: [300, 1600], q: 4, wet: 0.7, att: 0.4 }); [220, 277, 330, 440].forEach((f, i) => tone(f, 'sine', 0.05, 0.9, f * 1.5, i * 0.04, 0.7, 0.3)); sub(70, 50, 0.4, 0.8, 0, 0.3); },
+    // las runas se cierran: tono que sube
+    spiritRise() { tone(330, 'sawtooth', 0.04, 0.35, 1320, 0, 0.5); noise(0.15, 0.35, 0, 0, { sweep: [800, 5000], q: 2, wet: 0.5 }); },
+    // ¡ESTALLA!
+    spiritBurst() { sub(140, 35, 1, 0.8, 0, 0.4); crunch(260, 0.3, 0.3); noise(0.6, 0.7, 0, 0, { lp: 2500, wet: 0.7 }); ring([[880, 0.06, 1.6], [1319, 0.05, 1.8], [1760, 0.04, 2], [2637, 0.03, 2.2]], 0.02, 0.9); },
     spiritHit() { noise(0.3, 0.4, 0, 0, { sweep: [3000, 300], q: 2, wet: 0.6 }); ring([[880, 0.05, 0.8], [1320, 0.04, 1], [1760, 0.03, 1.1]], 0, 0.7); sub(130, 60, 0.35, 0.25); },
     // siseo y burbujeo de la lava
     lavaHiss() { noise(0.12, 0.7, 1800, 0, { wet: 0.3 }); for (let i = 0; i < 3; i++) sub(90 + Math.random() * 60, 50, 0.12, 0.12, Math.random() * 0.4); },
