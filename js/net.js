@@ -115,7 +115,7 @@ const Net = (() => {
     const o = {}; for (const k in v) o[k] = dec(v[k], g); return o;
   }
   const FSKIP = new Set(['cfg', 'ch', 'S', 'baseS', 'pal', 'ai', 'prev', 'buf', 'flickX', 'flickY', 'cstick', 'cHeld', 'cBufT', 'cBufDir', 'cArmed', '_slam', 'hitSet', '_pose']);
-  const GKEYS = ['frame', 'phase', 'phaseT', 'shake', 'slow', 'placing', 'cloudX', 'items', 'timeLeft', 'sd', 'endSeq', 'cam', 'finalSlow', 'duo'];
+  const GKEYS = ['frame', 'phase', 'phaseT', 'shake', 'slow', 'placing', 'cloudX', 'items', 'timeLeft', 'sd', 'endSeq', 'cam', 'finalSlow', 'duo', 'ev', 'evNext', 'evLast'];
   const SSKIP = new Set(['def', 'id', 'spawns', 'respawn', 'blast', 'grav', 'main', 'plats', 'flakes', 'embers', 'motes']);
   function snapshot(g) {
     const v = {}, s = {};
@@ -235,7 +235,7 @@ const Net = (() => {
   }
   function roomInfo() {
     const S = Select.state, M = Select.MODES[S.mode] || Select.MODES['1v1'];
-    return { mode: M.name, cap: roomCap, stocks: S.stocks, time: S.time || 0, items: !!S.items, ruby: S.ruby !== false, vote: !!S.arenaVote };
+    return { mode: M.name, cap: roomCap, stocks: S.stocks, time: S.time || 0, items: !!S.items, ruby: S.ruby !== false, events: S.events !== false, vote: !!S.arenaVote };
   }
   // tras simular: estado de la pelea para cada invitado (solo lo que cambió desde lo que confirmó)
   function hostSend(g) {
@@ -435,7 +435,7 @@ const Net = (() => {
   // resumen de la sala: modo, vidas, tiempo, objetos, rubí y cómo se elige la arena
   function roomTags(R) {
     return `<div class="onlRoom"><span>MODO <b>${R.mode}</b></span><span>VIDAS <b>${R.stocks}</b></span><span>TIEMPO <b>${R.time ? R.time + ' MIN' : 'SIN LÍMITE'}</b></span>
-      <span>OBJETOS <b>${R.items ? 'SÍ' : 'NO'}</b></span><span>RUBÍ <b>${R.ruby !== false ? 'SÍ' : 'NO'}</b></span><span>ARENA <b>${R.vote ? 'VOTACIÓN' : 'ANFITRIÓN'}</b></span></div>`;
+      <span>OBJETOS <b>${R.items ? 'SÍ' : 'NO'}</b></span><span>RUBÍ <b>${R.ruby !== false ? 'SÍ' : 'NO'}</b></span><span>EVENTOS <b>${R.events !== false ? 'SÍ' : 'NO'}</b></span><span>ARENA <b>${R.vote ? 'VOTACIÓN' : 'ANFITRIÓN'}</b></span></div>`;
   }
   function copy(txt, ok) {
     const done = () => { uiMsg = ok; renderUI(); };

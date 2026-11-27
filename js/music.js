@@ -14,6 +14,8 @@ const Music = (() => {
   // música dinámica: en las técnicas (¡¡¡DUPLA!!! / Ultimate Ruby) la canción se ahoga y va a medio tiempo,
   // y entra una capa de cine (dron, coro, timbales y golpes de orquesta en la tonalidad del acorde que suena)
   let moodLP = null, cineBus = null, cineVerb = null, tempoMul = 1, mood = null, drone = null, pulseT = 0, lastStab = 0;
+  // eventos de arena: la canción acelera y entra una capa propia de cada evento
+  let evMul = 1, evId = null, evLayer = null;
 
   // ---------- notas ----------
   const NOTE = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
@@ -260,7 +262,7 @@ const Music = (() => {
   // ---------- secuenciador ----------
   function playStep(t) {
     const P = song.parts[song.order[sec]], ch = P.ch[bar % P.ch.length], s = step;
-    const sd = 60 / (song.bpm * tempoMul) / 4, last = bar === P.ch.length - 1;
+    const sd = 60 / (song.bpm * tempoMul * evMul) / 4, last = bar === P.ch.length - 1;
     // batería
     const D = DRUMS[P.drums], k = (last && P.fill ? FILL.k : D.k), sn = (last && P.fill ? FILL.s : D.s);
     if (k[s] === 'x') kick(t);
@@ -306,7 +308,7 @@ const Music = (() => {
     if (!song) return;
     setVol(ducked ? VOL * 0.3 : VOL, 0.15);
     if (nextT < now - 0.3) nextT = now + 0.05;              // pestaña dormida: no amontonar notas
-    while (nextT < now + 0.12) { playStep(nextT); nextT += 60 / (song.bpm * tempoMul) / 4; }
+    while (nextT < now + 0.12) { playStep(nextT); nextT += 60 / (song.bpm * tempoMul * evMul) / 4; }
     // en las técnicas: timbales que laten como un corazón
     if ((mood === 'duo' || mood === 'ult') && now >= pulseT) { timpani(now + 0.02, mood === 'ult' ? 1 : 0.8); pulseT = now + (mood === 'ult' ? 0.86 : 0.68); }
   }
@@ -375,6 +377,30 @@ const Music = (() => {
     noiseHit(t, 0.14, 1.6, 'highpass', 4000, cineBus); kick(t, 1.1);
     noiseHit(t, 0.3, 0.6, 'lowpass', 300, cineBus);
   }
+  // ---------- eventos de arena ----------
+  function stopEvLayer() {
+    if (!evLayer) return;
+    const t = ac.currentTime;
+    evLayer.g.gain.cancelScheduledValues(t); evLayer.g.gain.setTargetAtTime(0.0001, t, 0.25);
+    for (const o of evLayer.srcs) { try { o.stop(t + 1.5); } catch (e) {} }
+    evLayer = null;
+  }
+  function setEvent(id) {
+    if (!ac || id === evId) return;
+    evId = id; stopEvLayer();
+    evMul = id === 'lava' ? 1.12 : id === 'papa' ? 1.1 : 1;
+    if (id === 'lava') {                                 // retumbe ardiente: ruido grave + sierra con trémolo
+      const t = ac.currentTime, g = ac.createGain(), srcs = [];
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 0.8); g.connect(cineBus);
+      const s = ac.createBufferSource(), lp = ac.createBiquadFilter(), ng = ac.createGain();
+      s.buffer = nbuf; s.loop = true; lp.type = 'lowpass'; lp.frequency.value = 200; ng.gain.value = 0.35;
+      s.connect(lp).connect(ng).connect(g); s.start(t); srcs.push(s);
+      const o = osc('sawtooth', hz(root() - 12), t, t + 40), tg = ac.createGain(), trem = osc('sine', 7, t, t + 40), tdepth = ac.createGain(), tf = ac.createBiquadFilter();
+      tf.type = 'lowpass'; tf.frequency.value = 400; tg.gain.value = 0.05; tdepth.gain.value = 0.04; trem.connect(tdepth).connect(tg.gain);
+      o.connect(tf).connect(tg).connect(g); srcs.push(o, trem);
+      evLayer = { g, srcs };
+    }
+  }
   function setMood(m) {
     if (!ac || m === mood) return;
     const prev = mood; mood = m;
@@ -400,6 +426,8 @@ const Music = (() => {
     setLevel(v) { userLevel = v; if (userGain) userGain.gain.setTargetAtTime(v, ac.currentTime, 0.03); },
     // estado de ánimo de la música: null · 'slow' (cámara lenta final) · 'duo' · 'ult'
     setMood(m) { setMood(m || null); },
+    // evento de arena en curso (null si ninguno): cambia el tempo y añade su capa
+    setEvent(id) { setEvent(id || null); },
     get mood() { return mood; },
     stab,
   };

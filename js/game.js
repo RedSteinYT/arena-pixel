@@ -75,6 +75,7 @@ class Game {
     this.hitDetection();
     this.stepProjectiles();
     ItemSys.step(this);
+    EventSys.step(this);                                 // eventos de arena (avisados y temporales)
     this.checkBlast();
     this.stepFx();
     if (this.shake > 0) this.shake *= 0.85;
@@ -306,6 +307,7 @@ class Game {
 
   applyHit(a, d, h, dirSign, mult, hx, hy) {
     if (ItemSys.absorbs(d, this, hx, hy)) { a.landedHit = true; a.landedAt = a.t; a.hitlag = 3; return; }   // burbuja / invencible
+    EventSys.onHit(this, a, d);                          // (¡PAPA CALIENTE!: la bomba pasa al golpeado)
     if (a.buffs && a.buffs.power > 0) { mult *= 1.35; h = Object.assign({}, h, { burn: Math.max(h.burn || 0, 70) }); }   // aura de fuego
     // combo: golpes seguidos mientras el rival no se ha recuperado
     // (con un pequeño margen: si acaba de recuperarse, el golpe aún cuenta para el combo)
@@ -488,6 +490,7 @@ class Game {
     def.renderBack(c, st, this);
     c.drawImage(def.art.stage, 0, 0);
     if (def.renderMid) def.renderMid(c, st, this);
+    EventSys.drawBack(c, this);
 
     for (const f of this.fighters) if (f.st === 'respawn') drawRespawnPad(c, f, this.frame);
     ItemSys.drawGround(c, this);
@@ -505,6 +508,8 @@ class Game {
       if (f.st === 'gone' || f._giant) continue;                    // (gigante: lo dibuja su Ultimate)
       if (f.st === 'portal') { drawPortal(c, f, this.frame); continue; }
       RubySys.drawAura(c, f, this);
+      const bomb = EventSys.holder(this) === f;                // ¡PAPA CALIENTE!: parpadea en rojo (más rápido al final)
+      f._bomb = bomb ? (this.ev.t > 300 ? 2 : 1) : 0;
       renderFighter(c, f, this.frame);
       if (f.ch.overlay) f.ch.overlay(c, f, this.frame);
       if (f.st === 'attack' && f.move && f.move.draw) f.move.draw(c, f, f.t, this);   // efectos propios del golpe (ataques rubí)
@@ -514,6 +519,7 @@ class Game {
       for (const hb of f.activeHits()) if (!hb.h0.grab && !hb.h0.noFx) drawSwoosh(c, hb, f.dir, f.pal.light, f.move.smash);
     }
     this.renderDuo(c, 'front');
+    EventSys.drawFront(c, this);
     for (const p of this.projectiles) if (!(p.delay > 0)) drawProjectile(c, p, this.frame);
     for (const e of this.fx) {
       if (e.kind === 'spark') drawSpark(c, e);
@@ -530,6 +536,7 @@ class Game {
       else drawTag(c, f, f.label);
     }
     c.restore();
+    EventSys.drawScreen(c, this);
     this.renderDuoScreen(c);
     if (cam.z < 1.02 && !this.duo) this.renderHudArt(c);       // (durante una técnica tampoco: aunque la cámara se aleje)       // con zoom, el marcador se esconde (que se luzcan)
   }
@@ -605,6 +612,7 @@ class Game {
       t.text('¡DUPLA!', clamp(f.x, 40, W - 40), y - 14, pop, f.duoA && f.duoA.pal ? f.duoA.pal.light : '#ffd34a', 'center');
     }
     for (const f of this.fighters) RubySys.drawText(t, f);          // nombre del ataque rubí
+    if (this.phase === 'play') EventSys.text(t, this);              // aviso y cuenta atrás de los eventos de arena
     // contador de combo sobre el rival y ¡REMATE!
     for (const f of this.fighters) {
       if (!f.alive() || f.st === 'respawn' || !f.comboBy) continue;

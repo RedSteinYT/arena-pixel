@@ -216,6 +216,7 @@ function renderFighter(c, f, frame) {
   f._pose = p;                                   // la mano sostiene el objeto
   let tint = null;
   if (f.flash > 0) tint = 'rgba(255,255,255,0.85)';
+  else if (f._bomb && (frame >> (f._bomb > 1 ? 1 : 3)) % 2) tint = 'rgba(255,40,40,0.55)';   // lleva la bomba
   else if (f.st === 'helpless') tint = 'rgba(20,10,50,0.35)';
   else if (f.st === 'attack' && f.move && f.move.smash && f.charge > 0 && (frame >> 2) % 2) tint = 'rgba(255,240,150,0.45)';
 

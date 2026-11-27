@@ -438,6 +438,7 @@ function frameBody(now) {
   const inFight = game && (screen === 'game' || (screen === 'controls' && ctrlReturn === 'pause'));
   Music.want(screen === 'vs' ? null : inFight ? game.stage.id : 'menu', inFight && (paused || screen === 'controls'));
   // música dinámica: se ahoga y entra la capa de cine en las técnicas; algo ahogada en la cámara lenta final
+  Music.setEvent(inFight ? EventSys.playing(game) : null);
   Music.setMood(inFight && game.duo && game.duo.big ? (game.duo.ult ? 'ult' : 'duo') : inFight && game.finalSlow && game.slow > 0 ? 'slow' : null);
 
   if (screen === 'vs') {

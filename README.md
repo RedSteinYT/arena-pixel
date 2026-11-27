@@ -131,7 +131,7 @@ La quinta, **Burbuja Arcana** (Brisa + Runa), mejor descúbrela jugando.
 <table>
   <tr>
     <td width="50%"><img src="docs/img/isla-celeste.png" alt="Isla Celeste"><br><b>Isla Celeste</b><br>Isla flotante sobre un mar de nubes. La arena clásica, sin trucos.</td>
-    <td width="50%"><img src="docs/img/fortaleza.png" alt="Fortaleza RedStein"><br><b>Fortaleza RedStein</b><br>El castillo del canal sobre un mar de lava. Las rejillas echan humo antes de lanzar géiseres de fuego.</td>
+    <td width="50%"><img src="docs/img/fortaleza.png" alt="Fortaleza RedStein"><br><b>Fortaleza RedStein</b><br>El castillo del canal sobre un mar de lava. Las rejillas echan humo antes de lanzar géiseres de fuego.<br>⚡ Eventos: <b>¡EL PISO ES LAVA!</b> y <b>¡PAPA CALIENTE!</b></td>
   </tr>
   <tr>
     <td><img src="docs/img/glaciar.png" alt="Glaciar Boreal"><br><b>Glaciar Boreal</b><br>Isla de hielo bajo la aurora. El suelo es hielo pulido: se patina al frenar y al arrancar.</td>
@@ -161,7 +161,8 @@ Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difí
 
 ## ⚙️ Opciones y extras
 
-- **Opciones de combate:** vidas (1 a 9), tiempo (2, 3, 5 u 8 minutos, o sin límite), objetos sí o no y ataques rubí sí o no.
+- **Opciones de combate:** vidas (1 a 9), tiempo (2, 3, 5 u 8 minutos, o sin límite), objetos, ataques rubí y eventos de arena (sí o no).
+- **⚡ Eventos de arena:** cada 45–60 s, una sorpresa propia de la arena. Siempre **avisa** antes (cartel y 3 s de advertencia) y dura unos segundos, con sus sonidos y su cambio de música. En la Fortaleza: **¡EL PISO ES LAVA!** (el suelo arde 15 s: ¡a las plataformas!) y **¡PAPA CALIENTE!** (una bomba con 7 s que pasa al rival que golpeas; al llegar a 0, ¡BUM!). Pronto, en el resto de arenas.
 - **Filtro CRT:** un interruptor en la portada pone el juego dentro de un televisor antiguo de madera, con líneas de barrido, antena, perillas y el papel tapiz de la casa de los abuelos.
 - **Volumen** de música y efectos por separado, desde el menú o en plena pausa.
 
@@ -225,6 +226,7 @@ js/game.js          la pelea: golpes, cámara, HUD y reglas
 js/duo.js           motor de cinemáticas y ataques en DUPLA
 js/ruby.js          ataques RUBÍ: corazón en llamas, concentración y reglas
 js/ultimates.js     la cinemática de cada Ultimate Ruby
+js/events.js        eventos de arena (aviso, duración, efectos)
 js/ai.js            las CPU
 js/net.js           modo en línea (PeerJS, el anfitrión manda)
 js/menu.js          pantallas, bucle principal y filtro CRT

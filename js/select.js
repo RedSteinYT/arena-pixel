@@ -14,7 +14,7 @@ const Select = (() => {
   const MODE_ORDER = ['1v1', '2v2', '3ffa', '4ffa'];
   const PCOL = ['#ff6b5e', '#5aa0ff', '#ffd34a', '#5ee08a'];           // color de cada jugador (J1..J4)
   const S = {
-    mode: '1v1', stocks: 3, time: 5, stage: 'cielo', screen: null, items: true, ruby: true,
+    mode: '1v1', stocks: 3, time: 5, stage: 'cielo', screen: null, items: true, ruby: true, events: true,
     slots: [null, null, null, null],      // { type:'human'|'cpu', dev, char, locked, level, team }
     cur: {},                              // por dispositivo: { slot, carry }
     prevGame: null, prevStage: null, prevRandom: 0,
@@ -63,9 +63,11 @@ const Select = (() => {
     $('oTime').textContent = timeLabel();
     $('oItems').textContent = S.items ? 'SÍ' : 'NO';
     $('oRuby').textContent = S.ruby ? 'SÍ' : 'NO';
+    $('oEvents').textContent = S.events ? 'SÍ' : 'NO';
     const room = S.onlineSetup || Net.isHost;
     $('optArena').style.display = room ? '' : 'none';
-    document.querySelector('#optScr .optList').classList.toggle('many', !!room);   // 5 filas: más compactas
+    document.querySelector('#optScr .optList').classList.add('many');                // muchas opciones: filas compactas
+    document.querySelector('#optScr .optList').classList.toggle('more', !!room);       // (y aún más en línea, con ARENA)
     $('oArena').textContent = S.arenaVote ? 'VOTACIÓN' : 'ANFITRIÓN';
     $('oNext').textContent = !S.onlineSetup ? 'ELEGIR ARENA ▶' : Net.isHost ? 'GUARDAR ▶' : 'CREAR SALA ▶';
   }
@@ -385,6 +387,7 @@ const Select = (() => {
         if (key === 'time') S.time = TIMES[(TIMES.indexOf(S.time) + dir + TIMES.length) % TIMES.length];
         if (key === 'items') S.items = !S.items;
         if (key === 'ruby') S.ruby = !S.ruby;
+        if (key === 'events') S.events = !S.events;
         if (key === 'arena') S.arenaVote = !S.arenaVote;
         showOpts(); Sfx.blip();
         const v = el && el.closest('.optRow') && el.closest('.optRow').querySelector('.ov b');      // pequeño "pop" del valor
@@ -561,7 +564,7 @@ const Select = (() => {
         level: s.level || 'normal', num: s.type === 'cpu' ? 0 : ++num, name: slotName(s) || undefined });
     }
     const stage = S.stage === 'random' ? STAGE_ORDER[Math.random() * STAGE_ORDER.length | 0] : S.stage;
-    return { teams: m.teams, stocks: S.stocks, time: S.time || 0, players, mode: S.mode, stage, items: S.items, ruby: S.ruby };
+    return { teams: m.teams, stocks: S.stocks, time: S.time || 0, players, mode: S.mode, stage, items: S.items, ruby: S.ruby, events: S.events };
   }
   function start() { Pointer.detach(); S.screen = null; startFight(cfg()); }
 
@@ -663,7 +666,7 @@ const Select = (() => {
   // lo que ven todos de la pantalla de arenas
   function stageState() {
     const V = S.vote;
-    return { mode: S.mode, stocks: S.stocks, time: S.time, items: S.items, ruby: S.ruby, vote: !!S.arenaVote,
+    return { mode: S.mode, stocks: S.stocks, time: S.time, items: S.items, ruby: S.ruby, events: S.events, vote: !!S.arenaVote,
       hover: S.hoverStage || S.stage, roster: Net.isHost ? Net.roster() : [],
       v: V ? { votes: V.votes, phase: V.phase, sec: Math.ceil(V.t / 60), tied: V.tied, pick: V.pick, winner: V.winner } : null };
   }
@@ -707,7 +710,7 @@ const Select = (() => {
     const fresh = S.screen !== 'stage' || !S.remote;
     S.remoteVote = sel;
     if (fresh) {
-      S.remote = me; S.mode = sel.mode; S.stocks = sel.stocks; S.time = sel.time || 0; S.items = sel.items; S.ruby = sel.ruby !== false;
+      S.remote = me; S.mode = sel.mode; S.stocks = sel.stocks; S.time = sel.time || 0; S.items = sel.items; S.ruby = sel.ruby !== false; S.events = sel.events !== false;
       game = null; S.myVote = null; lastVoteDraw = '';
       openStageScreen();
       if (sel.vote) Pointer.forceGhosts(false); else { Pointer.detach(); S.screen = 'stage'; Pointer.forceGhosts(true); }   // sin votación: solo se ve el puntero del anfitrión

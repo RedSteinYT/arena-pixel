@@ -165,6 +165,9 @@
   .optList.many .optRow .ot small { font-size: .85em; line-height: 1.45; }
   .optList.many .optRow .ov b { font-size: 1.4em; padding: .35em .4em; }
   .optList.many .optRow .arr { font-size: 1.1em; padding: .45em .7em; }
+  .optList.more { gap: .5em; }
+  .optList.more .optRow { padding: .4em 2em .4em 1.4em; }
+  .optList.more .optRow .ot small { font-size: .78em; line-height: 1.35; }
   .optRow .ov { display: flex; align-items: center; gap: 1em; }
   .optRow .ov b { width: 11em; box-sizing: border-box; white-space: nowrap; text-align: center;   /* mismo ancho en todas: flechas alineadas */ font-size: 1.7em; color: var(--oc); text-shadow: .12em .12em 0 var(--line);
     padding: .45em .4em; background: #120f2c; border: .2em solid var(--line); }
@@ -778,6 +781,11 @@
           <div class="ot"><b>RUBÍ</b><small>Ataques rubí: Comeback con 100 % de daño y Ultimate concentrándote (ESCUDO + ESPECIAL).</small></div>
           <div class="ov"><span class="sbtn arr" data-act="opt:ruby:-1">◀</span><b data-act="opt:ruby:1" id="oRuby">SÍ</b><span class="sbtn arr" data-act="opt:ruby:1">▶</span></div>
         </div>
+        <div class="optRow" style="--oc:#ff8a3a">
+          <span class="oi">⚡</span>
+          <div class="ot"><b>EVENTOS</b><small>Sorpresas propias de cada arena: avisan antes y duran unos segundos.</small></div>
+          <div class="ov"><span class="sbtn arr" data-act="opt:events:-1">◀</span><b data-act="opt:events:1" id="oEvents">SÍ</b><span class="sbtn arr" data-act="opt:events:1">▶</span></div>
+        </div>
         <div class="optRow" id="optArena" style="--oc:#5ee08a; display:none">
           <span class="oi">🗺</span>
           <div class="ot"><b>ARENA</b><small>En línea: la elige el anfitrión (los demás lo ven en vivo) o se vota entre todos.</small></div>
@@ -904,6 +912,7 @@
 <script src="js/duo.js"></script>
 <script src="js/ruby.js"></script>
 <script src="js/ultimates.js"></script>
+<script src="js/events.js"></script>
 <script src="js/music.js"></script>
 <script src="js/vs.js"></script>
 <script src="js/net.js"></script>

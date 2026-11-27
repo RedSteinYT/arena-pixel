@@ -248,6 +248,23 @@ const Sfx = (() => {
       [659, 988, 1319, 1976].forEach((f, i) => tone(f, 'triangle', 0.07, 0.6, null, i * 0.06, 0.7));
       sub(110, 50, 0.5, 0.4, 0, 0.3); noise(0.2, 0.8, 3000, 0, { wet: 0.6 });
     },
+    // ---- eventos de arena ----
+    // aviso: sirena de dos tonos (tres veces) sobre un golpe grave
+    alarm() {
+      sub(110, 50, 0.6, 0.5, 0, 0.3);
+      for (let i = 0; i < 3; i++) { tone(880, 'square', 0.07, 0.22, null, i * 0.5, 0.35); tone(660, 'square', 0.07, 0.22, null, i * 0.5 + 0.25, 0.35); }
+      noise(0.15, 1.4, 0, 0.1, { sweep: [300, 3000], q: 2, wet: 0.4, att: 1 });
+    },
+    // empieza el evento: golpe + acorde
+    eventGo() { sub(130, 30, 0.9, 0.7, 0, 0.4); noise(0.5, 0.6, 200, 0, { lp: 3000, wet: 0.6 }); [262, 392, 523, 784].forEach(f => tone(f, 'sawtooth', 0.04, 0.6, null, 0, 0.5)); crunch(200, 0.15, 0.3); },
+    // termina el evento: acorde que baja
+    eventEnd() { [784, 659, 523, 392].forEach((f, i) => tone(f, 'triangle', 0.06, 0.25, null, i * 0.07, 0.4)); },
+    // tic-tac de la bomba (urgente: más agudo)
+    tick(urgent) { tone(urgent ? 2200 : 1500, 'square', urgent ? 0.09 : 0.07, 0.04); noise(0.12, 0.03, 3000); if (urgent) sub(160, 90, 0.15, 0.05); },
+    // la bomba cambia de manos
+    pass() { noise(0.2, 0.15, 0, 0, { sweep: [800, 4000], q: 1.5 }); tone(990, 'square', 0.07, 0.08); tone(1320, 'square', 0.07, 0.1, null, 0.06, 0.3); },
+    // siseo y burbujeo de la lava
+    lavaHiss() { noise(0.12, 0.7, 1800, 0, { wet: 0.3 }); for (let i = 0; i < 3; i++) sub(90 + Math.random() * 60, 50, 0.12, 0.12, Math.random() * 0.4); },
     // pantalla VS: un "swinggg" de espada que cruza de izquierda a derecha y choca
     vsSwing() {
       if (api.muted) return;
