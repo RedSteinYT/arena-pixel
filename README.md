@@ -134,7 +134,7 @@ La quinta, **Burbuja Arcana** (Brisa + Runa), mejor descúbrela jugando.
     <td width="50%"><img src="docs/img/fortaleza.png" alt="Fortaleza RedStein"><br><b>Fortaleza RedStein</b><br>El castillo del canal sobre un mar de lava. Las rejillas echan humo antes de lanzar géiseres de fuego.<br>⚡ Eventos: <b>¡EL PISO ES LAVA!</b> y <b>¡PAPA CALIENTE!</b></td>
   </tr>
   <tr>
-    <td><img src="docs/img/glaciar.png" alt="Glaciar Boreal"><br><b>Glaciar Boreal</b><br>Isla de hielo bajo la aurora. El suelo es hielo pulido: se patina al frenar y al arrancar.</td>
+    <td><img src="docs/img/glaciar.png" alt="Glaciar Boreal"><br><b>Glaciar Boreal</b><br>Isla de hielo bajo la aurora. El suelo es hielo pulido: se patina al frenar y al arrancar.<br>⚡ Eventos: <b>¡VENTISCA!</b> y <b>¡LLUVIA DE HIELO!</b></td>
     <td><img src="docs/img/templo.png" alt="Templo del Equilibrio"><br><b>Templo del Equilibrio</b><br>Una balanza gigante: el plato con más peso baja y el otro sube. Coloso hunde su lado; Brisa apenas lo mueve.</td>
   </tr>
 </table>
@@ -162,7 +162,7 @@ Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difí
 ## ⚙️ Opciones y extras
 
 - **Opciones de combate:** vidas (1 a 9), tiempo (2, 3, 5 u 8 minutos, o sin límite), objetos, ataques rubí y eventos de arena (sí o no).
-- **⚡ Eventos de arena:** cada 45–60 s, una sorpresa propia de la arena. Siempre **avisa** antes (cartel y 3 s de advertencia) y dura unos segundos, con sus sonidos y su cambio de música. En la Fortaleza: **¡EL PISO ES LAVA!** (el suelo arde 15 s y cada toque quema fuerte, 13 %: ¡a las plataformas!) y **¡PAPA CALIENTE!** (una bomba con 7 s que pasa al rival que golpeas; al llegar a 0, ¡BUM!). En la Isla Celeste: **¡GRAVEDAD LUNAR!** (15 s con poca gravedad: saltos enormes, caídas muy lentas y vuelos más largos) y **¡TORMENTA ELÉCTRICA!** (12 s de rayos; cada uno se avisa 1 s antes con una marca en el suelo: 14 % si te pilla). Pronto, en el resto de arenas.
+- **⚡ Eventos de arena:** cada 45–60 s, una sorpresa propia de la arena. Siempre **avisa** antes (cartel y 3 s de advertencia) y dura unos segundos, con sus sonidos y su cambio de música. En la Fortaleza: **¡EL PISO ES LAVA!** (el suelo arde 15 s y cada toque quema fuerte, 13 %: ¡a las plataformas!) y **¡PAPA CALIENTE!** (una bomba con 7 s que pasa al rival que golpeas; al llegar a 0, ¡BUM!). En la Isla Celeste: **¡GRAVEDAD LUNAR!** (15 s con poca gravedad: saltos enormes, caídas muy lentas y vuelos más largos) y **¡TORMENTA ELÉCTRICA!** (12 s de rayos; cada uno se avisa 1 s antes con una marca en el suelo: 14 % si te pilla). En el Glaciar Boreal: **¡VENTISCA!** (12 s de viento helado en una dirección anunciada: empuja a todos, más en el aire; ¡cuidado con el borde!) y **¡LLUVIA DE HIELO!** (10 s de bloques de hielo; cada uno avisa con su sombra en el suelo y, si te pilla, te congela un momento). Pronto, en el resto de arenas.
 - **Filtro CRT:** un interruptor en la portada pone el juego dentro de un televisor antiguo de madera, con líneas de barrido, antena, perillas y el papel tapiz de la casa de los abuelos.
 - **Volumen** de música y efectos por separado, desde el menú o en plena pausa.
 

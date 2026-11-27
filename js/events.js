@@ -59,6 +59,81 @@ function stormClouds(key, seed, count, y0, yv, cols) {
   return (STORM_ART[key] = cv);
 }
 
+// ---------- arte del Glaciar: escarcha de la pantalla, cortinas de nieve y bloques de hielo ----------
+const ICE_EV = ['#0b1b44', '#1b4482', '#3a7cc2', '#86c4f0', '#b6e2fa', '#e6f8ff'];
+// escarcha en los bordes de la pantalla: cristales ramificados que crecen desde el marco
+function frostFrame() {
+  if (STORM_ART.frost) return STORM_ART.frost;
+  const cv = mkCanvas(W, H), x = cv.getContext('2d'), r = rng(404);
+  // velo helado tramado pegado al borde
+  const img = x.createImageData(W, H), d = img.data, cols = ['#86c4f0', '#b6e2fa', '#e6f8ff'].map(hexRgb);
+  for (let y = 0; y < H; y++) for (let xx = 0; xx < W; xx++) {
+    const e = Math.min(xx, y, W - 1 - xx, H - 1 - y) + Math.sin(xx * 0.21 + y * 0.13) * 2 + Math.sin(xx * 0.05 - y * 0.31) * 2;
+    const v = 1 - e / 14; if (v <= 0) continue;
+    if (v * 16 <= BAYER[y & 3][xx & 3] + 0.5) continue;
+    const c = cols[Math.min(2, v * 3 | 0)], k = (y * W + xx) * 4;
+    d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 150 + 90 * Math.min(1, v) | 0;
+  }
+  x.putImageData(img, 0, 0);
+  // helechos de escarcha: caminos que se ramifican hacia dentro
+  const fern = (sx, sy, ang, len, depth) => {
+    let px0 = sx, py0 = sy;
+    for (let i = 0; i < len; i++) {
+      px0 += Math.cos(ang); py0 += Math.sin(ang); ang += (r() - 0.5) * 0.35;
+      x.fillStyle = i < len * 0.3 ? '#ffffff' : i < len * 0.7 ? '#e6f8ff' : '#b6e2fa';
+      x.fillRect(Math.round(px0), Math.round(py0), 1, 1);
+      if (depth > 0 && i > 2 && i % 4 === 0) fern(px0, py0, ang + (r() < 0.5 ? -1 : 1) * (0.7 + r() * 0.4), len * 0.45 | 0, depth - 1);
+    }
+  };
+  for (let i = 0; i < 26; i++) fern(r() * W, 0, Math.PI / 2 + (r() - 0.5), 10 + r() * 16 | 0, 2);
+  for (let i = 0; i < 26; i++) fern(r() * W, H - 1, -Math.PI / 2 + (r() - 0.5), 10 + r() * 16 | 0, 2);
+  for (let i = 0; i < 16; i++) fern(0, r() * H, (r() - 0.5), 10 + r() * 18 | 0, 2);
+  for (let i = 0; i < 16; i++) fern(W - 1, r() * H, Math.PI + (r() - 0.5), 10 + r() * 18 | 0, 2);
+  return (STORM_ART.frost = cv);
+}
+// cortina de nieve arrastrada por el viento (bandas horizontales tramadas, se repite en horizontal)
+function snowVeil(key, seed, dens) {
+  if (STORM_ART[key]) return STORM_ART[key];
+  const CW = W * 2, cv = mkCanvas(CW, H), x = cv.getContext('2d'), r = rng(seed);
+  const img = x.createImageData(CW, H), d = img.data, cols = ['#9fbade', '#cfe2f5', '#ffffff'].map(hexRgb);
+  const ph = [r() * 6, r() * 6, r() * 6];
+  for (let y = 0; y < H; y++) {
+    const band = 0.5 + 0.5 * Math.sin(y * 0.09 + ph[0]) * Math.sin(y * 0.031 + ph[1]);
+    for (let xx = 0; xx < CW; xx++) {
+      const a = Math.PI * 2 * xx / CW;                                          // periódico en x (sin costura)
+      const streak = 0.5 + 0.5 * Math.sin(a * 7 + y * 0.6 + ph[2]) * Math.sin(a * 3 - y * 0.17);
+      const v = band * streak * dens; if (v * 16 <= BAYER[y & 3][xx & 3] + 2) continue;
+      const c = cols[Math.min(2, v * 2.4 | 0)], k = (y * CW + xx) * 4;
+      d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 110 + 120 * Math.min(1, v) | 0;
+    }
+  }
+  x.putImageData(img, 0, 0);
+  return (STORM_ART[key] = cv);
+}
+// bloque de hielo que cae (punta hacia abajo), facetado con luz de arriba-izquierda
+function iceChunk(size) {
+  const key = 'ice' + size; if (STORM_ART[key]) return STORM_ART[key];
+  const w = 6 + size * 3, h = 12 + size * 5, cv = mkCanvas(w + 2, h + 2), x = cv.getContext('2d');
+  const shape = []; for (let y = 0; y < h; y++) { const k = y < h * 0.35 ? 1 : 1 - (y - h * 0.35) / (h * 0.65); shape.push(Math.max(0, Math.round(w / 2 * (0.55 + 0.45 * k) * (y < 2 ? 0.8 : 1) * (k < 1 ? k + 0.1 : 1)))); }
+  for (let y = 0; y < h; y++) {                                                  // contorno
+    const hw = shape[y]; if (hw <= 0) { x.fillStyle = ICE_EV[0]; x.fillRect(1 + (w >> 1), y + 1, 1, 1); continue; }
+    x.fillStyle = ICE_EV[0]; x.fillRect(1 + (w >> 1) - hw - 1, y + 1, hw * 2 + 2, 1);
+  }
+  x.fillRect(1 + (w >> 1) - shape[0], 0, shape[0] * 2, 1);
+  for (let y = 0; y < h; y++) {                                                  // caras: izquierda clara, derecha oscura, arista brillante
+    const hw = shape[y]; if (hw <= 0) continue;
+    for (let i = -hw; i < hw; i++) {
+      const u = (i + hw) / (hw * 2), face = u < 0.35 ? 4 : u < 0.55 ? 3 : u < 0.8 ? 2 : 1;
+      const dith = (u > 0.3 && u < 0.4 && ((i + y) & 1)) ? -1 : 0;
+      x.fillStyle = ICE_EV[Math.max(1, face + dith)];
+      x.fillRect(1 + (w >> 1) + i, y + 1, 1, 1);
+    }
+    if (y % 3 === 0 && hw > 1) { x.fillStyle = ICE_EV[5]; x.fillRect(1 + (w >> 1) - hw + 1, y + 1, 1, 1); }
+  }
+  x.fillStyle = '#ffffff'; x.fillRect(1 + (w >> 1) - 2, 2, 2, 1); x.fillRect(1 + (w >> 1) - 2, 3, 1, 2);   // brillo
+  return (STORM_ART[key] = cv);
+}
+
 const STAGE_EVENTS = {
   fortaleza: [
     // ---------------- ¡EL PISO ES LAVA! ----------------
@@ -321,6 +396,163 @@ const STAGE_EVENTS = {
       drawScreen(c, g, E) { if (E.flash > 0) rect(c, 0, 0, W, H, '#e8e4ff', 0.045 * E.flash); },
     },
   ],
+  // ======================= GLACIAR BOREAL =======================
+  hielo: [
+    // ---------------- ¡VENTISCA! ----------------
+    //  12 s de viento helado en UNA dirección (anunciada): empuja a todos, más en el aire. Cuidado con el borde.
+    {
+      id: 'ventisca', name: '¡VENTISCA!', col: '#bfe8ff', icon: '🌬', dur: 720,
+      subOf(E) { return E.dir > 0 ? '¡El viento te empuja a la DERECHA!' : '¡El viento te empuja a la IZQUIERDA!'; },
+      warn(g, E) {
+        if (E.dir == null) E.dir = Math.random() < 0.5 ? -1 : 1;
+        if (E.t % 40 === 20) Sfx.gust(0.5);
+      },
+      gust(E) { return 0.65 + 0.35 * Math.sin(E.t * 0.045) * Math.sin(E.t * 0.017 + 1); },
+      step(g, E) {
+        const k = Math.min(1, E.t / 40) * this.gust(E);
+        for (const f of g.fighters) {
+          if (!alive(f) || f.st === 'ledge' || f.st === 'grabbed' || f.heldBy) continue;
+          f.x += E.dir * k * (f.grounded ? 0.55 : 1.05);
+        }
+        for (const p of g.projectiles) p.x += E.dir * k * 0.6;
+        if (E.t % 90 === 30) Sfx.gust(1);
+      },
+      // empuje hacia el borde: la CPU se resiste caminando contra el viento
+      ai(f, g, E, I) {
+        if (E.phase !== 'on' || !alive(f) || f.st === 'hitstun') return;
+        const M = STAGE.main, edge = E.dir > 0 ? M.x2 - f.x : f.x - M.x1;
+        if (f.x < M.x1 || f.x > M.x2) { I.mx = sgn((M.x1 + M.x2) / 2 - f.x); return; }   // fuera: hacia el centro
+        if (edge < 56) { I.mx = -E.dir; if (I.my > 0.5) I.my = 0; }
+      },
+      drawBack(c, g, E) {
+        const k = E.phase === 'warn' ? E.t / EVENT_WARN * 0.6 : E.phase === 'on' ? 0.6 + 0.4 * Math.min(1, E.t / 30) : Math.max(0, 1 - E.t / 50);
+        if (k <= 0) return;
+        rect(c, 0, 0, W, H, '#cfe2f5', 0.16 * k);                                 // blanquea el aire
+        const CW = W * 2, far = snowVeil('vf', 61, 0.75), sp = E.dir * (E.phase === 'on' ? 1 : 0.4);
+        E.sx1 = (E.sx1 || 0) + sp * 2.2 * (0.6 + 0.4 * this.gust(E));
+        const o = ((Math.round(-E.sx1) % CW) + CW) % CW;
+        withAlpha(c, 0.85 * k, () => { c.drawImage(far, -o, 0); c.drawImage(far, CW - o, 0); });
+      },
+      drawFront(c, g, E) {
+        const k = E.phase === 'warn' ? E.t / EVENT_WARN : E.phase === 'on' ? 1 : Math.max(0, 1 - E.t / 50);
+        if (k <= 0) return;
+        const T = g.frame, CW = W * 2, near = snowVeil('vn', 83, 0.55), sp = E.dir * (E.phase === 'on' ? 1 : 0.4);
+        E.sx2 = (E.sx2 || 0) + sp * 4.5 * (0.6 + 0.4 * this.gust(E));
+        const o = ((Math.round(-E.sx2) % CW) + CW) % CW;
+        withAlpha(c, 0.6 * k, () => { c.drawImage(near, -o, 0); c.drawImage(near, CW - o, 0); });
+        withAlpha(c, k, () => {                                                    // copos arrastrados (dos profundidades)
+          for (let i = 0; i < 120; i++) {
+            const depth = i % 3 === 0, v = depth ? 7 : 4;
+            const x = (((i * 61 + T * v * E.dir) % (W + 30)) + W + 30) % (W + 30) - 15;
+            const y = (i * 43 + Math.sin(T * 0.05 + i) * 6 + T * (depth ? 1.2 : 0.6)) % H;
+            const len = depth ? 6 : 3;
+            rect(c, Math.round(E.dir > 0 ? x - len : x), Math.round(y), len, 1, depth ? '#ffffff' : '#cfe2f5', depth ? 0.9 : 0.55);
+            if (depth) px(c, Math.round(x), Math.round(y), '#ffffff');
+          }
+        });
+        for (const f of g.fighters) {                                              // nieve que se levanta a los pies
+          if (E.phase === 'on' && alive(f) && f.grounded && (T + f.pal.main.length) % 6 === 0) g.fx.push({ kind: 'part', ptype: 'spark', x: f.x - E.dir * 4, y: f.y - 2, vx: E.dir * 1.6, vy: -0.4, t: 0, life: 18, size: 1, col: '#eef7ff' });
+        }
+      },
+      drawScreen(c, g, E) {
+        const k = E.phase === 'warn' ? E.t / EVENT_WARN : E.phase === 'on' ? 1 : Math.max(0, 1 - E.t / 50);
+        if (k > 0) withAlpha(c, 0.85 * k, () => c.drawImage(frostFrame(), 0, 0));   // la pantalla se escarcha
+        if (E.phase === 'warn' && E.t > 10) {                                      // flechas del viento bajo el cartel
+          for (let i = 0; i < 9; i++) {
+            const x = Math.round(((i * 36 + E.t * 2 * E.dir) % (W + 36) + W + 36) % (W + 36) - 18), y = 114;
+            const a = 0.5 + 0.5 * Math.sin(i + E.t * 0.2);
+            withAlpha(c, a, () => { pline(c, x - 4 * E.dir, y - 5, x, y, 2, '#e6f8ff'); pline(c, x - 4 * E.dir, y + 5, x, y, 2, '#e6f8ff'); });
+          }
+        }
+      },
+    },
+    // ---------------- ¡LLUVIA DE HIELO! ----------------
+    //  10 s de bloques de hielo cayendo. Cada uno se AVISA: su sombra crece en el suelo (y brilla arriba);
+    //  al caer pega 10 % y congela un momento a quien siga debajo.
+    {
+      id: 'granizo', name: '¡LLUVIA DE HIELO!', sub: '¡Fíjate en las sombras y apártate!', dur: 600, col: '#86c4f0', icon: '🧊',
+      WARN: 56, FALL: 16,
+      warn(g, E) { if (E.t % 30 === 0) Sfx.iceTinkle(); },
+      start(g, E) { E.chunks = []; E.next = 20; },
+      ground(x, y) {
+        let best = H + 30;
+        for (const s of [STAGE.main, ...STAGE.plats]) if (x >= s.x1 && x <= s.x2 && s.y >= y - 4 && s.y < best) best = s.y;
+        return best;
+      },
+      step(g, E) {
+        if (--E.next <= 0 && E.t < this.dur - this.WARN - 6) {
+          const c = g.fighters.filter(f => alive(f) && !f.out), M = STAGE.main;
+          let x, y;
+          if (c.length && Math.random() < 0.6) { const f = c[Math.random() * c.length | 0]; x = f.x + (Math.random() * 30 - 15); y = f.y; }
+          else { x = M.x1 + 10 + Math.random() * (M.x2 - M.x1 - 20); y = -50; }
+          x = Math.round(clamp(x, 16, W - 16));
+          E.chunks.push({ x, y: this.ground(x, y), t: 0, size: Math.random() * 3 | 0, hit: [] });
+          E.next = E.t > 300 ? 14 : 22;
+        }
+        for (const s of E.chunks) {
+          s.t++;
+          if (s.t === this.WARN - this.FALL) Sfx.iceWhistle();
+          if (s.t === this.WARN) {                                                 // ¡CHOCA!
+            const gy = Math.min(s.y, H);
+            g.shake = Math.max(g.shake, 3 + s.size); Sfx.iceShatter(s.size);
+            for (const f of g.fighters) {
+              if (!alive(f) || f.invuln > 0 || Math.abs(f.x - s.x) > 9 + s.size * 2 || f.y > s.y + 4 || f.y < gy - 60) continue;
+              evHit(g, f, { d: 9 + s.size, b: 4.4, g: 0.85, ang: 80 }, sgn(f.x - s.x) || 1);
+              if (f.st === 'hitstun') { f.frozen = Math.max(f.frozen || 0, 34); f.stun = Math.max(f.stun || 0, 34); f.lvx *= 0.4; f.lvy *= 0.4; }
+              s.hit.push(g.fighters.indexOf(f));
+            }
+            for (let i = 0; i < 10 + s.size * 4; i++) g.fx.push({ kind: 'part', ptype: 'spark', x: s.x + (Math.random() * 6 - 3), y: gy - 2, vx: (Math.random() - 0.5) * 4.5, vy: -0.6 - Math.random() * 2.6, t: 0, life: 18 + Math.random() * 10 | 0, size: Math.random() < 0.3 ? 2 : 1, col: ICE_EV[3 + (i % 3)] });
+            g.burst(s.x, gy - 2, 2, 'smoke');
+          }
+        }
+        E.chunks = E.chunks.filter(s => s.t < this.WARN + 30);
+      },
+      danger(f, E) {
+        if (!E.chunks) return null;
+        for (const s of E.chunks) if (s.t < this.WARN && Math.abs(f.x - s.x) < 22 && f.y <= s.y + 4) return s;
+        return null;
+      },
+      drawBack(c, g, E) {
+        const k = E.phase === 'warn' ? E.t / EVENT_WARN : E.phase === 'on' ? 1 : Math.max(0, 1 - E.t / 50);
+        if (k > 0) rect(c, 0, 0, W, H, '#0b1b44', 0.22 * k);                      // cielo encapotado
+        if (!E.chunks) return;
+        for (const s of E.chunks) {                                                // sombras que crecen en el suelo
+          if (s.t >= this.WARN || s.y > H) continue;
+          const q = s.t / this.WARN, rx = Math.round(4 + (8 + s.size * 3) * q), blink = q > 0.65 && (s.t >> 1) % 2;
+          // sombra ovalada en 3 tonos sobre la superficie (crece mientras el hielo se acerca)
+          for (let yy = -2; yy <= 1; yy++) {
+            const hw = Math.round(rx * [0.55, 0.85, 1, 0.7][yy + 2]);
+            rect(c, s.x - hw, s.y - 1 + yy, hw * 2 + 1, 1, '#061030', 0.5 + 0.4 * q);
+            if (hw > 3) rect(c, s.x - hw + 2, s.y - 1 + yy, Math.round(hw * 0.7), 1, '#0b1b44', 0.6);   // núcleo un poco más claro a la izquierda (luz de la luna)
+          }
+          // marco de escarcha que parpadea en los extremos y en el centro
+          const mc = blink ? '#ffffff' : '#86c4f0';
+          px(c, s.x - rx - 1, s.y - 1, mc); px(c, s.x + rx + 1, s.y - 1, mc); px(c, s.x - rx - 2, s.y - 1, '#3a7cc2'); px(c, s.x + rx + 2, s.y - 1, '#3a7cc2');
+          if (q > 0.35) { px(c, s.x, s.y - 4, mc); px(c, s.x - 1, s.y - 3, '#3a7cc2'); px(c, s.x + 1, s.y - 3, '#3a7cc2'); }
+        }
+      },
+      drawFront(c, g, E) {
+        const T = g.frame;
+        if (!E.chunks) return;
+        for (const s of E.chunks) {
+          const gy = Math.min(s.y, H);
+          if (s.t < this.WARN - this.FALL) {                                       // destello arriba: de ahí caerá
+            const q = s.t / (this.WARN - this.FALL), on = (s.t >> 2) % 2;
+            if (on) { px(c, s.x, 3, '#ffffff'); px(c, s.x - 1, 3, '#b6e2fa'); px(c, s.x + 1, 3, '#b6e2fa'); px(c, s.x, 2, '#b6e2fa'); px(c, s.x, 4, '#b6e2fa'); }
+            if (q > 0.5 && (s.t + s.x) % 5 === 0) g.fx.push({ kind: 'part', ptype: 'spark', x: s.x + (Math.random() * 4 - 2), y: 6, vx: 0, vy: 1.5, t: 0, life: 24, size: 1, col: '#e6f8ff' });
+          } else if (s.t < this.WARN) {                                            // cayendo (acelera)
+            const q = (s.t - (this.WARN - this.FALL)) / this.FALL, img = iceChunk(s.size);
+            const y = Math.round(-img.height + (gy + 2) * q * q);
+            for (let i = 1; i <= 3; i++) rect(c, s.x - 1, y - i * 7, 2, 5, '#e6f8ff', 0.25 / i);   // estela
+            c.drawImage(img, Math.round(s.x - img.width / 2), y - img.height + 4);
+          } else {                                                                 // anillo de escarcha al estallar
+            const a = s.t - this.WARN; if (a > 14) continue;
+            withAlpha(c, 1 - a / 14, () => { ring(c, s.x, gy - 1, 4 + a * 2, '#e6f8ff'); });
+          }
+        }
+      },
+    },
+  ],
 };
 
 const EventSys = {
@@ -381,7 +613,7 @@ const EventSys = {
     if (E.phase === 'warn') {
       const pop = E.t < 8 ? 1 + (8 - E.t) * 0.12 : 1, blink = (E.t >> 3) % 2;
       t.text(D.name, W / 2, 64, Math.round(24 * pop), blink ? D.col : '#ffffff', 'center');
-      if (E.t > 10) t.text(D.sub, W / 2, 92, 8, '#ffd34a', 'center');
+      if (E.t > 10) t.text(D.subOf ? D.subOf(E) : D.sub, W / 2, 92, 8, '#ffd34a', 'center');
       t.text('en ' + Math.ceil((EVENT_WARN - E.t) / 60) + '…', W / 2, 102, 8, '#ffffff', 'center');
     } else if (E.phase === 'on') {
       const left = Math.ceil((D.dur - E.t) / 60);
@@ -398,8 +630,10 @@ const EventSys = {
   //  plataforma (sin caída rápida); sobre una plataforma -> no se deja caer ni camina fuera del borde.
   aiPost(f, g, I) {
     const E = g.ev;
-    if (E && E.id === 'storm' && E.phase === 'on' && alive(f) && f.st !== 'hitstun' && f.st !== 'grabbed' && !f.holding) {
-      const s = this.def('storm').danger(f, E);                            // ¡una marca de rayo cerca! a un lado
+    const DE = E && this.def(E.id);
+    if (DE && DE.ai) DE.ai(f, g, E, I);                                     // (¡VENTISCA!: contra el viento cerca del borde)
+    if (DE && DE.danger && E.phase === 'on' && alive(f) && f.st !== 'hitstun' && f.st !== 'grabbed' && !f.holding) {
+      const s = DE.danger(f, E);                                           // ¡una marca de rayo / una sombra de hielo cerca! a un lado
       if (s) { const away = sgn(f.x - s.x) || (f.x < W / 2 ? 1 : -1); I.mx = away; I.shd = false; if (f.grounded && Math.abs(f.x - s.x) < 8 && Math.random() < 0.15) I.jump = !f.prev.jump; }
       return I;
     }

@@ -273,6 +273,16 @@ const Sfx = (() => {
     thunder() { noise(0.6, 0.12, 1200, 0, { wet: 0.3 }); crunch(220, 0.25, 0.25); sub(70, 30, 0.8, 0.9, 0.05, 0.4); noise(0.35, 1.6, 0, 0.08, { lp: 400, wet: 0.7, att: 0.05 }); },
     // trueno lejano (durante el aviso)
     thunderFar() { noise(0.25, 1.8, 0, 0, { lp: 260, wet: 0.8, att: 0.2 }); sub(55, 35, 0.3, 1.2, 0.1, 0.5); },
+    // ¡VENTISCA!: ráfaga (silbido que barre)
+    gust(k = 1) { noise(0.22 * k, 1.1, 0, 0, { sweep: [400, 1800], q: 3, wet: 0.5, att: 0.3, pan: Math.random() - 0.5 }); noise(0.12 * k, 0.9, 0, 0.3, { sweep: [1600, 500], q: 4, wet: 0.5, att: 0.2 }); },
+    // ¡LLUVIA DE HIELO!: tintineo de aviso, silbido de caída y estallido de cristal
+    iceTinkle() { ring([[2637, 0.03, 0.4], [3520, 0.02, 0.5]], 0, 0.6); ring([[3136, 0.025, 0.4]], 0.12, 0.6); },
+    iceWhistle() { tone(2400, 'sine', 0.04, 0.26, 700, 0, 0.3); },
+    iceShatter(size = 1) {
+      crunch(500 - size * 80, 0.14 + size * 0.04, 0.12); sub(120 - size * 15, 50, 0.3 + size * 0.1, 0.25);
+      noise(0.3, 0.25, 3000, 0, { wet: 0.4 });
+      ring([[1760 + Math.random() * 400, 0.05, 0.5], [2793, 0.04, 0.6], [3951, 0.03, 0.7]], 0.01, 0.6);
+    },
     // siseo y burbujeo de la lava
     lavaHiss() { noise(0.12, 0.7, 1800, 0, { wet: 0.3 }); for (let i = 0; i < 3; i++) sub(90 + Math.random() * 60, 50, 0.12, 0.12, Math.random() * 0.4); },
     // pantalla VS: un "swinggg" de espada que cruza de izquierda a derecha y choca

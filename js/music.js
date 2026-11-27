@@ -388,7 +388,28 @@ const Music = (() => {
   function setEvent(id) {
     if (!ac || id === evId) return;
     evId = id; stopEvLayer();
-    evMul = id === 'lava' ? 1.12 : id === 'papa' ? 1.1 : id === 'luna' ? 0.86 : id === 'storm' ? 1.08 : 1;
+    evMul = id === 'lava' ? 1.12 : id === 'papa' ? 1.1 : id === 'luna' ? 0.86 : id === 'storm' ? 1.08 : id === 'ventisca' ? 1.06 : id === 'granizo' ? 1.08 : 1;
+    if (id === 'ventisca') {                             // el viento aúlla: ruido en paso de banda que sube y baja + su volumen en ráfagas
+      const t = ac.currentTime, g = ac.createGain(), srcs = [];
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 1); g.connect(cineBus);
+      for (const [f0, q, vol, rate] of [[500, 6, 0.16, 0.13], [900, 9, 0.1, 0.21]]) {
+        const s = ac.createBufferSource(), bp = ac.createBiquadFilter(), ng = ac.createGain();
+        s.buffer = nbuf; s.loop = true; bp.type = 'bandpass'; bp.frequency.value = f0; bp.Q.value = q; ng.gain.value = vol;
+        const lfo = osc('sine', rate, t, t + 40), ld = ac.createGain(); ld.gain.value = f0 * 0.55; lfo.connect(ld).connect(bp.frequency);
+        const lfo2 = osc('sine', rate * 1.7, t, t + 40), ld2 = ac.createGain(); ld2.gain.value = vol * 0.7; lfo2.connect(ld2).connect(ng.gain);
+        s.connect(bp).connect(ng).connect(g); s.start(t); srcs.push(s, lfo, lfo2);
+      }
+      evLayer = { g, srcs };
+    }
+    if (id === 'granizo') {                              // frío de cristal: dos agudos en triángulo que tiemblan
+      const t = ac.currentTime, g = ac.createGain(), srcs = [];
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 1); g.connect(cineVerb || cineBus);
+      [24, 31].forEach((st, i) => {
+        const o = osc('triangle', hz(root() + st), t, t + 40, i ? 8 : -8), og = ac.createGain(), lfo = osc('sine', 5 + i * 1.5, t, t + 40), ld = ac.createGain();
+        og.gain.value = 0.014; ld.gain.value = 0.01; lfo.connect(ld).connect(og.gain); o.connect(og).connect(g); srcs.push(o, lfo);
+      });
+      evLayer = { g, srcs };
+    }
     if (id === 'luna') {                                 // la luna: colchón de senos brillantes que respira (más lento)
       const t = ac.currentTime, g = ac.createGain(), srcs = [];
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 1.2); g.connect(cineVerb || cineBus);
