@@ -130,7 +130,7 @@ La quinta, **Burbuja Arcana** (Brisa + Runa), mejor descúbrela jugando.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/img/isla-celeste.png" alt="Isla Celeste"><br><b>Isla Celeste</b><br>Isla flotante sobre un mar de nubes. La arena clásica, sin trucos.</td>
+    <td width="50%"><img src="docs/img/isla-celeste.png" alt="Isla Celeste"><br><b>Isla Celeste</b><br>Isla flotante sobre un mar de nubes. La arena clásica, sin trucos.<br>⚡ Eventos: <b>¡GRAVEDAD LUNAR!</b> y <b>¡TORMENTA ELÉCTRICA!</b></td>
     <td width="50%"><img src="docs/img/fortaleza.png" alt="Fortaleza RedStein"><br><b>Fortaleza RedStein</b><br>El castillo del canal sobre un mar de lava. Las rejillas echan humo antes de lanzar géiseres de fuego.<br>⚡ Eventos: <b>¡EL PISO ES LAVA!</b> y <b>¡PAPA CALIENTE!</b></td>
   </tr>
   <tr>
@@ -162,7 +162,7 @@ Cualquier hueco libre se puede llenar con una CPU en nivel fácil, medio o difí
 ## ⚙️ Opciones y extras
 
 - **Opciones de combate:** vidas (1 a 9), tiempo (2, 3, 5 u 8 minutos, o sin límite), objetos, ataques rubí y eventos de arena (sí o no).
-- **⚡ Eventos de arena:** cada 45–60 s, una sorpresa propia de la arena. Siempre **avisa** antes (cartel y 3 s de advertencia) y dura unos segundos, con sus sonidos y su cambio de música. En la Fortaleza: **¡EL PISO ES LAVA!** (el suelo arde 15 s y cada toque quema fuerte, 13 %: ¡a las plataformas!) y **¡PAPA CALIENTE!** (una bomba con 7 s que pasa al rival que golpeas; al llegar a 0, ¡BUM!). Pronto, en el resto de arenas.
+- **⚡ Eventos de arena:** cada 45–60 s, una sorpresa propia de la arena. Siempre **avisa** antes (cartel y 3 s de advertencia) y dura unos segundos, con sus sonidos y su cambio de música. En la Fortaleza: **¡EL PISO ES LAVA!** (el suelo arde 15 s y cada toque quema fuerte, 13 %: ¡a las plataformas!) y **¡PAPA CALIENTE!** (una bomba con 7 s que pasa al rival que golpeas; al llegar a 0, ¡BUM!). En la Isla Celeste: **¡GRAVEDAD LUNAR!** (15 s con poca gravedad: saltos enormes, caídas lentas y vuelos más largos) y **¡TORMENTA ELÉCTRICA!** (12 s de rayos; cada uno se avisa 1 s antes con una marca en el suelo: 14 % si te pilla). Pronto, en el resto de arenas.
 - **Filtro CRT:** un interruptor en la portada pone el juego dentro de un televisor antiguo de madera, con líneas de barrido, antena, perillas y el papel tapiz de la casa de los abuelos.
 - **Volumen** de música y efectos por separado, desde el menú o en plena pausa.
 

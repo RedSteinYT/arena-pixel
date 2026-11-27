@@ -388,7 +388,28 @@ const Music = (() => {
   function setEvent(id) {
     if (!ac || id === evId) return;
     evId = id; stopEvLayer();
-    evMul = id === 'lava' ? 1.12 : id === 'papa' ? 1.1 : 1;
+    evMul = id === 'lava' ? 1.12 : id === 'papa' ? 1.1 : id === 'luna' ? 0.86 : id === 'storm' ? 1.08 : 1;
+    if (id === 'luna') {                                 // la luna: colchón de senos brillantes que respira (más lento)
+      const t = ac.currentTime, g = ac.createGain(), srcs = [];
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 1.2); g.connect(cineVerb || cineBus);
+      [12, 19, 24, 31].forEach((st, i) => {
+        const o = osc('sine', hz(root() + st), t, t + 40, i * 3), og = ac.createGain(), lfo = osc('sine', 0.15 + i * 0.07, t, t + 40), ld = ac.createGain();
+        og.gain.value = 0.022; ld.gain.value = 0.016; lfo.connect(ld).connect(og.gain);
+        o.connect(og).connect(g); srcs.push(o, lfo);
+      });
+      evLayer = { g, srcs };
+    }
+    if (id === 'storm') {                                // la tormenta: lluvia constante (ruido filtrado) + zumbido eléctrico
+      const t = ac.currentTime, g = ac.createGain(), srcs = [];
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 1); g.connect(cineBus);
+      const s = ac.createBufferSource(), bp = ac.createBiquadFilter(), ng = ac.createGain();
+      s.buffer = nbuf; s.loop = true; bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 0.6; ng.gain.value = 0.09;
+      s.connect(bp).connect(ng).connect(g); s.start(t); srcs.push(s);
+      const o = osc('sawtooth', hz(root() - 24), t, t + 40), lp = ac.createBiquadFilter(), og = ac.createGain();
+      lp.type = 'lowpass'; lp.frequency.value = 300; og.gain.value = 0.035;
+      o.connect(lp).connect(og).connect(g); srcs.push(o);
+      evLayer = { g, srcs };
+    }
     if (id === 'lava') {                                 // retumbe ardiente: ruido grave + sierra con trémolo
       const t = ac.currentTime, g = ac.createGain(), srcs = [];
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 0.8); g.connect(cineBus);

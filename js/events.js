@@ -104,6 +104,152 @@ const STAGE_EVENTS = {
       },
     },
   ],
+  // ======================= ISLA CELESTE =======================
+  cielo: [
+    // ---------------- ¡GRAVEDAD LUNAR! ----------------
+    //  15 s con poca gravedad (60 %): saltos enormes, caídas lentas... y los golpes te mandan más lejos.
+    {
+      id: 'luna', name: '¡GRAVEDAD LUNAR!', sub: '¡Saltos enormes... y vuelos más largos!', dur: 900, col: '#9ad8ff', icon: '🌙',
+      warn(g, E) {
+        if (E.t % 6 === 0) this.mote(g);
+        if (E.t > 120 && E.t % 3 === 0) this.mote(g);
+      },
+      mote(g) {                                                                  // polvo de estrellas que sube despacio
+        g.fx.push({ kind: 'part', ptype: 'spark', x: 40 + Math.random() * (W - 80), y: H - 20 - Math.random() * 60, vx: (Math.random() - 0.5) * 0.2, vy: -0.25 - Math.random() * 0.35, t: 0, life: 90 + Math.random() * 60 | 0, size: 1, col: Math.random() < 0.5 ? '#cfefff' : '#ffffff' });
+      },
+      start(g, E) { E.g0 = g.frame; },
+      step(g, E) {
+        if (E.t % 4 === 0) this.mote(g);
+        for (const f of g.fighters) {                                           // estela suave al flotar
+          if (alive(f) && !f.grounded && E.t % 5 === 0) g.fx.push({ kind: 'part', ptype: 'spark', x: f.x + (Math.random() * 6 - 3), y: f.y - 4, vx: 0, vy: 0.15, t: 0, life: 22, size: 1, col: '#9ad8ff' });
+        }
+        if (E.t % 240 === 120) Sfx.lunarChime();
+      },
+      stop(g, E) { E.relax = true; },
+      drawBack(c, g, E) {
+        const T = g.frame;
+        let k;
+        if (E.phase === 'warn') k = E.t / EVENT_WARN * 0.6;
+        else if (E.phase === 'on') k = 0.6 + 0.4 * Math.min(1, E.t / 30);
+        else k = Math.max(0, 1 - E.t / 50);
+        if (k <= 0) return;
+        rect(c, 0, 0, W, H, '#0a1240', 0.22 * k);                                // cielo de noche
+        for (let i = 0; i < 46; i++) {                                           // estrellas que titilan
+          const sx = (i * 97 + 31) % W, sy = (i * 53 + 7) % 120, tw = Math.sin(T * 0.08 + i * 1.7);
+          if (tw > 0.2) px(c, sx, sy, tw > 0.8 ? '#ffffff' : '#bfe6ff');
+        }
+        glow(c, 78, 44, 46, '#cfefff', 0.12 * k, 3);                            // luna grande (aparece con el resto)
+        withAlpha(c, k, () => {
+          disc(c, 78, 44, 18, '#dfe8f4'); disc(c, 82, 40, 14, '#eef3fa');
+          disc(c, 72, 48, 3, '#c4cfdc'); disc(c, 84, 52, 2, '#c4cfdc'); disc(c, 79, 36, 2, '#cdd7e3');
+        });
+      },
+    },
+    // ---------------- ¡TORMENTA ELÉCTRICA! ----------------
+    //  12 s de rayos. Cada rayo se AVISA: una marca en el suelo y una columna que chisporrotea (1 s);
+    //  luego cae y quema a quien siga debajo.
+    {
+      id: 'storm', name: '¡TORMENTA ELÉCTRICA!', sub: '¡Esquiva las marcas antes de que caiga el rayo!', dur: 720, col: '#ffe24a', icon: '⚡',
+      WARN: 60,
+      warn(g, E) { if (E.t > 60 && E.t % 50 === 0) { E.far = 6; Sfx.thunderFar(); } if (E.far > 0) E.far--; },
+      start(g, E) { E.strikes = []; E.next = 30; E.far = 0; },
+      ground(x, y) {                                                              // la superficie bajo (x, y)
+        let best = H + 30;
+        for (const s of [STAGE.main, ...STAGE.plats]) if (x >= s.x1 && x <= s.x2 && s.y >= y - 4 && s.y < best) best = s.y;
+        return best;
+      },
+      step(g, E) {
+        if (E.far > 0) E.far--;
+        if (--E.next <= 0 && E.t < this.dur - this.WARN - 10) {
+          const c = g.fighters.filter(f => alive(f) && !f.out);
+          const n = E.t > 400 && c.length > 1 ? 2 : 1;                          // al final, de dos en dos
+          for (let i = 0; i < n && c.length; i++) {
+            const f = c.splice(Math.random() * c.length | 0, 1)[0];
+            const x = clamp(f.x + (Math.random() * 20 - 10) + (f.vx || 0) * 12, 20, W - 20);
+            E.strikes.push({ x: Math.round(x), y: this.ground(x, f.y), t: 0, hit: [] });
+          }
+          Sfx.zapWarn();
+          E.next = E.t > 400 ? 52 : 68;
+        }
+        for (const s of E.strikes) {
+          s.t++;
+          if (s.t === this.WARN) {                                               // ¡CAE!
+            g.shake = Math.max(g.shake, 7); E.flash = 5; Sfx.thunder();
+            for (const f of g.fighters) {
+              if (!alive(f) || f.invuln > 0 || Math.abs(f.x - s.x) > 12 || f.y > s.y + 4) continue;
+              evHit(g, f, { d: 14, b: 5.4, g: 1.0, ang: 72 }, sgn(f.x - s.x) || (Math.random() < 0.5 ? -1 : 1));
+              s.hit.push(g.fighters.indexOf(f));
+            }
+            for (let i = 0; i < 8; i++) g.fx.push({ kind: 'part', ptype: 'spark', x: s.x, y: Math.min(s.y, H) - 1, vx: (Math.random() - 0.5) * 4, vy: -Math.random() * 3, t: 0, life: 16, size: 1, col: i % 2 ? '#ffe24a' : '#ffffff' });
+            g.burst(s.x, Math.min(s.y, H) - 2, 3, 'smoke');
+          }
+        }
+        E.strikes = E.strikes.filter(s => s.t < this.WARN + 40);
+        if (E.flash > 0) E.flash--;
+      },
+      zapped(g, E, f) {                                                           // ¿le acaba de caer un rayo?
+        if (!E.strikes) return false;
+        const i = g.fighters.indexOf(f);
+        return E.strikes.some(s => s.t >= this.WARN && s.t < this.WARN + 34 && s.hit.includes(i));
+      },
+      danger(f, E) {                                                              // marca cercana sin caer aún (para la CPU)
+        if (!E.strikes) return null;
+        for (const s of E.strikes) if (s.t < this.WARN && Math.abs(f.x - s.x) < 26 && f.y <= s.y + 4) return s;
+        return null;
+      },
+      drawBack(c, g, E) {
+        let k;
+        if (E.phase === 'warn') k = E.t / EVENT_WARN * 0.7;
+        else if (E.phase === 'on') k = 0.7 + 0.3 * Math.min(1, E.t / 20);
+        else k = Math.max(0, 1 - E.t / 50);
+        if (k <= 0) return;
+        rect(c, 0, 0, W, H, '#0c0820', 0.52 * k);                               // cielo de tormenta
+        const T = g.frame;
+        for (let i = 0; i < 7; i++) {                                            // nubarrones arriba
+          const x = ((i * 83 + T * 0.3) % (W + 120)) - 60;
+          disc(c, Math.round(x), 8 + (i % 3) * 5, 26 + (i % 2) * 8, '#1c1638');
+          disc(c, Math.round(x + 18), 14 + (i % 2) * 4, 20, '#251d48');
+        }
+        if (E.far > 0) rect(c, 0, 0, W, H, '#c8c0ff', 0.07 * E.far);             // relámpago lejano
+      },
+      drawFront(c, g, E) {
+        const T = g.frame;
+        // lluvia
+        let k = E.phase === 'on' ? 1 : E.phase === 'warn' ? E.t / EVENT_WARN : Math.max(0, 1 - E.t / 50);
+        if (k > 0) withAlpha(c, 0.6 * k, () => {
+          for (let i = 0; i < 90; i++) {
+            const x = (i * 71 + T * 3) % (W + 40) - 20, y = (i * 37 + T * 9) % (H + 20) - 10;
+            pline(c, Math.round(x), Math.round(y), Math.round(x - 3), Math.round(y + 7), 1, '#9aa8e0');
+          }
+        });
+        if (!E.strikes) return;
+        for (const s of E.strikes) {
+          const gy = Math.min(s.y, H);
+          if (s.t < this.WARN) {                                                 // AVISO: marca + columna que chisporrotea
+            const q = s.t / this.WARN, blink = (s.t >> (q > 0.6 ? 1 : 2)) % 2;
+            withAlpha(c, 0.25 + 0.35 * q, () => rect(c, s.x - 11, 0, 23, gy, '#ffe24a', 0.12 + 0.1 * blink));
+            rect(c, s.x - 12, gy - 1, 25, 2, blink ? '#ffffff' : '#ffe24a');
+            rect(c, s.x - 8 + Math.round(4 * q), gy - 3, 17 - Math.round(8 * q), 1, '#ffe24a');
+            if (blink) for (let y = 4; y < gy; y += 9) px(c, s.x + ((y * 13 + T) % 7) - 3, y, '#fff6b0');
+          } else {                                                               // EL RAYO
+            const a = s.t - this.WARN; if (a > 10) continue;
+            const w = a < 3 ? 1 : 0.7 - a * 0.06;
+            glow(c, s.x, gy - 10, 30, '#ffe24a', 0.4 * w, 3);
+            withAlpha(c, Math.max(0, w), () => {
+              let x = s.x, y = 0;
+              while (y < gy) {
+                const ny = Math.min(gy, y + 10 + ((s.x * 7 + y * 3) % 8)), nx = s.x + (((y * 31 + s.x) % 11) - 5);
+                pline(c, x, y, nx, ny, 4, '#ffe24a'); pline(c, x, y, nx, ny, 2, '#ffffff');
+                x = nx; y = ny;
+              }
+              ring(c, s.x, gy - 2, 6 + a * 3, '#fff6b0');
+            });
+          }
+        }
+      },
+      drawScreen(c, g, E) { if (E.flash > 0) rect(c, 0, 0, W, H, '#ffffff', 0.09 * E.flash); },
+    },
+  ],
 };
 
 const EventSys = {
@@ -130,8 +276,18 @@ const EventSys = {
       if (D.step) D.step(g, E);
       if (E.t >= D.dur) { E.phase = 'end'; E.t = 0; if (D.stop) D.stop(g, E); if (!E.abort) Sfx.eventEnd(); }
     } else if (E.t >= 60) { g.ev = null; g.evNext = EVENT_GAP[0] + (Math.random() * (EVENT_GAP[1] - EVENT_GAP[0]) | 0); }
+    g.evGrav = this.grav(g);
   },
-  clear(g) { g.ev = null; },
+  // ¡GRAVEDAD LUNAR!: multiplica la gravedad (baja y sube suave en medio segundo)
+  grav(g) {
+    const E = g.ev; if (!E || E.id !== 'luna') return 1;
+    if (E.phase === 'on') return 1 - 0.4 * Math.min(1, E.t / 30);
+    if (E.phase === 'end') return 0.6 + 0.4 * Math.min(1, E.t / 30);
+    return 1;
+  },
+  // ¿le acaba de caer un rayo? (parpadea en amarillo)
+  zapped(g, f) { const E = g.ev; if (!E || E.id !== 'storm') return false; return this.def('storm').zapped(g, E, f); },
+  clear(g) { g.ev = null; g.evGrav = 1; },
   onHit(g, a, d) { const E = g.ev; if (!E) return; const D = this.def(E.id); if (D && D.onHit) D.onHit(g, E, a, d); },
   holder(g) { return g.ev && g.ev.id === 'papa' && g.ev.phase === 'on' ? g.ev.holder : null; },
   // ¿qué evento suena ahora? (para la música)
@@ -141,7 +297,9 @@ const EventSys = {
   drawFront(c, g) { const E = g.ev; if (!E) return; const D = this.def(E.id); if (D && D.drawFront) D.drawFront(c, g, E); },
   // franja del aviso (en pantalla)
   drawScreen(c, g) {
-    const E = g.ev; if (!E || E.phase !== 'warn') return;
+    const E = g.ev; if (!E) return;
+    if (this.def(E.id).drawScreen) this.def(E.id).drawScreen(c, g, E);
+    if (E.phase !== 'warn') return;
     const D = this.def(E.id), k = Math.min(1, E.t / 10, (EVENT_WARN - E.t) / 10), h = Math.round(46 * k), y = 58;
     rect(c, 0, y, W, h, '#0c0a24', 0.6);
     for (let x = -20; x < W + 20; x += 16) { const o = (E.t * 2) % 16; rect(c, x + o, y, 8, 2, D.col, 0.9 * k); rect(c, x - o, y + h - 2, 8, 2, D.col, 0.9 * k); }   // franjas de peligro en movimiento
@@ -169,6 +327,11 @@ const EventSys = {
   //  plataforma (sin caída rápida); sobre una plataforma -> no se deja caer ni camina fuera del borde.
   aiPost(f, g, I) {
     const E = g.ev;
+    if (E && E.id === 'storm' && E.phase === 'on' && alive(f) && f.st !== 'hitstun' && f.st !== 'grabbed' && !f.holding) {
+      const s = this.def('storm').danger(f, E);                            // ¡una marca de rayo cerca! a un lado
+      if (s) { const away = sgn(f.x - s.x) || (f.x < W / 2 ? 1 : -1); I.mx = away; I.shd = false; if (f.grounded && Math.abs(f.x - s.x) < 8 && Math.random() < 0.15) I.jump = !f.prev.jump; }
+      return I;
+    }
     if (!E || E.id !== 'lava' || E.phase === 'end' || (E.phase === 'warn' && E.t < EVENT_WARN - 110)) return I;
     if (!alive(f) || f.st === 'hitstun' || f.st === 'helpless' || f.st === 'ledge' || f.st === 'grabbed' || f.holding) return I;
     const M = STAGE.main;

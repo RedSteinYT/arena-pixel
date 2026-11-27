@@ -265,6 +265,14 @@ const Sfx = (() => {
     pass() { noise(0.2, 0.15, 0, 0, { sweep: [800, 4000], q: 1.5 }); tone(990, 'square', 0.07, 0.08); tone(1320, 'square', 0.07, 0.1, null, 0.06, 0.3); },
     // ¡te quemaste! golpe grave + chasquido + llamarada que baja
     lavaBurn() { sub(90, 35, 0.7, 0.35); crunch(160, 0.12, 0.35); noise(0.45, 0.35, 0, 0, { sweep: [3000, 400], q: 1, wet: 0.4 }); tone(220, 'sawtooth', 0.06, 0.25, 110); },
+    // ¡GRAVEDAD LUNAR!: campanitas de cristal que flotan
+    lunarChime() { ring([[1568, 0.04, 1.2], [2093, 0.03, 1.4], [2637, 0.02, 1.6]], 0, 0.8); ring([[1760, 0.03, 1.2], [2349, 0.02, 1.4]], 0.35, 0.8); },
+    // ¡TORMENTA ELÉCTRICA!: la marca chisporrotea (aviso del rayo)
+    zapWarn() { for (let i = 0; i < 4; i++) noise(0.08, 0.05, 2500, i * 0.09, { wet: 0.2 }); tone(1200, 'sawtooth', 0.03, 0.5, 2400, 0, 0.3); },
+    // el rayo: chasquido seco + trueno que retumba
+    thunder() { noise(0.6, 0.12, 1200, 0, { wet: 0.3 }); crunch(220, 0.25, 0.25); sub(70, 30, 0.8, 0.9, 0.05, 0.4); noise(0.35, 1.6, 0, 0.08, { lp: 400, wet: 0.7, att: 0.05 }); },
+    // trueno lejano (durante el aviso)
+    thunderFar() { noise(0.25, 1.8, 0, 0, { lp: 260, wet: 0.8, att: 0.2 }); sub(55, 35, 0.3, 1.2, 0.1, 0.5); },
     // siseo y burbujeo de la lava
     lavaHiss() { noise(0.12, 0.7, 1800, 0, { wet: 0.3 }); for (let i = 0; i < 3; i++) sub(90 + Math.random() * 60, 50, 0.12, 0.12, Math.random() * 0.4); },
     // pantalla VS: un "swinggg" de espada que cruza de izquierda a derecha y choca

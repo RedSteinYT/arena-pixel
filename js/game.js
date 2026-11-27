@@ -136,7 +136,7 @@ class Game {
   }
   // ¿ese lanzamiento lo saca por un lateral o por arriba antes de recuperarse? (vuelo sin obstáculos)
   predictKO(d, lvx, lvy, stun) {
-    const B = STAGE.blast, g = d.S.grav * 0.9 * (STAGE.grav || 1);
+    const B = STAGE.blast, g = d.S.grav * 0.9 * (STAGE.grav || 1) * (this.evGrav || 1);
     let x = d.x, y = d.y, vy = 0;
     for (let i = 0; i < stun; i++) {
       vy = Math.min(vy + g, d.S.maxFall); lvx *= PH.decay; lvy *= PH.decay;
@@ -510,6 +510,7 @@ class Game {
       RubySys.drawAura(c, f, this);
       const bomb = EventSys.holder(this) === f;                // ¡PAPA CALIENTE!: parpadea en rojo (más rápido al final)
       f._bomb = bomb ? (this.ev.t > 300 ? 2 : 1) : 0;
+      f._zap = EventSys.zapped(this, f);                         // ¡le cayó un rayo!
       renderFighter(c, f, this.frame);
       if (f.ch.overlay) f.ch.overlay(c, f, this.frame);
       if (f.st === 'attack' && f.move && f.move.draw) f.move.draw(c, f, f.t, this);   // efectos propios del golpe (ataques rubí)

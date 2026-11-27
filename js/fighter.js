@@ -484,11 +484,12 @@ class Fighter {
     const noGrav = this.st === 'attack' && this.move && this.move.noGrav && this.move.noGrav(this, this.t);
     const freeze = this.st === 'dodge' && this.dodgeKind === 'air' && this.t < 18;
     if (!this.grounded && !noGrav && !freeze) {
-      const grav = (this.st === 'hitstun' ? this.S.grav * (this.floatT > 0 ? 0.45 : 0.9) : this.S.grav) * (STAGE.grav || 1);   // tras un ataque hacia arriba flota un poco
+      const grav = (this.st === 'hitstun' ? this.S.grav * (this.floatT > 0 ? 0.45 : 0.9) : this.S.grav) * (STAGE.grav || 1) * (g.evGrav || 1);   // tras un ataque hacia arriba flota un poco (y en ¡GRAVEDAD LUNAR!, todos)
       this.vy += grav;
-      const cap = this.ff ? this.S.fastFall : this.S.maxFall;
+      const capK = (g.evGrav || 1) < 1 ? 0.5 + 0.5 * g.evGrav : 1;             // en la luna también se cae más lento
+      const cap = (this.ff ? this.S.fastFall : this.S.maxFall) * capK;
       if (this.vy > cap) this.vy = this.ff ? cap : Math.max(cap, this.vy - 0.6);
-      if (this.ff && this.vy >= 0) this.vy = this.S.fastFall;
+      if (this.ff && this.vy >= 0) this.vy = this.S.fastFall * capK;
     }
     // empuje de los golpes (se va frenando)
     if (!this.sdLaunch) { this.lvx *= PH.decay; this.lvy *= PH.decay; }   // lanzado en muerte súbita: no frena
