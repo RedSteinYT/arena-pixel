@@ -412,7 +412,7 @@ const STAGE_EVENTS = {
         const k = Math.min(1, E.t / 40) * this.gust(E);
         for (const f of g.fighters) {
           if (!alive(f) || f.st === 'ledge' || f.st === 'grabbed' || f.heldBy) continue;
-          f.x += E.dir * k * (f.grounded ? 0.55 : 1.05);
+          f.x += E.dir * k * (f.grounded ? 0.78 : 1.4);
         }
         for (const p of g.projectiles) p.x += E.dir * k * 0.6;
         if (E.t % 90 === 30) Sfx.gust(1);
