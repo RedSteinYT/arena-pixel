@@ -825,6 +825,8 @@ const EventSys = {
       if (E.t >= D.dur) { E.phase = 'end'; E.t = 0; if (D.stop) D.stop(g, E); if (!E.abort) Sfx.eventEnd(); }
     } else if (E.t >= 60) { g.ev = null; g.evNext = EVENT_GAP[0] + (Math.random() * (EVENT_GAP[1] - EVENT_GAP[0]) | 0); }
     g.evGrav = this.grav(g);
+    const B = g.stage && g.stage.bal;                                     // la balanza solo la manda ¡BALANZA ENLOQUECIDA! mientras dura
+    if (B && B.force != null && !(g.ev && g.ev.id === 'loca' && g.ev.phase === 'on')) B.force = null;
   },
   // ¡GRAVEDAD LUNAR!: multiplica la gravedad (baja y sube suave en medio segundo)
   grav(g) {
