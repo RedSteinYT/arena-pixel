@@ -11,6 +11,9 @@ const Music = (() => {
   let song = null, songId = null, want = null, ducked = false, switchAt = 0, vol = 0;
   let userGain = null, userLevel = 1;                 // volumen de música elegido por el jugador (0-1)
   let nextT = 0, step = 0, bar = 0, sec = 0;
+  // música dinámica: en las técnicas (¡¡¡DUPLA!!! / Ultimate Ruby) la canción se ahoga y va a medio tiempo,
+  // y entra una capa de cine (dron, coro, timbales y golpes de orquesta en la tonalidad del acorde que suena)
+  let moodLP = null, cineBus = null, cineVerb = null, tempoMul = 1, mood = null, drone = null, pulseT = 0, lastStab = 0;
 
   // ---------- notas ----------
   const NOTE = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
@@ -132,9 +135,15 @@ const Music = (() => {
     ac = Sfx.unlock(); if (!ac) return false;
     const comp = ac.createDynamicsCompressor();
     comp.threshold.value = -20; comp.ratio.value = 3.5; comp.attack.value = 0.01; comp.release.value = 0.2;
-    userGain = ac.createGain(); userGain.gain.value = userLevel; userGain.connect(ac.destination);
+    userGain = ac.createGain(); userGain.gain.value = userLevel; userGain.connect(Sfx.output() || ac.destination);   // por el limitador final
     comp.connect(userGain);
-    bus = ac.createGain(); bus.gain.value = 0; bus.connect(comp);
+    bus = ac.createGain(); bus.gain.value = 0;
+    moodLP = ac.createBiquadFilter(); moodLP.type = 'lowpass'; moodLP.frequency.value = 20000; moodLP.Q.value = 0.7;
+    bus.connect(moodLP).connect(comp);                 // la canción pasa por un filtro que se cierra en las técnicas
+    cineBus = ac.createGain(); cineBus.connect(comp);    // la capa de cine va aparte (sin filtrar)
+    const conv = ac.createConvolver(), vg = ac.createGain(), L = Math.floor(ac.sampleRate * 2.8), ib = ac.createBuffer(2, L, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = ib.getChannelData(c); for (let i = 0; i < L; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 2.6); }
+    conv.buffer = ib; vg.gain.value = 0.7; cineVerb = ac.createGain(); cineVerb.connect(conv).connect(vg).connect(comp);
     gtrIn = chain(2.4, 1900, 0.55);                    // guitarra rítmica: cálida, sin agudos que molesten
     leadIn = chain(1.7, 2900, 0.6);                    // guitarra solista
     // eco del solista
@@ -251,7 +260,7 @@ const Music = (() => {
   // ---------- secuenciador ----------
   function playStep(t) {
     const P = song.parts[song.order[sec]], ch = P.ch[bar % P.ch.length], s = step;
-    const sd = 60 / song.bpm / 4, last = bar === P.ch.length - 1;
+    const sd = 60 / (song.bpm * tempoMul) / 4, last = bar === P.ch.length - 1;
     // batería
     const D = DRUMS[P.drums], k = (last && P.fill ? FILL.k : D.k), sn = (last && P.fill ? FILL.s : D.s);
     if (k[s] === 'x') kick(t);
@@ -297,7 +306,86 @@ const Music = (() => {
     if (!song) return;
     setVol(ducked ? VOL * 0.3 : VOL, 0.15);
     if (nextT < now - 0.3) nextT = now + 0.05;              // pestaña dormida: no amontonar notas
-    while (nextT < now + 0.12) { playStep(nextT); nextT += 60 / song.bpm / 4; }
+    while (nextT < now + 0.12) { playStep(nextT); nextT += 60 / (song.bpm * tempoMul) / 4; }
+    // en las técnicas: timbales que laten como un corazón
+    if ((mood === 'duo' || mood === 'ult') && now >= pulseT) { timpani(now + 0.02, mood === 'ult' ? 1 : 0.8); pulseT = now + (mood === 'ult' ? 0.86 : 0.68); }
+  }
+
+  // ---------- capa de cine ----------
+  // nota raíz del acorde que suena ahora (para que todo encaje con la canción)
+  function root() {
+    if (!song) return 40;
+    const P = song.parts[song.order[sec]]; return P.ch[bar % P.ch.length].root;
+  }
+  function timpani(t, v = 1) {
+    const f = hz(root() - (root() > 45 ? 12 : 0)), o = osc('sine', f * 1.5, t, t + 0.9), g = ac.createGain();
+    o.frequency.exponentialRampToValueAtTime(f, t + 0.12);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.45 * v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+    o.connect(g); g.connect(cineBus); g.connect(cineVerb);
+    noiseHit(t, 0.12 * v, 0.25, 'lowpass', 500, cineBus);
+  }
+  function startDrone(m) {
+    stopDrone();
+    const t = ac.currentTime, r = root(), oscs = [], g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 0.7);
+    g.connect(cineBus); const send = ac.createGain(); send.gain.value = 0.6; g.connect(send).connect(cineVerb);
+    // dron grave: dos sierras desafinadas por un filtro que respira
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 300; lp.Q.value = 3;
+    const lfo = osc('sine', 0.25, t, t + 60), lg = ac.createGain(); lg.gain.value = 140; lfo.connect(lg).connect(lp.frequency); oscs.push(lfo);
+    const dg = ac.createGain(); dg.gain.value = 0.09; lp.connect(dg).connect(g);
+    for (const det of [-9, 9]) { const o = osc('sawtooth', hz(r), t, t + 60, det); o.connect(lp); oscs.push(o); }
+    const so = osc('sine', hz(r - 12), t, t + 60), sg = ac.createGain(); sg.gain.value = 0.16; so.connect(sg).connect(g); oscs.push(so);
+    // Ultimate: coro (menor) con vibrato, épico
+    if (m === 'ult') {
+      const cf = ac.createBiquadFilter(); cf.type = 'lowpass'; cf.frequency.value = 1800;
+      const cg = ac.createGain(); cg.gain.setValueAtTime(0.0001, t); cg.gain.exponentialRampToValueAtTime(0.05, t + 1.4);
+      cf.connect(cg).connect(g);
+      const vib = osc('sine', 5.2, t, t + 60), vg = ac.createGain(); vg.gain.value = 9; vib.connect(vg); oscs.push(vib);
+      for (const iv of [24, 27, 31, 36]) for (const det of [-6, 6]) { const o = osc('triangle', hz(r + iv), t, t + 60, det); vg.connect(o.detune); o.connect(cf); oscs.push(o); }
+    }
+    // subida de tensión: ruido que sube durante dos segundos
+    const s = ac.createBufferSource(), bp = ac.createBiquadFilter(), ng = ac.createGain();
+    s.buffer = nbuf; s.loop = true; bp.type = 'bandpass'; bp.Q.value = 3;
+    bp.frequency.setValueAtTime(250, t); bp.frequency.exponentialRampToValueAtTime(5000, t + 2.2);
+    ng.gain.setValueAtTime(0.0001, t); ng.gain.exponentialRampToValueAtTime(0.08, t + 2); ng.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
+    s.connect(bp).connect(ng).connect(g); s.start(t); s.stop(t + 2.7);
+    drone = { g, oscs };
+  }
+  function stopDrone() {
+    if (!drone) return;
+    const t = ac.currentTime;
+    drone.g.gain.cancelScheduledValues(t); drone.g.gain.setTargetAtTime(0.0001, t, 0.15);
+    for (const o of drone.oscs) { try { o.stop(t + 1); } catch (e) {} }
+    drone = null;
+  }
+  // golpe de orquesta en la tonalidad (en cada impacto grande de una técnica)
+  function stab() {
+    if (!ac || !(mood === 'duo' || mood === 'ult')) return;
+    const t = ac.currentTime; if (t - lastStab < 0.25) return; lastStab = t;
+    const r = root() + 12, f = ac.createBiquadFilter(), g = ac.createGain();
+    f.type = 'lowpass'; f.frequency.setValueAtTime(3500, t); f.frequency.exponentialRampToValueAtTime(500, t + 0.9);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.2, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+    for (const iv of [0, 7, 12, 19]) for (const det of [-10, 10]) osc('sawtooth', hz(r + iv), t, t + 1.4, det).connect(f);
+    f.connect(g); g.connect(cineBus); g.connect(cineVerb);
+    timpani(t, 1.2);
+  }
+  // al terminar la técnica, la canción vuelve de golpe: platillo + bombo
+  function drop() {
+    const t = ac.currentTime + 0.02;
+    noiseHit(t, 0.14, 1.6, 'highpass', 4000, cineBus); kick(t, 1.1);
+    noiseHit(t, 0.3, 0.6, 'lowpass', 300, cineBus);
+  }
+  function setMood(m) {
+    if (!ac || m === mood) return;
+    const prev = mood; mood = m;
+    const t = ac.currentTime, cine = m === 'duo' || m === 'ult';
+    const f = m === 'ult' ? 380 : m === 'duo' ? 620 : m === 'slow' ? 1300 : 20000;
+    moodLP.frequency.cancelScheduledValues(t); moodLP.frequency.setTargetAtTime(f, t, m ? 0.12 : 0.18);
+    moodLP.Q.cancelScheduledValues(t); moodLP.Q.setTargetAtTime(cine ? 5 : 0.7, t, 0.1);
+    tempoMul = cine ? 0.5 : m === 'slow' ? 0.75 : 1;
+    if (cine) { if (!(prev === 'duo' || prev === 'ult')) startDrone(m); pulseT = t + 0.1; }
+    else stopDrone();
+    if (!cine && (prev === 'duo' || prev === 'ult')) drop();
   }
 
   return {
@@ -310,5 +398,9 @@ const Music = (() => {
     },
     get playing() { return songId; },
     setLevel(v) { userLevel = v; if (userGain) userGain.gain.setTargetAtTime(v, ac.currentTime, 0.03); },
+    // estado de ánimo de la música: null · 'slow' (cámara lenta final) · 'duo' · 'ult'
+    setMood(m) { setMood(m || null); },
+    get mood() { return mood; },
+    stab,
   };
 })();

@@ -81,7 +81,7 @@ const DUO_ANIMS = {
         if (t < 108) duoPose(red, 'fsmash', 'rec', (t - 84) / 24); else duoStand(red);
       }
       // efectos
-      if (t === 1) Sfx.remate();
+      if (t === 1) Sfx.duoStart();
       if (t >= 12 && t < 64 && t % 6 === 0) Sfx.blip();
       if (t >= 44 && t < 76 && t % 2 === 0) {                                // la espada arde roja y azul
         const h = duoHand(red);
@@ -182,7 +182,7 @@ const DUO_ANIMS = {
       else if (t < 70) duoPose(blo, 'dsmash', 'act');
       else duoPose(blo, 'dsmash', 'rec', (t - 70) / 30);
       // efectos
-      if (t === 1) Sfx.remate();
+      if (t === 1) Sfx.duoStart();
       if (t === 50) { g.shake = 8; Sfx.hit(12); g.burst(blo.x - side * 14, gy, 10, 'dust'); }
       if (t > 50 && t < 70 && t % 3 === 0) { g.burst(pX, gy, 3, 'dust'); g.shake = Math.max(g.shake, 3); }
       if (t === 104) {                                                         // ¡el pilar revienta!
@@ -267,7 +267,7 @@ const DUO_ANIMS = {
       else if (t < 112) duoPose(bri, 'fair', 'act');
       else { duoStand(bri, 'air'); bri.vy = 1; bri.y = Math.min(gy, bri.y + (t - 112) * 0.25); }
       // efectos
-      if (t === 1) { Sfx.remate(); }
+      if (t === 1) Sfx.duoStart();
       if (t === 6) Sfx.freeze();
       if (t === 58 || t === 71 || t === 84) { Sfx.jump(); duoRadial(g, bri.x, bri.y, 8, ['#ffffff', '#bff2ff'], 1.4, 'spark', 14); }
       if (t === 100) {                                                         // ¡patada!
@@ -334,7 +334,7 @@ const DUO_ANIMS = {
       else if (t < 104) { duoPlace(red, rx1, gy, side); duoPose(red, 'dsmash', 'act'); }
       else { duoPlace(red, rx1, gy, side); duoPose(red, 'dsmash', 'rec', (t - 104) / 24); }
       // efectos
-      if (t === 1) Sfx.remate();
+      if (t === 1) Sfx.duoStart();
       if (t >= 16 && t < 100 && t % 9 === 0) Sfx.swing();
       if (t >= 16 && t < 108 && t % 2 === 0) {                               // viento (y luego brasas) girando
         const k = Math.random(), fire = this.fireLv(t) > k;
@@ -416,7 +416,7 @@ const DUO_ANIMS = {
       else if (t < 118) { duoPlace(man, dLerp(D.mx0, mx1, (t - 112) / 5), gy, side); duoPose(man, 'fsmash', 'act'); }
       else { duoPlace(man, mx1, gy, side); duoPose(man, 'fsmash', 'rec', (t - 118) / 22); }
       // efectos
-      if (t === 1) Sfx.remate();
+      if (t === 1) Sfx.duoStart();
       if (t >= 8 && t < 40 && t % 5 === 0) Sfx.blip();
       if (t === 40) Sfx.join();                                                 // objetivo fijado
       if (t === 44) { Sfx.jump(); g.burst(D.bx0, gy, 6, 'dust'); }

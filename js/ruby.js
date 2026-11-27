@@ -42,7 +42,7 @@ const RubySys = (() => {
     if (f.item) { f.inp = blankInput(); ItemSys.throwItem(f, g); }        // el ataque rubí es suyo: suelta lo que lleve en la mano
     f.startMove(name, g);
     const m = f.ch.moves[name];
-    if (name === 'rubyCb') { f.rubyTxt = m.rubyName; f.rubyTxtT = 70; Sfx.remate(); }
+    if (name === 'rubyCb') { f.rubyTxt = m.rubyName; f.rubyTxtT = 70; Sfx.rubyCb(); }
     else Sfx.freeze();
     g.burst(f.x, f.y - f.S.hh * 0.6, 8, 'star', RUBY_COL.l);
   }
@@ -57,11 +57,11 @@ const RubySys = (() => {
       const a = Math.random() * Math.PI * 2, r = 26 + Math.random() * 10;
       g.fx.push({ kind: 'part', ptype: 'spark', x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, vx: -Math.cos(a) * 2.2, vy: -Math.sin(a) * 2.2, t: 0, life: 12, size: 1, col: f.chargeT % 6 ? RUBY_COL.l : '#ffffff' });
     }
-    if (f.chargeT % 30 === 0) Sfx.blip();
+    if (f.chargeT % 20 === 0) Sfx.charge(f.chargeT / RUBY_CHARGE);          // zumbido que sube con la carga
     if (f.chargeT >= RUBY_CHARGE) {
       f.ultReady = true; f.chargeT = 0; f.setSt('ground');
       f.rubyTxt = '¡ULTIMATE LISTO!'; f.rubyTxtT = 60;
-      Sfx.remate(); g.shake = Math.max(g.shake, 4);
+      Sfx.rubyReady(); g.shake = Math.max(g.shake, 4);
       duoRadial(g, cx, cy, 20, [RUBY_COL.l, RUBY_COL.m, '#ffffff'], 2.2);
     }
   }
@@ -167,11 +167,12 @@ Object.assign(Game.prototype, {
   // los primeros fotogramas de cualquier Ultimate: el corazón de rubí que late, se agrieta y explota
   stepUltPre(D) {
     const t = D.t, a = D.a;
-    if (t === 1) Sfx.freeze();
-    if (t === 8 || t === 13) Sfx.blip();
+    if (t === 1) Sfx.heartbeat(0.6);                                     // late… late… y estalla
+    if (t === 8) Sfx.heartbeat(0.85);
+    if (t === 14) Sfx.heartbeat(1.1);
     if (t === 18) {
       const hx = a.x, hy = a.y - a.S.hh - 26;
-      D.flash = 9; this.shake = 10; Sfx.brk(); Sfx.hit(16);
+      D.flash = 9; this.shake = 10; Sfx.rubyShatter();
       duoRadial(this, hx, hy, 34, [RUBY_COL.l, RUBY_COL.m, RUBY_COL.d, '#ffffff'], 3, 'spark', 30);
       duoRadial(this, hx, hy, 12, ['#ffd0da', '#ffffff'], 1.2, 'star', 36);
     }
